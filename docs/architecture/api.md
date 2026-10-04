@@ -1,0 +1,293 @@
+# API Architecture
+
+**Project:** Digital Freight Marketplace  
+**Version:** 1.0  
+**Date:** 2026-10-03  
+**Style:** RESTful  
+**Documentation:** OpenAPI 3.x / Swagger UI  
+
+---
+
+## 1. Overview
+
+The API is the single communication interface between the React frontend and the Express.js backend. It follows REST conventions with consistent URL patterns, HTTP methods, request/response formats, and error handling.
+
+All endpoints are prefixed with `/api/v1/` and organized by module.
+
+---
+
+## 2. General Conventions
+
+| Aspect | Convention |
+|--------|-----------|
+| Base URL | `/api/v1` |
+| Data format | JSON (`Content-Type: application/json`) |
+| Authentication | Session-based via Better Auth; session token in HTTP-only cookie |
+| Pagination | Query params: `?page=1&limit=20`; response includes `meta.pagination` |
+| Sorting | Query param: `?sort=createdAt:desc` |
+| Filtering | Query params per field: `?status=PUBLISHED&goodsType=agricultural` |
+| Date format | ISO 8601 (`2026-10-03T14:30:00.000Z`) |
+| IDs | UUID v4 |
+
+---
+
+## 3. Response Format
+
+### Success Response
+
+```json
+{
+  "data": { ... },
+  "meta": {
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 87,
+      "totalPages": 5
+    }
+  }
+}
+```
+
+- **Single resource:** `"data"` is an object.
+- **Collection:** `"data"` is an array, `"meta.pagination"` is included.
+- **Create/Update:** Returns the created/updated resource in `"data"`.
+- **Delete:** Returns `204 No Content` with no body.
+
+### Error Response
+
+```json
+{
+  "error": {
+    "code": "SHIPMENT_NOT_FOUND",
+    "message": "Shipment with the given ID does not exist.",
+    "details": null
+  }
+}
+```
+
+For validation errors, `details` contains field-level issues:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed.",
+    "details": [
+      { "field": "weightKg", "message": "Weight must be a positive number." },
+      { "field": "pickupDate", "message": "Pickup date must be in the future." }
+    ]
+  }
+}
+```
+
+---
+
+## 4. HTTP Status Codes
+
+| Code | Usage |
+|------|-------|
+| 200 | Successful GET, PUT, PATCH |
+| 201 | Successful POST (resource created) |
+| 204 | Successful DELETE (no body) |
+| 400 | Validation error, malformed request |
+| 401 | Not authenticated (missing or invalid session) |
+| 403 | Authenticated but not authorized (wrong role) |
+| 404 | Resource not found |
+| 409 | Conflict (e.g., duplicate bid, email already registered) |
+| 422 | Business rule violation (e.g., bid on non-published shipment) |
+| 429 | Rate limit exceeded |
+| 500 | Unexpected server error |
+
+---
+
+## 5. Endpoint Catalog
+
+### 5.1 Auth Module — `/api/v1/auth`
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/auth/register` | No | Register a new user (Shipper or Transporter) |
+| POST | `/auth/login` | No | Authenticate and create session |
+| POST | `/auth/logout` | Yes | Destroy current session |
+| POST | `/auth/forgot-password` | No | Request password reset email |
+| POST | `/auth/reset-password` | No | Reset password with token |
+| GET | `/auth/me` | Yes | Get current authenticated user profile |
+
+### 5.2 User / Profile — `/api/v1/users`
+
+| Method | Endpoint | Auth | Roles | Description |
+|--------|----------|------|-------|-------------|
+| GET | `/users/:id` | Yes | Any | Get user public profile |
+| PATCH | `/users/:id` | Yes | Owner | Update profile (name, phone, location, photo) |
+| GET | `/users/:id/vehicle` | Yes | Any | Get transporter's vehicle details |
+| PUT | `/users/:id/vehicle` | Yes | Transporter (owner) | Create or update vehicle details |
+| GET | `/users/:id/reviews` | Yes | Any | Get reviews received by a user |
+
+### 5.3 Shipment Module — `/api/v1/shipments`
+
+| Method | Endpoint | Auth | Roles | Description |
+|--------|----------|------|-------|-------------|
+| POST | `/shipments` | Yes | Shipper | Create a new shipment (DRAFT) |
+| GET | `/shipments` | Yes | Any | List/search shipments (Transporters see PUBLISHED; Shippers see own) |
+| GET | `/shipments/:id` | Yes | Any | Get shipment detail |
+| PATCH | `/shipments/:id` | Yes | Shipper (owner) | Update shipment fields |
+| PATCH | `/shipments/:id/publish` | Yes | Shipper (owner) | Publish a DRAFT shipment |
+| PATCH | `/shipments/:id/cancel` | Yes | Shipper (owner) | Cancel a shipment |
+| PATCH | `/shipments/:id/complete` | Yes | Shipper (owner) | Mark shipment as completed |
+| POST | `/shipments/:id/images` | Yes | Shipper (owner) | Upload image(s) to shipment |
+| DELETE | `/shipments/:id/images/:imageId` | Yes | Shipper (owner) | Remove an image |
+
+### 5.4 Bid Module — `/api/v1/shipments/:shipmentId/bids`
+
+Bids are nested under shipments since they exist in that context.
+
+| Method | Endpoint | Auth | Roles | Description |
+|--------|----------|------|-------|-------------|
+| POST | `/shipments/:shipmentId/bids` | Yes | Transporter | Submit a bid |
+| GET | `/shipments/:shipmentId/bids` | Yes | Shipper (owner) | List all bids on a shipment |
+|  GET | `/bids/my` | Yes | Transporter | List current transporter's bids across all shipments |
+| GET | `/shipments/:shipmentId/bids/:id` | Yes | Shipper (owner) or Transporter (owner) | Get bid detail |
+| PATCH | `/shipments/:shipmentId/bids/:id` | Yes | Transporter (owner) | Update bid (price, date, message) |
+| PATCH | `/shipments/:shipmentId/bids/:id/withdraw` | Yes | Transporter (owner) | Withdraw a bid |
+| PATCH | `/shipments/:shipmentId/bids/:id/accept` | Yes | Shipper (shipment owner) | Accept a bid |
+| PATCH | `/shipments/:shipmentId/bids/:id/decline` | Yes | Shipper (shipment owner) | Decline a bid |
+
+### 5.5 Messaging Module — `/api/v1/shipments/:shipmentId/messages`
+
+| Method | Endpoint | Auth | Roles | Description |
+|--------|----------|------|-------|-------------|
+| GET | `/shipments/:shipmentId/messages` | Yes | Shipper (owner) or Transporter (with bid) | Get message thread for a shipment |
+| POST | `/shipments/:shipmentId/messages` | Yes | Shipper (owner) or Transporter (with bid) | Send a message |
+
+### 5.6 Notification Module — `/api/v1/notifications`
+
+| Method | Endpoint | Auth | Roles | Description |
+|--------|----------|------|-------|-------------|
+| GET | `/notifications` | Yes | Any | Get current user's notifications |
+| PATCH | `/notifications/:id/read` | Yes | Owner | Mark a notification as read |
+| PATCH | `/notifications/read-all` | Yes | Owner | Mark all notifications as read |
+
+### 5.7 Review Module — `/api/v1/shipments/:shipmentId/reviews`
+
+| Method | Endpoint | Auth | Roles | Description |
+|--------|----------|------|-------|-------------|
+| POST | `/shipments/:shipmentId/reviews` | Yes | Shipper or Transporter (participant) | Create a review after completion |
+| GET | `/shipments/:shipmentId/reviews` | Yes | Any | Get reviews for a shipment |
+
+### 5.8 Admin Module — `/api/v1/admin`
+
+All admin endpoints require `ADMIN` role.
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/admin/users` | Yes | List all users (with search, filter by role/status) |
+| PATCH | `/admin/users/:id/suspend` | Yes | Suspend a user account |
+| PATCH | `/admin/users/:id/activate` | Yes | Reactivate a suspended user |
+| GET | `/admin/shipments` | Yes | List all shipments (with filter by status) |
+| PATCH | `/admin/shipments/:id/remove` | Yes | Remove/hide a shipment listing |
+| GET | `/admin/metrics` | Yes | Get platform metrics (user counts, shipment stats) |
+
+---
+
+## 6. Request Validation
+
+Every request body and query parameter is validated using Zod schemas before reaching the controller. Validation is applied via the shared `validate` middleware.
+
+**Example: Create Shipment schema**
+
+```javascript
+import { z } from 'zod';
+
+export const createShipmentSchema = z.object({
+  body: z.object({
+    goodsDescription: z.string().min(10).max(1000),
+    goodsType: z.string().min(1).max(50),
+    weightKg: z.number().positive(),
+    pickupLocation: z.string().min(1).max(255),
+    pickupLat: z.number().min(-90).max(90).optional(),
+    pickupLng: z.number().min(-180).max(180).optional(),
+    deliveryLocation: z.string().min(1).max(255),
+    deliveryLat: z.number().min(-90).max(90).optional(),
+    deliveryLng: z.number().min(-180).max(180).optional(),
+    pickupDate: z.string().datetime(),
+    specialRequirements: z.string().max(2000).optional(),
+  }),
+});
+```
+
+---
+
+## 7. Pagination Convention
+
+Paginated endpoints accept query parameters and return a `meta.pagination` block:
+
+**Request:** `GET /api/v1/shipments?page=2&limit=10`
+
+**Response:**
+
+```json
+{
+  "data": [ ... ],
+  "meta": {
+    "pagination": {
+      "page": 2,
+      "limit": 10,
+      "total": 87,
+      "totalPages": 9
+    }
+  }
+}
+```
+
+| Parameter | Default | Max | Description |
+|-----------|---------|-----|-------------|
+| `page` | 1 | — | Current page number (1-indexed) |
+| `limit` | 20 | 100 | Items per page |
+
+---
+
+## 8. Rate Limiting
+
+| Route Group | Limit | Window |
+|-------------|-------|--------|
+| Auth endpoints (`/auth/login`, `/auth/register`) | 10 requests | 15 minutes per IP |
+| General API (authenticated) | 100 requests | 1 minute per user |
+| File uploads | 20 requests | 1 minute per user |
+
+Rate limit responses return `429 Too Many Requests` with a `Retry-After` header.
+
+---
+
+## 9. API Documentation
+
+| Aspect | Detail |
+|--------|--------|
+| Specification | OpenAPI 3.x |
+| Served at | `/api/docs` (Swagger UI) |
+| JSON spec | `/api/docs/json` |
+| Generation | Maintained as JSDoc annotations or a standalone YAML/JSON file |
+| Environment | Available in development. Configurable for production. |
+
+---
+
+## 10. API Versioning Strategy
+
+| Aspect | Decision |
+|--------|----------|
+| Versioning scheme | URL prefix (`/api/v1/`, `/api/v2/`) |
+| Current version | `v1` |
+| Backward compatibility | Non-breaking changes (new fields, new endpoints) added to the current version without a version bump |
+| Breaking changes | Require a new version (`v2`); previous version remains available during a deprecation period |
+| Deprecation policy | Deprecated versions receive security patches only for 6 months after a successor version is released |
+| Sunset communication | `Sunset` and `Deprecation` HTTP headers added to responses from deprecated versions |
+
+### What Constitutes a Breaking Change
+
+| Breaking | Non-Breaking |
+|----------|-------------|
+| Removing a field from a response | Adding a new optional field to a response |
+| Renaming an endpoint | Adding a new endpoint |
+| Changing a field's type | Adding a new optional query parameter |
+| Removing an endpoint | Adding a new enum value (additive) |
+| Changing required → optional on request (or vice-versa) | Adding a new middleware that doesn't alter existing behavior |
