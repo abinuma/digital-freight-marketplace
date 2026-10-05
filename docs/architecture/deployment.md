@@ -9,7 +9,7 @@
 
 ## 1. Overview
 
-The Digital Freight Marketplace is deployed as three independent tiers: a static frontend hosted on **Vercel**, an API server running on **Render**, and a managed **PostgreSQL** database. All tiers communicate over HTTPS. Docker is used for local development parity and can be adopted for production containerization when needed.
+The Digital Freight Marketplace uses a static frontend hosted on **Vercel**, an API server hosted by a provider selected by the project owner, and **Neon PostgreSQL**. Local API development connects to a Neon development branch over TLS; no local database is used. All deployed tiers communicate over HTTPS. Docker is not part of the local development workflow.
 
 ---
 
@@ -28,15 +28,15 @@ All configuration is driven by environment variables — no secrets in source co
 
 | Variable | Example | Where Set |
 |----------|---------|-----------|
-| `DATABASE_URL` | `postgresql://user:pass@host:5432/dfm` | Render / `.env` |
-| `BETTER_AUTH_SECRET` | (random 64-char string) | Render / `.env` |
-| `CORS_ORIGIN` | `https://app.example.com` | Render / `.env` |
-| `CLOUDINARY_URL` | `cloudinary://key:secret@cloud` | Render / `.env` |
-| `NODE_ENV` | `production` | Render / `.env` |
-| `PORT` | `5000` | Render / `.env` |
-| `LOG_LEVEL` | `info` | Render / `.env` |
-| `RATE_LIMIT_WINDOW_MS` | `60000` | Render / `.env` |
-| `RATE_LIMIT_MAX` | `100` | Render / `.env` |
+| `DATABASE_URL` | Neon PostgreSQL connection URI with TLS | API host / `server/.env` |
+| `BETTER_AUTH_SECRET` | (random 64-char string) | API host / `.env` |
+| `CORS_ORIGIN` | `https://app.example.com` | API host / `.env` |
+| `CLOUDINARY_URL` | `cloudinary://key:secret@cloud` | API host / `.env` |
+| `NODE_ENV` | `production` | API host / `.env` |
+| `PORT` | `5000` | API host / `.env` |
+| `LOG_LEVEL` | `info` | API host / `.env` |
+| `RATE_LIMIT_WINDOW_MS` | `60000` | API host / `.env` |
+| `RATE_LIMIT_MAX` | `100` | API host / `.env` |
 
 A `.env.example` file in the repository root documents every required variable without values.
 
@@ -51,16 +51,15 @@ A `.env.example` file in the repository root documents every required variable w
                     └──────┬──────────────┬────────┘
                            │              │
               ┌────────────▼───┐    ┌─────▼────────────┐
-              │    Vercel      │    │     Render        │
+              │    Vercel      │    │   API Hosting    │
               │  (Frontend)    │    │   (API Server)    │
               │ React + Vite   │    │ Node.js + Express │
               │ Static SPA     │    │ Modular Monolith  │
               └────────────────┘    └──┬───────────┬───┘
                                        │           │
                               ┌────────▼──┐  ┌─────▼──────────┐
-                              │ PostgreSQL │  │   Cloudinary   │
-                              │ (Managed)  │  │   / S3         │
-                              │ Render DB  │  │ (File Storage) │
+                              │    Neon    │  │   Cloudinary   │
+                              │ PostgreSQL │  │   / S3         │
                               └───────────┘  └────────────────┘
 ```
 
@@ -73,7 +72,7 @@ A `.env.example` file in the repository root documents every required variable w
 | Platform | Vercel |
 | Build command | `npm run build` (Vite) |
 | Output directory | `dist/` |
-| Node version | 20.x |
+| Node version | Use a currently supported Node.js release |
 | Framework preset | Vite |
 | Root directory | `client/` |
 
@@ -101,23 +100,23 @@ The SPA rewrite ensures client-side routing works — all paths serve `index.htm
 
 ---
 
-## 5. Backend Deployment (Render)
+## 5. Backend Deployment (Provider to be selected)
 
 | Aspect | Detail |
 |--------|--------|
-| Platform | Render (Web Service) |
-| Runtime | Node.js 20.x |
+| Platform | To be selected by project owner |
+| Runtime | Node.js release supported by the selected API host |
 | Build command | `npm ci && npx prisma generate` |
 | Start command | `node src/server.js` |
 | Root directory | `server/` |
 | Instance type | Starter (scaled as needed) |
 | Health check path | `/api/v1/health` |
-| Auto-deploy | Enabled on `main` branch push |
+| Auto-deploy | Configure with selected provider |
 
-### Render Configuration
+### Example Hosting Configuration
 
 ```yaml
-# render.yaml (Infrastructure as Code)
+# Adapt this example after selecting an API hosting provider.
 services:
   - type: web
     name: dfm-api
@@ -163,17 +162,17 @@ A lightweight health endpoint confirms the API is operational:
 
 ---
 
-## 6. Database Deployment (PostgreSQL)
+## 6. Database Deployment (Neon PostgreSQL)
 
 | Aspect | Detail |
 |--------|--------|
-| Provider | Render Managed PostgreSQL |
-| Version | 16.x |
-| Plan | Starter (upgradable) |
-| Connection | Internal (within Render network) or external with TLS |
-| Connection pooling | Prisma connection pool (default: 10 connections) |
-| Backups | Daily automated; 7-day retention |
-| Maintenance window | Low-traffic hours (configurable) |
+| Provider | Neon |
+| Version | PostgreSQL version selected for the Neon project |
+| Branches | Separate development and production branches/databases |
+| Connection | Neon connection URI with TLS; use pooled URI where appropriate |
+| Connection pooling | Follow Neon and Prisma guidance for pooled/runtime and direct migration connections |
+| Backups | Configure and verify according to the selected Neon plan |
+| Maintenance window | Managed by Neon |
 
 ### Migration Deployment
 
@@ -184,7 +183,7 @@ Migrations run **before** the application starts in production:
 npx prisma migrate deploy
 ```
 
-This is executed as part of the Render build step or as a pre-start script:
+Run against the explicitly selected Neon branch as part of deployment or a pre-start step:
 
 ```json
 {
@@ -207,22 +206,20 @@ This is executed as part of the Render build step or as a pre-start script:
 Prisma client configuration in `shared/db/prisma.js`:
 
 ```javascript
-import { PrismaClient } from '@prisma/client';
+import 'dotenv/config';
+import { PrismaClient } from '../../../generated/prisma/index.js';
+import { PrismaNeon } from '@prisma/adapter-neon';
 
-const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development'
-    ? ['query', 'info', 'warn', 'error']
-    : ['error'],
-});
-
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 export default prisma;
 ```
 
 ---
 
-## 7. Containerization (Docker)
+## 7. Containerization (Optional future deployment)
 
-Docker is used for local development parity and CI testing. It can be adopted for production if moving away from Render's native Node.js runtime.
+Docker is not used for local database development because local API work connects directly to Neon. Containerization may be added later if required by the selected API host. CI should use a dedicated test database or an isolated ephemeral PostgreSQL service, never development or production data.
 
 ### Dockerfile (Backend)
 
@@ -260,7 +257,9 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
 CMD ["node", "src/server.js"]
 ```
 
-### docker-compose.yml (Local Development)
+### Docker Compose
+
+No Docker Compose database service is used in the current workflow.
 
 ```yaml
 version: '3.8'
@@ -348,27 +347,14 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: dfm_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    # Configure DB-backed tests with an isolated Neon test branch or disposable PostgreSQL service.
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       # ---- Server ----
@@ -435,8 +421,8 @@ jobs:
 
 | Concern | Tool |
 |---------|------|
-| Server uptime | Render built-in monitoring and alerting |
-| Database metrics | Render PostgreSQL dashboard (connections, query time, storage) |
+| Server uptime | Monitoring and alerting from the selected API host |
+| Database metrics | Neon project monitoring (connections, query time, storage) |
 | Frontend performance | Vercel Analytics (Web Vitals, load time) |
 | External uptime | UptimeRobot or similar (ping health endpoint every 5 min) |
 
@@ -502,7 +488,7 @@ The API server is **stateless** — sessions live in the database, file storage 
 | Aspect | Strategy |
 |--------|----------|
 | Database backups | Daily automated; 7-day retention (Render managed) |
-| Point-in-time recovery | Available on Render Pro plan |
+| Point-in-time recovery | Verify availability and retention for the selected Neon plan |
 | Code recovery | Git — all code in GitHub; tags per release |
 | Secrets recovery | Document secrets in a secure vault; regenerate if compromised |
 | Rollback procedure | Revert to previous Git commit; Render re-deploys automatically |
@@ -522,7 +508,7 @@ The API server is **stateless** — sessions live in the database, file storage 
 | # | Item | Status |
 |---|------|--------|
 | 1 | All environment variables set in production | ☐ |
-| 2 | `NODE_ENV=production` on Render | ☐ |
+| 2 | `NODE_ENV=production` on the selected API host | ☐ |
 | 3 | CORS origin restricted to frontend domain | ☐ |
 | 4 | HTTPS enforced (Render + Vercel default) | ☐ |
 | 5 | Database migrations applied (`prisma migrate deploy`) | ☐ |

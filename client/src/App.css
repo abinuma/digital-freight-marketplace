@@ -1,0 +1,76 @@
+#root {
+  min-height: 100vh;
+}
+
+.landing {
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  background: #f7f8fa;
+  color: #17212b;
+}
+
+.brand-mark {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  place-items: center;
+  border-radius: 1rem;
+  background: #243b53;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+
+.eyebrow {
+  margin: 1.5rem 0 0.5rem;
+  color: #526579;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.landing h1 {
+  max-width: 42rem;
+  margin: 0;
+  color: #17212b;
+  font-size: clamp(2.5rem, 7vw, 4.5rem);
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 1.05;
+}
+
+.intro {
+  max-width: 34rem;
+  margin: 1.25rem 0 0;
+  color: #526579;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  line-height: 1.65;
+}
+
+.availability {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 2rem;
+  padding: 0.65rem 0.95rem;
+  border: 1px solid #dce3e9;
+  border-radius: 999px;
+  background: #fff;
+  color: #35495e;
+  font-size: 0.9rem;
+}
+
+.status-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #d49a36;
+}

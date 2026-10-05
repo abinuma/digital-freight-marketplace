@@ -40,12 +40,13 @@ Establish the monorepo structure, development tooling, shared infrastructure cod
    - Initialize `client/package.json` via Vite + React scaffold.
 
 2. **Install server dependencies**
-   - `express`, `zod`, `prisma`, `@prisma/client`, `better-auth`, `pino` (logger), `helmet`, `cors`, `express-rate-limit`, `multer` (file upload middleware), `cloudinary` (or S3-compatible SDK).
+   - `express`, `zod`, `prisma`, `@prisma/client`, `better-auth`, `pino` (logger), `helmet`, `cors`, `express-rate-limit`, `multer` (file upload middleware), and the selected Cloudinary SDK.
    - Dev dependencies: `vitest`, `supertest`, `eslint`, `prettier`, `nodemon`.
 
-3. **Install client dependencies**
-   - `react`, `react-dom`, `react-router-dom`, `@tanstack/react-query`, `tailwindcss`, `leaflet`, `react-leaflet`, `axios` (or fetch wrapper), `zod`.
-   - Dev dependencies: `vitest`, `@playwright/test`, `eslint`, `prettier`.
+3. **Install client dependencies (run these commands from `client/`)**
+   - Runtime packages: `npm install react-router-dom @tanstack/react-query tailwindcss @tailwindcss/vite leaflet react-leaflet axios zod`.
+   - Development packages: `npm install -D vitest @playwright/test prettier`.
+   - The React/Vite scaffold dependencies are already declared; add the other packages only when ready to use them.
 
 4. **Configure development tooling**
    - ESLint + Prettier configuration for both `server/` and `client/`.
@@ -69,9 +70,10 @@ Establish the monorepo structure, development tooling, shared infrastructure cod
    - `server/src/index.js` — Module registration stub (will mount module routers as they are built).
    - Health check endpoint: `GET /api/v1/health` per [deployment.md § 5](./architecture/deployment.md).
 
-7. **Docker & Docker Compose**
-   - `server/Dockerfile` per [deployment.md § 7](./architecture/deployment.md).
-   - Root `docker-compose.yml` with `api` and `db` (PostgreSQL 16) services per [deployment.md § 7](./architecture/deployment.md).
+7. **Configure Neon for database access**
+   - Use the Neon PostgreSQL project as the only database environment, including during local development.
+   - Store the Neon `DATABASE_URL` in `server/.env` (ignored by Git); document only a placeholder in the root `.env.example`.
+   - Keep credentials out of source control and use Neon-provided TLS connection settings.
 
 8. **CI pipeline skeleton**
    - `.github/workflows/ci.yml` per [deployment.md § 8](./architecture/deployment.md) — lint, test, build, audit stages.
@@ -81,7 +83,7 @@ Establish the monorepo structure, development tooling, shared infrastructure cod
 
 - Working `server/` directory with Express app that starts and responds to `GET /api/v1/health`.
 - Working `client/` directory with Vite dev server serving a placeholder page.
-- `docker-compose up` starts PostgreSQL + API server locally.
+- API and client run locally; the API connects to the configured Neon PostgreSQL database.
 - All shared middleware and utilities implemented and unit-tested.
 - CI pipeline runs lint + build successfully.
 
@@ -92,7 +94,7 @@ Establish the monorepo structure, development tooling, shared infrastructure cod
 | 1 | `npm run dev` in `server/` starts Express on port 5000 | Manual run |
 | 2 | `GET http://localhost:5000/api/v1/health` returns `{ "status": "healthy", ... }` | HTTP request |
 | 3 | `npm run dev` in `client/` starts Vite on port 3000 | Manual run |
-| 4 | `docker-compose up` starts both services without errors | Manual run |
+| 4 | API connects to Neon using `DATABASE_URL` | Manual verification after Neon credentials are configured |
 | 5 | ESLint passes with zero errors in both `server/` and `client/` | `npm run lint` |
 | 6 | `errorHandler` middleware formats errors per the documented JSON structure | Unit test |
 | 7 | `validate` middleware rejects invalid input with 400 and Zod error details | Unit test |
@@ -101,12 +103,7 @@ Establish the monorepo structure, development tooling, shared infrastructure cod
 
 ### User Actions Required
 
-> **Before starting this phase, the following decisions and setup are needed from you:**
->
-> 1. **GitHub repository:** Create the repository (or confirm its name/URL) and ensure push access is configured.
-> 2. **Node.js version:** Confirm Node.js 20.x is installed locally (or confirm a different version).
-> 3. **File storage choice:** Confirm whether to use **Cloudinary** or an **S3-compatible** provider. This determines which SDK to install. If Cloudinary, you will need to create a free Cloudinary account and provide the `CLOUDINARY_URL` environment variable later (Phase 4).
-> 4. **Email service provider:** Confirm which transactional email service to use (e.g., Resend, SendGrid, Mailgun, Mailtrap for dev). This is needed for notifications (Phase 6), but the choice affects the SDK installed now.
+> No additional user decisions are needed to complete Phase 1. Neon is the selected database, Cloudinary is the selected file-storage provider, and Gmail is the selected email provider. Configure service credentials only when the phase that uses them begins.
 
 ---
 
@@ -116,7 +113,13 @@ Establish the monorepo structure, development tooling, shared infrastructure cod
 
 Define the complete Prisma schema matching [database.md](./architecture/database.md), generate the initial migration, seed development data, and verify all entities, indexes, and constraints are correctly in place.
 
+> **Temporary Prisma setup check:** Phase 1 currently has a minimal `TestRecord` model to verify Prisma configuration. Validate it with `npx prisma validate` from `server/`. Replace it with the complete marketplace schema below before creating or applying any database migration.
+
 ### Tasks
+
+0. **Install the Neon Prisma adapter**
+   - From `server/`, run `npm install @prisma/adapter-neon@^7.10.0` when beginning Phase 2.
+   - Keep the adapter version aligned with the installed Prisma 7 packages.
 
 1. **Write `prisma/schema.prisma`**
    Define all models from [database.md § 3](./architecture/database.md):
@@ -148,7 +151,7 @@ Define the complete Prisma schema matching [database.md](./architecture/database
    - `prisma/seed.js` — Create one Admin user, two sample Shippers, two sample Transporters (with vehicles), and a few sample shipments in various statuses.
 
 6. **Verify schema**
-   - Run migration on a fresh database.
+   - Run the migration against a dedicated Neon development branch/database (never production).
    - Seed data and verify via Prisma Studio or direct queries.
 
 ### Deliverables
@@ -156,13 +159,13 @@ Define the complete Prisma schema matching [database.md](./architecture/database
 - Complete `prisma/schema.prisma`.
 - Initial migration in `prisma/migrations/`.
 - Seed script `prisma/seed.js`.
-- All entities and indexes created in the local PostgreSQL database.
+- All entities and indexes created in the Neon development database.
 
 ### Completion Criteria
 
 | # | Criterion | Verification |
 |---|-----------|--------------|
-| 1 | `npx prisma migrate dev` applies cleanly on a fresh database | Command exits 0 |
+| 1 | `npx prisma migrate dev` applies cleanly on a fresh Neon development branch | Command exits 0 |
 | 2 | `npx prisma db seed` populates sample data without errors | Command exits 0 |
 | 3 | All 8 tables exist with correct columns and types | `npx prisma studio` inspection |
 | 4 | Unique constraints enforced (Vehicle.userId, active bid per transporter per shipment, review per user per shipment) | Attempted duplicate inserts fail |
@@ -173,7 +176,7 @@ Define the complete Prisma schema matching [database.md](./architecture/database
 
 ### User Actions Required
 
-> No user actions required for this phase beyond the PostgreSQL instance confirmed in Phase 1.
+> Ensure the Neon development branch is available and its connection string is configured in `server/.env` before applying migrations. Use a separate Neon branch for production.
 
 ---
 
@@ -258,12 +261,7 @@ Implement the `auth` module — user registration, login, logout, password reset
 
 ### User Actions Required
 
-> **Email service setup needed:**
->
-> - For development: A test email provider (e.g., Mailtrap, Ethereal) is needed to test password reset emails. You will need to provide SMTP credentials (or API key) as environment variables.
-> - For production: The chosen transactional email service account and credentials. This can be deferred to Phase 8 (deployment), but the development mock is needed now.
->
-> **Required environment variable:** `BETTER_AUTH_SECRET` — Generate a 64-character random string for session signing.
+> Use a mocked email sender in Phase 3 tests. Gmail is the selected provider; configure its credentials when Phase 6 implements notification email delivery. Set `BETTER_AUTH_SECRET` for local authentication when starting this phase.
 
 ---
 
@@ -311,7 +309,7 @@ Implement shipment CRUD, status lifecycle, image upload, and the search/browse/f
 4. **Implement image upload**
    - Use `multer` for multipart handling.
    - Validate MIME type (JPEG, PNG, WebP) and size (max 5 MB per file) per [security.md § 9](./architecture/security.md).
-   - Upload to Cloudinary/S3; store URL in `ShipmentImage`.
+   - Upload to Cloudinary; store URL in `ShipmentImage`.
    - Enforce max 5 images per shipment (FR-105).
    - Rate limit: 20 uploads / 1 min per user per [security.md § 8](./architecture/security.md).
 
@@ -354,12 +352,7 @@ Implement shipment CRUD, status lifecycle, image upload, and the search/browse/f
 
 ### User Actions Required
 
-> **File storage credentials needed:**
->
-> - If using **Cloudinary**: Create a free account at cloudinary.com and provide the `CLOUDINARY_URL` environment variable.
-> - If using **S3-compatible**: Provide the bucket name, region, access key, and secret key as environment variables.
->
-> This is required for image upload to work. For local testing, a mock/stub implementation can be used temporarily, but the real service credentials are needed before Phase 7 (frontend) testing.
+> Cloudinary is the selected provider. Configure the Cloudinary account and `CLOUDINARY_URL` when implementing image upload in this phase. Use a mock in tests when testing does not require a real upload.
 
 ---
 
@@ -578,10 +571,7 @@ Implement the remaining backend modules — messaging (FR-400-403), notification
 
 ### User Actions Required
 
-> **Email service credentials needed by this phase:**
->
-> - Development SMTP credentials (e.g., Mailtrap account) should have been set up in Phase 3. If not, they are required now for notification email testing.
-> - Provide the following environment variables: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (or equivalent API key for services like Resend/SendGrid).
+> Gmail is the selected provider. Configure the required Gmail credentials for the email integration in this phase. Keep credentials in environment variables and use a mocked sender in automated tests.
 
 ---
 
@@ -687,12 +677,7 @@ Build the complete React frontend — all pages, components, API integration, an
 
 ### User Actions Required
 
-> **Design decisions needed from you:**
->
-> 1. **Visual design / wireframes:** Do you have specific design mockups, brand colors, or a style guide? If not, I will design a clean, professional interface using a neutral color palette. Please confirm.
-> 2. **Logo and branding assets:** If you have a logo or brand assets, provide them. Otherwise, a text-based logo will be used as placeholder.
-> 3. **Map default center:** The Leaflet map needs a default center point for Ethiopia. I will default to Addis Ababa (9.0192, 38.7525) unless you specify otherwise.
-> 4. **Goods type categories:** The shipment form needs a list of goods type options (e.g., `Agricultural`, `Industrial`, `Household`, `Construction`, `Electronics`). Please confirm or provide the list, or I will use the examples from the documentation.
+> No design input is required to begin. Use a neutral visual style, a text-based Digital Freight Marketplace mark, Addis Ababa as the initial map center, and the goods categories already documented in this plan. Revisit these defaults only if you provide branding or category requirements during this phase.
 
 ---
 
@@ -758,14 +743,14 @@ Perform comprehensive quality assurance, apply all security hardening measures, 
 
 #### 8D. Production Deployment
 
-1. **Deploy database (Render PostgreSQL)**
-   - Create managed PostgreSQL instance per [deployment.md § 6](./architecture/deployment.md).
-   - Run `npx prisma migrate deploy` against production database.
+1. **Use Neon PostgreSQL**
+   - Use the existing Neon project, with separate development and production branches or databases.
+   - Run `npx prisma migrate deploy` against the production Neon connection only during deployment.
    - Seed initial admin user.
 
-2. **Deploy backend (Render)**
-   - Create Web Service per [deployment.md § 5](./architecture/deployment.md).
-   - Set all environment variables (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `CORS_ORIGIN`, `CLOUDINARY_URL`, `NODE_ENV=production`, etc.).
+2. **Deploy backend (selected provider)**
+   - Configure a Node.js Web Service per [deployment.md § 5](./architecture/deployment.md).
+   - Set all environment variables (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `CORS_ORIGIN`, storage credentials, `NODE_ENV=production`, etc.).
    - Configure health check path: `/api/v1/health`.
    - Verify `prestart` script runs migrations.
 
@@ -782,7 +767,7 @@ Perform comprehensive quality assurance, apply all security hardening measures, 
    - Registration + login flow works.
    - Shipment creation and browsing works.
    - Bid submission and acceptance works.
-   - Image upload works (to production Cloudinary/S3).
+   - Image upload works (to production Cloudinary).
    - Emails are sent (password reset, bid notifications).
 
 #### 8E. Production Readiness Checklist
@@ -792,7 +777,7 @@ Verify all items from [deployment.md § 12](./architecture/deployment.md):
 | # | Item |
 |---|------|
 | 1 | All environment variables set in production |
-| 2 | `NODE_ENV=production` on Render |
+| 2 | `NODE_ENV=production` on the selected API host |
 | 3 | CORS origin restricted to frontend domain |
 | 4 | HTTPS enforced |
 | 5 | Database migrations applied |
@@ -839,15 +824,16 @@ Verify all items from [deployment.md § 12](./architecture/deployment.md):
 
 > **Production deployment requires the following from you:**
 >
-> 1. **Render account:** Create an account at render.com. Create a Web Service (for the API) and a PostgreSQL database. Provide the `DATABASE_URL` connection string.
+> 1. **API hosting account:** Choose and configure the API hosting provider, then provide its production environment configuration.
 > 2. **Vercel account:** Create an account at vercel.com. Connect your GitHub repository. Configure the project root as `client/`.
-> 3. **Domain name (optional):** If you want a custom domain (e.g., `app.example.com`), purchase and configure DNS. Otherwise, Vercel and Render provide default subdomains.
-> 4. **Production email service:** Set up the production transactional email account (e.g., Resend, SendGrid) and provide API keys/SMTP credentials as environment variables on Render.
-> 5. **Production file storage:** Ensure the Cloudinary/S3 account is on a production-suitable plan and provide production credentials as environment variables on Render.
-> 6. **Production `BETTER_AUTH_SECRET`:** Generate a new, strong 64-character random string for production. Do NOT reuse the development secret.
-> 7. **Uptime monitoring:** Create an account on UptimeRobot (or similar) and configure a monitor for the production health check endpoint. Provide an email/Slack webhook for alerts.
-> 8. **Initial admin account:** Provide the email and password for the first production admin user, which will be seeded during deployment.
-> 9. **GitHub Actions secrets:** Add `DATABASE_URL` (for CI test database), `BETTER_AUTH_SECRET`, and any other required secrets to the GitHub repository's Actions Secrets.
+> 3. **Domain name (optional):** If you want a custom domain, purchase and configure DNS. Otherwise, use the default domains provided by the selected hosting services.
+> 4. **Neon production connection:** Create or select the production branch/database and configure its connection string securely in the API host.
+> 5. **Gmail email delivery:** Configure the Gmail credentials required by the selected integration on the API host.
+> 6. **Production file storage:** Ensure the selected storage account is production-ready and configure its credentials on the API host.
+> 7. **Production `BETTER_AUTH_SECRET`:** Generate a new, strong 64-character random string for production. Do NOT reuse the development secret.
+> 8. **Uptime monitoring:** Create an account on UptimeRobot (or similar) and configure a monitor for the production health check endpoint. Provide an email/Slack webhook for alerts.
+> 9. **Initial admin account:** Provide the email and password for the first production admin user, which will be seeded during deployment.
+> 10. **GitHub Actions test database:** Choose an isolated test database: a dedicated Neon test branch/connection string in repository secrets, or an ephemeral PostgreSQL service in GitHub Actions. Never point CI at development or production data.
 
 ---
 
@@ -864,24 +850,9 @@ Verify all items from [deployment.md § 12](./architecture/deployment.md):
 | 7 | Frontend | All user stories, NFR-200-205 |
 | 8 | Deploy & QA | NFR-001-005, NFR-300-304, production checklist |
 
-### Consolidated User Dependencies
+### User Dependencies
 
-| Dependency | Needed By | Status |
-|------------|-----------|--------|
-| GitHub repository | Phase 1 | Pending |
-| Node.js 20.x installed | Phase 1 | Pending |
-| File storage choice (Cloudinary vs S3) | Phase 1 | Pending |
-| Email service choice + dev credentials | Phase 3 | Pending |
-| File storage credentials | Phase 4 | Pending |
-| Design preferences / brand assets | Phase 7 | Pending |
-| Goods type category list | Phase 7 | Pending |
-| Render account + PostgreSQL | Phase 8 | Pending |
-| Vercel account | Phase 8 | Pending |
-| Production email credentials | Phase 8 | Pending |
-| Production `BETTER_AUTH_SECRET` | Phase 8 | Pending |
-| Domain name (optional) | Phase 8 | Pending |
-| Uptime monitoring account | Phase 8 | Pending |
-| Initial admin account credentials | Phase 8 | Pending |
+Neon, Cloudinary, and Gmail are the selected services. Any credentials, accounts, or external setup are called out only inside the phase that first needs them; no future-phase setup is requested in advance. Node.js version is not a project decision or Phase 1 completion requirement.
 
 ---
 
