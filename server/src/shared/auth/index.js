@@ -78,6 +78,12 @@ export const auth = betterAuth({
         input: true,
         validator: { input: roleSchema },
       },
+      status: {
+        type: ['ACTIVE', 'SUSPENDED'],
+        required: true,
+        input: false,
+        defaultValue: 'ACTIVE',
+      },
     },
   },
   databaseHooks: {
