@@ -39,4 +39,14 @@ describe('shared middleware', () => {
     for (let i = 0; i < 10; i += 1) expect((await request(app).get('/limited')).status).toBe(200);
     expect((await request(app).get('/limited')).status).toBe(429);
   });
+
+  it('returns 429 after three password reset requests in the window', async () => {
+    const { passwordResetRateLimiter } = await import('../../src/shared/middleware/rateLimiter.js');
+    const app = express();
+    app.use(passwordResetRateLimiter);
+    app.post('/forgot-password', (req, res) => res.sendStatus(200));
+
+    for (let i = 0; i < 3; i += 1) expect((await request(app).post('/forgot-password')).status).toBe(200);
+    expect((await request(app).post('/forgot-password')).status).toBe(429);
+  });
 });
