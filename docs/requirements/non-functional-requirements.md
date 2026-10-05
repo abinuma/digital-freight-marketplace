@@ -31,7 +31,7 @@
 | ID | Requirement | Metric |
 |----|-------------|--------|
 | NFR-100 | All client-server communication shall use HTTPS (TLS 1.2+). | No HTTP endpoints exposed in production |
-| NFR-101 | User passwords shall be hashed using bcrypt or argon2 with appropriate work factors. | No plaintext or reversible password storage |
+| NFR-101 | User passwords shall be hashed using Better Auth's built-in scrypt implementation. | No plaintext or reversible password storage; hashes are verified through Better Auth |
 | NFR-102 | All API endpoints (except public auth routes) shall enforce authentication. | 401 returned for unauthenticated requests |
 | NFR-103 | API endpoints shall enforce authorization based on user role (RBAC). | 403 returned for unauthorized role access |
 | NFR-104 | User input shall be validated and sanitized on both client and server to prevent XSS and injection attacks. | Zod validation on all API inputs |

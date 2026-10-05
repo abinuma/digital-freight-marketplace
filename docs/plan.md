@@ -192,7 +192,7 @@ Implement the `auth` module — user registration, login, logout, password reset
    - Set up Better Auth with PostgreSQL session storage per [security.md § 2](./architecture/security.md).
    - Enable email/password signup and login, plus Google OAuth (FR-008). Collect the required phone number during manual signup and Google sign-up onboarding.
    - Configure session cookie: `HttpOnly`, `Secure`, `SameSite=Lax`, 24-hour inactivity expiry.
-   - Password hashing: bcrypt, work factor >= 10.
+   - Use Better Auth's built-in scrypt password hashing.
 
 2. **Implement `authenticate` middleware**
    - `shared/middleware/authenticate.js` — Verifies session via Better Auth; attaches `req.user` (id, email, role, status); returns 401 if invalid.
@@ -226,7 +226,7 @@ Better Auth's credential account is the sole password-hash store. Do not add a d
    | GET | `/users/:id/reviews` | Reviews received |
 
 6. **Write Zod validation schemas**
-   - Registration: name (required), email (valid format, unique), phone (required), password (min 8, uppercase, lowercase, digit per [security.md § 2](./architecture/security.md)), role (SHIPPER or TRANSPORTER).
+   - Registration: name (required), email (valid format, unique), phone (required), password (min 8, uppercase, lowercase, digit per [security.md § 2](./architecture/security.md)); enforce password rules on signup and reset. Use Better Auth's built-in scrypt hashing. Role must be SHIPPER or TRANSPORTER.
    - Profile update: name, phone, location, profilePhoto (all optional).
    - Vehicle: type, capacityTons, plateNumber (all required).
 

@@ -22,7 +22,7 @@ Handled by **Better Auth** with session-based management.
 | Session storage | PostgreSQL (managed by Better Auth) |
 | Token delivery | HTTP-only, Secure, SameSite=Lax cookie |
 | Session lifetime | 24 hours of inactivity (configurable) |
-| Password hashing | bcrypt, work factor ≥ 10 |
+| Password hashing | Better Auth built-in scrypt implementation |
 | Password reset | Time-limited email token (1 hour expiry) |
 | Password rules | Min 8 chars, one uppercase, one lowercase, one digit |
 
@@ -140,7 +140,7 @@ Validated: `req.body`, `req.params` (UUID format), `req.query` (pagination/filte
 
 | Concern | Approach |
 |---------|---------|
-| Passwords | bcrypt hashed; never stored plain; never logged |
+| Passwords | scrypt hashed by Better Auth; never stored plain; never logged |
 | Sessions | DB-stored; HTTP-only cookie transport |
 | Secrets | Environment variables; `.env` in `.gitignore` |
 | Logging | Sensitive fields (password, token) excluded |

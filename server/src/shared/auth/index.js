@@ -1,0 +1,109 @@
+import 'dotenv/config';
+import { betterAuth } from 'better-auth';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
+import { prismaAdapter } from '@better-auth/prisma-adapter';
+import { z } from 'zod';
+import { config } from '../config/index.js';
+import { prisma } from '../db/prisma.js';
+import { logger } from '../utils/logger.js';
+
+const requiredEnv = ['BETTER_AUTH_SECRET', 'BETTER_AUTH_URL', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'];
+const missingEnv = requiredEnv.filter((name) => !process.env[name]);
+
+if (missingEnv.length > 0) {
+  throw new Error(`Missing Better Auth environment variables: ${missingEnv.join(', ')}`);
+}
+
+const phoneSchema = z.string().trim().min(7).max(20);
+const roleSchema = z.enum(['SHIPPER', 'TRANSPORTER']);
+const passwordSchema = z
+  .string()
+  .min(8)
+  .max(128)
+  .regex(/[A-Z]/, 'Password must include an uppercase letter')
+  .regex(/[a-z]/, 'Password must include a lowercase letter')
+  .regex(/[0-9]/, 'Password must include a digit');
+const allowedRoles = new Set(['SHIPPER', 'TRANSPORTER']);
+
+export const auth = betterAuth({
+  appName: 'Digital Freight Marketplace',
+  baseURL: process.env.BETTER_AUTH_URL,
+  secret: process.env.BETTER_AUTH_SECRET,
+  database: prismaAdapter(prisma, { provider: 'postgresql' }),
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
+    ...(config.NODE_ENV === 'development' && {
+      sendResetPassword: async ({ user, url }) => {
+        logger.warn({ email: user.email, resetUrl: url }, 'Development password reset link (local testing only)');
+      },
+    }),
+  },
+  hooks: {
+    before: createAuthMiddleware(async (context) => {
+      const passwordField =
+        context.path === '/sign-up/email'
+          ? 'password'
+          : context.path === '/reset-password'
+            ? 'newPassword'
+            : null;
+      if (!passwordField) return;
+
+      const parsed = passwordSchema.safeParse(context.body?.[passwordField]);
+      if (!parsed.success) {
+        throw new APIError('BAD_REQUEST', {
+          message: 'Password must be at least 8 characters and include uppercase and lowercase letters and a digit.',
+        });
+      }
+    }),
+  },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    },
+  },
+  user: {
+    additionalFields: {
+      phone: {
+        type: 'string',
+        required: true,
+        input: true,
+        validator: { input: phoneSchema },
+      },
+      role: {
+        type: ['SHIPPER', 'TRANSPORTER'],
+        required: true,
+        input: true,
+        validator: { input: roleSchema },
+      },
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const phone = phoneSchema.safeParse(user.phone);
+          if (!phone.success || !allowedRoles.has(user.role)) return false;
+
+          return { data: { ...user, phone: phone.data, role: user.role } };
+        },
+      },
+    },
+  },
+  session: {
+    expiresIn: 60 * 60 * 24,
+  },
+  advanced: {
+    database: { generateId: 'uuid' },
+    useSecureCookies: process.env.NODE_ENV === 'production',
+    defaultCookieAttributes: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    },
+  },
+});
+
+export default auth;
