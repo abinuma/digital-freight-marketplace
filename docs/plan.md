@@ -22,7 +22,7 @@ Setup      Database   Auth      Shipment   Bid       Msg/Notif  Frontend   Deplo
 
 ### Priority Scope
 
-The plan implements all **Must** and **Should** requirements from the [functional requirements](./requirements/functional-requirements.md). **Could** requirements (FR-008 Google OAuth, FR-402 unread badges, FR-605 reports queue, FR-701/FR-702 in-app notifications) are deferred to a follow-up iteration and are not included in this plan unless noted.
+The plan implements all **Must** and **Should** requirements from the [functional requirements](./requirements/functional-requirements.md), including Google OAuth (FR-008). **Could** requirements (FR-402 unread badges, FR-605 reports queue, FR-701/FR-702 in-app notifications) are deferred to a follow-up iteration and are not included in this plan unless noted.
 
 ---
 
@@ -190,6 +190,7 @@ Implement the `auth` module — user registration, login, logout, password reset
 
 1. **Configure Better Auth**
    - Set up Better Auth with PostgreSQL session storage per [security.md § 2](./architecture/security.md).
+   - Enable email/password signup and login, plus Google OAuth (FR-008). Collect the required phone number during manual signup and Google sign-up onboarding.
    - Configure session cookie: `HttpOnly`, `Secure`, `SameSite=Lax`, 24-hour inactivity expiry.
    - Password hashing: bcrypt, work factor >= 10.
 
@@ -210,6 +211,8 @@ Implement the `auth` module — user registration, login, logout, password reset
    | Service | `auth.service.js` | |
    | Repository | `auth.repository.js` | |
    | Validation | `auth.validation.js` | Zod schemas for registration (FR-001), login (FR-002), password reset (FR-003) |
+
+Better Auth's credential account is the sole password-hash store. Do not add a duplicate `passwordHash` field to `User`.
 
 5. **Implement User/Profile endpoints**
    Per [api.md § 5.2](./architecture/api.md):
@@ -262,6 +265,8 @@ Implement the `auth` module — user registration, login, logout, password reset
 ### User Actions Required
 
 > Use a mocked email sender in Phase 3 tests. Gmail is the selected provider; configure its credentials when Phase 6 implements notification email delivery. Set `BETTER_AUTH_SECRET` for local authentication when starting this phase.
+>
+> Configure a Google OAuth client and its local callback URL before testing Google sign-in. Store the client ID and secret in local environment variables, never in source control.
 
 ---
 
@@ -843,7 +848,7 @@ Verify all items from [deployment.md § 12](./architecture/deployment.md):
 |-------|-------|--------------------------|
 | 1 | Setup & Foundation | NFR-400, NFR-402, NFR-404, NFR-600, NFR-601 |
 | 2 | Database | All entity definitions from database.md |
-| 3 | Auth | FR-001-007, NFR-100-109 |
+| 3 | Auth | FR-001-008, NFR-100-109 |
 | 4 | Shipment & Search | FR-100-107, FR-200-205, FR-500 |
 | 5 | Bid | FR-300-308 |
 | 6 | Messaging/Notif/Reviews/Admin | FR-400-403, FR-500-503, FR-600-604, FR-700-701 |

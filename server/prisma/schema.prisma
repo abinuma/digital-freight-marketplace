@@ -38,7 +38,6 @@ model User {
   email         String     @unique(map: "idx_user_email") @db.VarChar(255)
   name          String     @db.VarChar(100)
   phone         String     @db.VarChar(20)
-  passwordHash  String     @db.VarChar(255)
   role          Role
   status        UserStatus @default(ACTIVE)
   image         String?    @map("profilePhoto") @db.VarChar(500)

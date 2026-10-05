@@ -26,7 +26,7 @@
 | FR-005 | Users shall be able to view and update their profile information (name, phone, location, profile photo). | Must |
 | FR-006 | Transporters shall be able to add vehicle details to their profile (vehicle type, capacity in tons, plate number). | Must |
 | FR-007 | The system shall manage user sessions with secure token-based authentication via Better Auth. | Must |
-| FR-008 | The system should support social login via Google OAuth. | Could |
+| FR-008 | The system shall support social login via Google OAuth. | Must |
 
 ---
 
@@ -147,12 +147,12 @@ PENDING ──→ ACCEPTED
 
 | Area | ID Range | Total | Must | Should | Could |
 |------|----------|-------|------|--------|-------|
-| Authentication & Users | FR-001 – FR-008 | 8 | 7 | 0 | 1 |
+| Authentication & Users | FR-001 – FR-008 | 8 | 8 | 0 | 0 |
 | Shipment Management | FR-100 – FR-107 | 8 | 5 | 3 | 0 |
 | Discovery & Search | FR-200 – FR-205 | 6 | 3 | 3 | 0 |
-| Bidding & Response | FR-300 – FR-308 | 9 | 6 | 2 | 0 |*
+| Bidding & Response | FR-300 – FR-308 | 9 | 7 | 2 | 0 |
 | Communication | FR-400 – FR-403 | 4 | 0 | 3 | 1 |
 | Completion & Reviews | FR-500 – FR-503 | 4 | 1 | 3 | 0 |
 | Administration | FR-600 – FR-605 | 6 | 4 | 1 | 1 |
 | Notifications | FR-700 – FR-702 | 3 | 0 | 1 | 2 |
-| **Total** | | **48** | **26** | **16** | **5** |*
+| **Total** | | **48** | **28** | **16** | **4** |

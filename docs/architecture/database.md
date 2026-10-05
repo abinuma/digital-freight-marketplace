@@ -24,12 +24,11 @@ The application uses PostgreSQL as its sole persistent data store, accessed thro
 │ email        │◄──┐   │ shipperId (FK)   │──►┐   │ shipmentId   │──►┐
 │ name         │   │   │ goodsDescription │   │   │ transporterId│──►│
 │ phone        │   │   │ goodsType        │   │   │ price        │   │
-│ passwordHash │   │   │ weightKg         │   │   │ pickupDate   │   │
-│ role         │   │   │ pickupLocation   │   │   │ message      │   │
-│ status       │   │   │ pickupLat        │   │   │ status       │   │
-│ profilePhoto │   │   │ pickupLng        │   │   │ createdAt    │   │
-│ createdAt    │   │   │ deliveryLocation │   │   │ updatedAt    │   │
-│ updatedAt    │   │   │ deliveryLat      │   │   └──────────────┘   │
+│ role         │   │   │ weightKg         │   │   │ pickupDate   │   │
+│ status       │   │   │ pickupLocation   │   │   │ message      │   │
+│ profilePhoto │   │   │ pickupLat        │   │   │ status       │   │
+│ createdAt    │   │   │ pickupLng        │   │   │ createdAt    │   │
+│ updatedAt    │   │   │ deliveryLocation │   │   │ updatedAt    │   │
 └──────┬───────┘   │   │ deliveryLng      │   │                      │
        │           │   │ pickupDate       │   │   ┌──────────────┐   │
        │           │   │ specialReqs      │   │   │   Message    │   │
@@ -81,13 +80,14 @@ Owned by: `auth` module
 | email | VARCHAR(255) | UNIQUE, NOT NULL | Login email |
 | name | VARCHAR(100) | NOT NULL | Display name |
 | phone | VARCHAR(20) | NOT NULL | Contact phone number |
-| passwordHash | VARCHAR(255) | NOT NULL | Bcrypt/argon2 hashed password |
 | role | ENUM | NOT NULL | `SHIPPER`, `TRANSPORTER`, `ADMIN` |
 | status | ENUM | NOT NULL, default `ACTIVE` | `ACTIVE`, `SUSPENDED` |
 | profilePhoto | VARCHAR(500) | NULL | URL to profile image |
 | location | VARCHAR(255) | NULL | User's city or region |
 | createdAt | TIMESTAMP | NOT NULL, default now | Registration timestamp |
 | updatedAt | TIMESTAMP | NOT NULL, auto-update | Last profile update |
+
+Authentication credentials are managed by Better Auth. Email/password hashes are stored in `Account.password` for the `credential` provider; the `User` table does not duplicate password hashes. Better Auth's `image` field maps to the `profilePhoto` column.
 
 ### 3.2 Vehicle
 
@@ -230,7 +230,7 @@ Each module owns specific tables. No module writes directly to another module's 
 
 | Module | Owned Tables |
 |--------|-------------|
-| auth | User, Vehicle, Session (Better Auth managed) |
+| auth | User, Vehicle, Session, Account, Verification (Better Auth managed) |
 | shipment | Shipment, ShipmentImage, Review |
 | bid | Bid |
 | messaging | Message |
