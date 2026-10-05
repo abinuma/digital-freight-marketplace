@@ -29,7 +29,16 @@ export const auth = betterAuth({
   appName: 'Digital Freight Marketplace',
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
+  trustedOrigins: [config.CORS_ORIGIN],
   database: prismaAdapter(prisma, { provider: 'postgresql' }),
+  rateLimit: {
+    enabled: true,
+    customRules: {
+      '/sign-up/email': { window: 15 * 60, max: 10 },
+      '/sign-in/email': { window: 15 * 60, max: 10 },
+      '/request-password-reset': { window: 15 * 60, max: 3 },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,

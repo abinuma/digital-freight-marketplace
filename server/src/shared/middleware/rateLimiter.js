@@ -11,4 +11,5 @@ const makeLimiter = (windowMs, limit) => rateLimit({
 
 export const generalRateLimiter = makeLimiter(config.RATE_LIMIT_WINDOW_MS, config.RATE_LIMIT_MAX);
 export const authRateLimiter = makeLimiter(15 * 60 * 1000, 10);
+export const passwordResetRateLimiter = makeLimiter(15 * 60 * 1000, 3);
 export const uploadRateLimiter = makeLimiter(60 * 1000, 20);

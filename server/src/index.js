@@ -1,6 +1,7 @@
 import { Router } from 'express';
+import authRouter from './modules/auth/auth.routes.js';
 
-// Feature module routers will be mounted here as they are implemented.
 const router = Router();
+router.use('/auth', authRouter);
 
 export default router;
