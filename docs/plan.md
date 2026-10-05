@@ -167,7 +167,7 @@ Define the complete Prisma schema matching [database.md](./architecture/database
 |---|-----------|--------------|
 | 1 | `npx prisma migrate dev` applies cleanly on a fresh Neon development branch | Command exits 0 |
 | 2 | `npx prisma db seed` populates sample data without errors | Command exits 0 |
-| 3 | All 8 tables exist with correct columns and types | `npx prisma studio` inspection |
+| 3 | All 8 marketplace tables and 3 Better Auth tables exist with correct columns and types | `npx prisma studio` inspection |
 | 4 | Unique constraints enforced (Vehicle.userId, active bid per transporter per shipment, review per user per shipment) | Attempted duplicate inserts fail |
 | 5 | ON DELETE CASCADE works for ShipmentImage when parent Shipment is deleted | Integration test |
 | 6 | ON DELETE RESTRICT prevents Shipment deletion when bids exist | Integration test |

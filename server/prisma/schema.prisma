@@ -129,7 +129,7 @@ model Bid {
 
   @@index([shipmentId], map: "idx_bid_shipment")
   @@index([transporterId], map: "idx_bid_transporter")
-  // The active-bid partial unique index is added in the initial SQL migration.
+  // The active-bid partial unique index is added in a SQL migration.
 }
 
 model Message {
@@ -160,7 +160,7 @@ model Review {
 
   @@unique([shipmentId, reviewerId])
   @@index([revieweeId], map: "idx_review_reviewee")
-  // The rating CHECK constraint is added in the initial SQL migration.
+  // The rating CHECK constraint is added in a SQL migration.
 }
 
 model Notification {
