@@ -7,6 +7,221 @@ datasource db {
   provider = "postgresql"
 }
 
-model TestRecord {
-  id Int @id @default(autoincrement())
+enum Role {
+  SHIPPER
+  TRANSPORTER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum ShipmentStatus {
+  DRAFT
+  PUBLISHED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+}
+
+model User {
+  id            String     @id @default(uuid()) @db.Uuid
+  email         String     @unique(map: "idx_user_email") @db.VarChar(255)
+  name          String     @db.VarChar(100)
+  phone         String     @db.VarChar(20)
+  passwordHash  String     @db.VarChar(255)
+  role          Role
+  status        UserStatus @default(ACTIVE)
+  image         String?    @map("profilePhoto") @db.VarChar(500)
+  location      String?    @db.VarChar(255)
+  emailVerified Boolean    @default(false)
+  createdAt     DateTime   @default(now()) @db.Timestamp(3)
+  updatedAt     DateTime   @updatedAt @db.Timestamp(3)
+
+  vehicle           Vehicle?
+  shipments         Shipment[]
+  bids              Bid[]
+  messages          Message[]
+  reviewsGiven      Review[]       @relation("ReviewReviewer")
+  reviewsReceived   Review[]       @relation("ReviewReviewee")
+  notifications     Notification[]
+  sessions          Session[]
+  accounts          Account[]
+
+  @@index([role, status], map: "idx_user_role_status")
+}
+
+model Vehicle {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @unique @db.Uuid
+  type         String   @db.VarChar(50)
+  capacityTons Decimal  @db.Decimal(10, 2)
+  plateNumber  String   @db.VarChar(20)
+  createdAt    DateTime @default(now()) @db.Timestamp(3)
+  updatedAt    DateTime @updatedAt @db.Timestamp(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Shipment {
+  id                   String         @id @default(uuid()) @db.Uuid
+  shipperId            String         @db.Uuid
+  goodsDescription     String         @db.Text
+  goodsType            String         @db.VarChar(50)
+  weightKg             Decimal        @db.Decimal(10, 2)
+  pickupLocation       String         @db.VarChar(255)
+  pickupLat            Decimal?       @db.Decimal(10, 7)
+  pickupLng            Decimal?       @db.Decimal(10, 7)
+  deliveryLocation     String         @db.VarChar(255)
+  deliveryLat          Decimal?       @db.Decimal(10, 7)
+  deliveryLng          Decimal?       @db.Decimal(10, 7)
+  pickupDate           DateTime       @db.Date
+  specialRequirements  String?        @db.Text
+  status               ShipmentStatus @default(DRAFT)
+  createdAt            DateTime       @default(now()) @db.Timestamp(3)
+  updatedAt            DateTime       @updatedAt @db.Timestamp(3)
+
+  shipper  User            @relation(fields: [shipperId], references: [id], onDelete: Restrict)
+  images   ShipmentImage[]
+  bids     Bid[]
+  messages Message[]
+  reviews  Review[]
+
+  @@index([shipperId], map: "idx_shipment_shipper")
+  @@index([status], map: "idx_shipment_status")
+  @@index([goodsType], map: "idx_shipment_goods_type")
+  @@index([pickupDate], map: "idx_shipment_pickup_date")
+  @@index([createdAt(sort: Desc)], map: "idx_shipment_created")
+}
+
+model ShipmentImage {
+  id         String   @id @default(uuid()) @db.Uuid
+  shipmentId String   @db.Uuid
+  url        String   @db.VarChar(500)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now()) @db.Timestamp(3)
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+}
+
+model Bid {
+  id            String    @id @default(uuid()) @db.Uuid
+  shipmentId    String    @db.Uuid
+  transporterId String    @db.Uuid
+  price         Decimal   @db.Decimal(12, 2)
+  pickupDate    DateTime  @db.Timestamp(3)
+  message       String?   @db.Text
+  status        BidStatus @default(PENDING)
+  declineReason String?   @db.Text
+  createdAt     DateTime  @default(now()) @db.Timestamp(3)
+  updatedAt     DateTime  @updatedAt @db.Timestamp(3)
+
+  shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  transporter User     @relation(fields: [transporterId], references: [id], onDelete: Restrict)
+
+  @@index([shipmentId], map: "idx_bid_shipment")
+  @@index([transporterId], map: "idx_bid_transporter")
+  // The active-bid partial unique index is added in the initial SQL migration.
+}
+
+model Message {
+  id         String   @id @default(uuid()) @db.Uuid
+  shipmentId String   @db.Uuid
+  senderId   String   @db.Uuid
+  content    String   @db.Text
+  createdAt  DateTime @default(now()) @db.Timestamp(3)
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  sender   User     @relation(fields: [senderId], references: [id], onDelete: Restrict)
+
+  @@index([shipmentId, createdAt], map: "idx_message_shipment")
+}
+
+model Review {
+  id         String   @id @default(uuid()) @db.Uuid
+  shipmentId String   @db.Uuid
+  reviewerId String   @db.Uuid
+  revieweeId String   @db.Uuid
+  rating     Int
+  comment    String?  @db.Text
+  createdAt  DateTime @default(now()) @db.Timestamp(3)
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  reviewer User     @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  reviewee User     @relation("ReviewReviewee", fields: [revieweeId], references: [id], onDelete: Restrict)
+
+  @@unique([shipmentId, reviewerId])
+  @@index([revieweeId], map: "idx_review_reviewee")
+  // The rating CHECK constraint is added in the initial SQL migration.
+}
+
+model Notification {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  type        String   @db.VarChar(50)
+  title       String   @db.VarChar(255)
+  message     String   @db.Text
+  read        Boolean  @default(false)
+  referenceId String?  @db.Uuid
+  createdAt   DateTime @default(now()) @db.Timestamp(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt(sort: Desc)], map: "idx_notification_user")
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  expiresAt DateTime @db.Timestamp(3)
+  token     String   @unique @db.VarChar(255)
+  ipAddress String?  @db.VarChar(255)
+  userAgent String?  @db.Text
+  createdAt DateTime @default(now()) @db.Timestamp(3)
+  updatedAt DateTime @updatedAt @db.Timestamp(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(uuid()) @db.Uuid
+  accountId             String    @db.VarChar(255)
+  providerId            String    @db.VarChar(255)
+  userId                String    @db.Uuid
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime? @db.Timestamp(3)
+  refreshTokenExpiresAt DateTime? @db.Timestamp(3)
+  scope                 String?   @db.Text
+  password              String?   @db.Text
+  createdAt             DateTime  @default(now()) @db.Timestamp(3)
+  updatedAt             DateTime  @updatedAt @db.Timestamp(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([providerId, accountId])
+}
+
+model Verification {
+  id         String   @id @default(uuid()) @db.Uuid
+  identifier String   @db.VarChar(255)
+  value      String   @db.Text
+  expiresAt  DateTime @db.Timestamp(3)
+  createdAt  DateTime @default(now()) @db.Timestamp(3)
+  updatedAt  DateTime @updatedAt @db.Timestamp(3)
+
+  @@index([identifier])
 }
