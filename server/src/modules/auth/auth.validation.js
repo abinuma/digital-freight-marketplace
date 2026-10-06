@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 const emailSchema = z.string().trim().email().max(255).transform((email) => email.toLowerCase());
 const phoneSchema = z.string().trim().min(7).max(20);
+const roleSchema = z.enum(['SHIPPER', 'TRANSPORTER']);
 const passwordSchema = z
   .string()
   .min(8)
@@ -35,5 +36,12 @@ export const resetPasswordSchema = {
   body: z.object({
     token: z.string().min(1),
     newPassword: passwordSchema,
+  }),
+};
+
+export const completeProfileSchema = {
+  body: z.object({
+    phone: phoneSchema,
+    role: roleSchema,
   }),
 };

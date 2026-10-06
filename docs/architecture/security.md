@@ -52,6 +52,8 @@ Three roles, enforced via `authorize(roles)` middleware:
 | `TRANSPORTER` | Browse shipments, own bids, messaging, reviews |
 | `ADMIN` | User moderation, shipment moderation, platform metrics |
 
+Google OAuth may establish a session before the user chooses a marketplace role or supplies a phone number. `authenticate` reports `profileComplete`; the API allows `/auth/me`, logout, and `/auth/complete-profile` for these sessions, while marketplace routes must apply `requireProfileComplete` before their handlers. The completion endpoint accepts only a validated phone number and `SHIPPER` or `TRANSPORTER`; role is not editable through general profile updates.
+
 ### Resource Ownership
 
 Beyond role checks, the **service layer** verifies ownership:

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { config } from '../config/index.js';
 import { prisma } from '../db/prisma.js';
 import { logger } from '../utils/logger.js';
+import { authSessionOptions } from './session.config.js';
 
 const requiredEnv = ['BETTER_AUTH_SECRET', 'BETTER_AUTH_URL', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'];
 const missingEnv = requiredEnv.filter((name) => !process.env[name]);
@@ -77,13 +78,13 @@ export const auth = betterAuth({
     additionalFields: {
       phone: {
         type: 'string',
-        required: true,
+        required: false,
         input: true,
         validator: { input: phoneSchema },
       },
       role: {
         type: ['SHIPPER', 'TRANSPORTER'],
-        required: true,
+        required: false,
         input: true,
         validator: { input: roleSchema },
       },
@@ -99,17 +100,20 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          const phone = phoneSchema.safeParse(user.phone);
-          if (!phone.success || !allowedRoles.has(user.role)) return false;
+          if (user.phone == null && user.role == null) {
+            return { data: { ...user, phone: null, role: null } };
+          }
 
-          return { data: { ...user, phone: phone.data, role: user.role } };
+          const phone = phoneSchema.safeParse(user.phone);
+          const role = roleSchema.safeParse(user.role);
+          if (!phone.success || !role.success || !allowedRoles.has(user.role)) return false;
+
+          return { data: { ...user, phone: phone.data, role: role.data } };
         },
       },
     },
   },
-  session: {
-    expiresIn: 60 * 60 * 24,
-  },
+  session: authSessionOptions,
   advanced: {
     database: { generateId: 'uuid' },
     useSecureCookies: process.env.NODE_ENV === 'production',

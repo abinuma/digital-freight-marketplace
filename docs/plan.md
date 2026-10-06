@@ -190,13 +190,14 @@ Implement the `auth` module — user registration, login, logout, password reset
 
 1. **Configure Better Auth**
    - Set up Better Auth with PostgreSQL session storage per [security.md § 2](./architecture/security.md).
-   - Enable email/password signup and login, plus Google OAuth (FR-008). Collect the required phone number during manual signup and Google sign-up onboarding.
-   - Configure session cookie: `HttpOnly`, `Secure`, `SameSite=Lax`, 24-hour inactivity expiry.
+   - Enable email/password signup and login, plus Google OAuth (FR-008). Require phone and role during manual signup. Google OAuth may establish a session with an incomplete profile; collect phone and marketplace role after sign-in before allowing marketplace access.
+   - Configure session cookie: `HttpOnly`, `Secure`, `SameSite=Lax`, 24-hour inactivity expiry. Refresh active sessions hourly (`updateAge: 1 hour`) so the inactivity expiry rolls forward during use.
    - Use Better Auth's built-in scrypt password hashing.
 
 2. **Implement `authenticate` middleware**
-   - `shared/middleware/authenticate.js` — Verifies session via Better Auth; attaches `req.user` (id, email, role, status); returns 401 if invalid.
+   - `shared/middleware/authenticate.js` — Verifies session via Better Auth; attaches `req.user` (id, email, phone, role, status, profileComplete); returns 401 if invalid.
    - Rejects suspended users (checks `user.status === 'ACTIVE'`).
+   - `shared/middleware/requireProfileComplete.js` — Blocks marketplace API access until phone and role are set, while leaving auth status, logout, and profile-completion routes available.
 
 3. **Implement `authorize` middleware**
    - `shared/middleware/authorize.js` — Checks `req.user.role` against allowed roles; returns 403 if denied.
@@ -206,7 +207,7 @@ Implement the `auth` module — user registration, login, logout, password reset
 
    | Layer | File | Endpoints |
    |-------|------|-----------|
-   | Route | `auth.routes.js` | POST `/auth/register`, POST `/auth/login`, POST `/auth/logout`, POST `/auth/forgot-password`, POST `/auth/reset-password`, GET `/auth/me` |
+   | Route | `auth.routes.js` | POST `/auth/register`, POST `/auth/login`, POST `/auth/logout`, POST `/auth/forgot-password`, POST `/auth/reset-password`, GET `/auth/me`, POST `/auth/complete-profile` |
    | Controller | `auth.controller.js` | |
    | Service | `auth.service.js` | |
    | Repository | `auth.repository.js` | |
@@ -226,7 +227,7 @@ Better Auth's credential account is the sole password-hash store. Do not add a d
    | GET | `/users/:id/reviews` | Reviews received |
 
 6. **Write Zod validation schemas**
-   - Registration: name (required), email (valid format, unique), phone (required), password (min 8, uppercase, lowercase, digit per [security.md § 2](./architecture/security.md)); enforce password rules on signup and reset. Use Better Auth's built-in scrypt hashing. Role must be SHIPPER or TRANSPORTER.
+   - Registration: name (required), email (valid format, unique), phone (required for manual signup), password (min 8, uppercase, lowercase, digit per [security.md § 2](./architecture/security.md)); enforce password rules on signup and reset. Use Better Auth's built-in scrypt hashing. Role must be SHIPPER or TRANSPORTER. The authenticated profile-completion endpoint requires phone and role for Google OAuth users.
    - Profile update: name, phone, location, profilePhoto (all optional).
    - Vehicle: type, capacityTons, plateNumber (all required).
 
@@ -261,12 +262,17 @@ Better Auth's credential account is the sole password-hash store. Do not add a d
 | 11 | Rate limiter returns 429 after 10 login attempts in 15 minutes | Integration test |
 | 12 | Suspended user cannot authenticate | Integration test |
 | 13 | All tests pass in CI | CI pipeline |
+| 14 | Google OAuth users can establish a session, see `profileComplete: false`, are blocked from marketplace routes, and can complete their profile to regain access | Integration test |
 
 ### User Actions Required
 
 > Use a mocked email sender in Phase 3 tests. Gmail is the selected provider; configure its credentials when Phase 6 implements notification email delivery. Set `BETTER_AUTH_SECRET` for local authentication when starting this phase.
 >
 > Configure a Google OAuth client and its local callback URL before testing Google sign-in. Store the client ID and secret in local environment variables, never in source control.
+>
+> Run the real Better Auth integration suite only against a dedicated, disposable test database: set `AUTH_INTEGRATION_DATABASE_URL` in `server/.env` and run `npm run test:auth:integration` from `server/`. The regular `npm test` command always skips these live database checks; the dedicated command enables them. The suite creates temporary auth records and removes them when it finishes.
+>
+> Apply the new profile-completion migration to the development database before testing Google OAuth there. Use `npx prisma migrate deploy` from `server/` with the development `DATABASE_URL`; keep the disposable integration branch configured separately in `AUTH_INTEGRATION_DATABASE_URL`.
 
 ---
 
@@ -612,9 +618,10 @@ Build the complete React frontend — all pages, components, API integration, an
 
 1. **Registration page** — Role selection (Shipper/Transporter), form with client-side Zod validation, error display per NFR-202.
 2. **Login page** — Email + password form.
-3. **Forgot password page** — Email input, success message.
-4. **Reset password page** — New password form (from email link).
-5. **Profile page** — View and edit profile, upload profile photo. Transporter: vehicle details form.
+3. **Google OAuth profile completion** — After Google sign-in, collect phone and marketplace role for incomplete profiles; keep protected marketplace routes gated until the API reports `profileComplete: true`.
+4. **Forgot password page** — Email input, success message.
+5. **Reset password page** — New password form (from email link).
+6. **Profile page** — View and edit profile, upload profile photo. Transporter: vehicle details form.
 
 #### 7C. Shipper Pages
 

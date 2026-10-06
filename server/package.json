@@ -8,6 +8,7 @@
     "start": "node src/server.js",
     "lint": "eslint src tests",
     "test": "vitest run",
+    "test:auth:integration": "node scripts/run-auth-integration.js",
     "format": "prettier --write src tests"
   },
   "keywords": [],

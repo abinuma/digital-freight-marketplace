@@ -12,8 +12,10 @@ export async function authenticate(req, res, next) {
     req.user = {
       id: session.user.id,
       email: session.user.email,
+      phone: session.user.phone,
       role: session.user.role,
       status: session.user.status,
+      profileComplete: Boolean(session.user.phone && session.user.role),
     };
 
     return next();

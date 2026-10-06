@@ -79,8 +79,8 @@ Owned by: `auth` module
 | id | UUID | PK, auto-generated | Unique user identifier |
 | email | VARCHAR(255) | UNIQUE, NOT NULL | Login email |
 | name | VARCHAR(100) | NOT NULL | Display name |
-| phone | VARCHAR(20) | NOT NULL | Contact phone number |
-| role | ENUM | NOT NULL | `SHIPPER`, `TRANSPORTER`, `ADMIN` |
+| phone | VARCHAR(20) | NULL until profile completion | Contact phone number |
+| role | ENUM | NULL until profile completion | `SHIPPER`, `TRANSPORTER`, `ADMIN`; users choose `SHIPPER` or `TRANSPORTER` during completion |
 | status | ENUM | NOT NULL, default `ACTIVE` | `ACTIVE`, `SUSPENDED` |
 | profilePhoto | VARCHAR(500) | NULL | URL to profile image |
 | location | VARCHAR(255) | NULL | User's city or region |
@@ -88,6 +88,10 @@ Owned by: `auth` module
 | updatedAt | TIMESTAMP | NOT NULL, auto-update | Last profile update |
 
 Authentication credentials are managed by Better Auth. Email/password hashes are stored in `Account.password` for the `credential` provider; the `User` table does not duplicate password hashes. Better Auth's `image` field maps to the `profilePhoto` column.
+
+Google OAuth may create an authenticated user before phone and marketplace role are known. Those fields remain nullable until the signed-in user completes their profile. Marketplace API access is blocked until both are set; normal email registration still requires both at signup.
+
+The database enforces that `phone` and `role` are either both NULL or both populated.
 
 ### 3.2 Vehicle
 

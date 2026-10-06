@@ -50,3 +50,12 @@ export async function me(req, res, next) {
     return next(error);
   }
 }
+
+export async function completeProfile(req, res, next) {
+  try {
+    const user = await authService.completeProfile(req.user.id, req.body);
+    return res.json({ user });
+  } catch (error) {
+    return next(error);
+  }
+}

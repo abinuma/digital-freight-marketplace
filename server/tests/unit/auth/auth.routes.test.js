@@ -9,6 +9,7 @@ vi.mock('../../../src/modules/auth/auth.service.js', () => ({
   requestPasswordReset: vi.fn(),
   resetPassword: vi.fn(),
   getCurrentUser: vi.fn(),
+  completeProfile: vi.fn(),
 }));
 
 vi.mock('../../../src/shared/middleware/authenticate.js', () => ({
@@ -141,12 +142,47 @@ describe('auth endpoints', () => {
   });
 
   it('returns the current authenticated user', async () => {
-    authService.getCurrentUser.mockResolvedValue({ id: 'user-id', name: 'Amina Hassan', role: 'SHIPPER' });
+    authService.getCurrentUser.mockResolvedValue({
+      id: 'user-id',
+      name: 'Amina Hassan',
+      role: 'SHIPPER',
+      profileComplete: true,
+    });
 
     const response = await request(createApp()).get('/auth/me');
 
     expect(response.status).toBe(200);
-    expect(response.body.user).toEqual({ id: 'user-id', name: 'Amina Hassan', role: 'SHIPPER' });
+    expect(response.body.user).toEqual({ id: 'user-id', name: 'Amina Hassan', role: 'SHIPPER', profileComplete: true });
     expect(authService.getCurrentUser).toHaveBeenCalledWith('0ecb5efc-f011-4fc9-92a8-96df1682e579');
+  });
+
+  it('completes the authenticated user profile', async () => {
+    const completedUser = {
+      id: 'user-id',
+      phone: '+251911234567',
+      role: 'SHIPPER',
+      profileComplete: true,
+    };
+    authService.completeProfile.mockResolvedValue(completedUser);
+
+    const response = await request(createApp())
+      .post('/auth/complete-profile')
+      .send({ phone: '+251911234567', role: 'SHIPPER' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.user).toEqual(completedUser);
+    expect(authService.completeProfile).toHaveBeenCalledWith('0ecb5efc-f011-4fc9-92a8-96df1682e579', {
+      phone: '+251911234567',
+      role: 'SHIPPER',
+    });
+  });
+
+  it('rejects an invalid phone number during profile completion', async () => {
+    const response = await request(createApp())
+      .post('/auth/complete-profile')
+      .send({ phone: '123', role: 'SHIPPER' });
+
+    expect(response.status).toBe(400);
+    expect(authService.completeProfile).not.toHaveBeenCalled();
   });
 });

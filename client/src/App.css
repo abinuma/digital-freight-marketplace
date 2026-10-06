@@ -68,6 +68,93 @@
   font-size: 0.9rem;
 }
 
+.auth-card {
+  width: min(100%, 32rem);
+  margin-top: 2rem;
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  border: 1px solid #dce3e9;
+  border-radius: 1.25rem;
+  background: #fff;
+  box-shadow: 0 1.5rem 4rem rgb(23 33 43 / 8%);
+  text-align: left;
+}
+
+.auth-card .eyebrow {
+  margin-top: 0;
+}
+
+.auth-card h1 {
+  font-size: clamp(2rem, 6vw, 3rem);
+}
+
+.auth-card .intro {
+  margin-top: 0.85rem;
+  font-size: 1rem;
+}
+
+.profile-form {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1.75rem;
+  text-align: left;
+}
+
+.profile-form label {
+  margin-top: 0.35rem;
+  color: #35495e;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.profile-form input,
+.profile-form select {
+  width: 100%;
+  min-height: 2.9rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #bac7d2;
+  border-radius: 0.55rem;
+  background: #fff;
+  color: #17212b;
+  font: inherit;
+}
+
+.profile-form input:focus,
+.profile-form select:focus,
+.primary-button:focus-visible,
+.secondary-button:focus-visible {
+  outline: 3px solid rgb(55 115 166 / 35%);
+  outline-offset: 2px;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 2.9rem;
+  margin-top: 1rem;
+  padding: 0.7rem 1.1rem;
+  border: 0;
+  border-radius: 0.6rem;
+  background: #243b53;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.secondary-button {
+  border: 1px solid #bac7d2;
+  background: #fff;
+  color: #243b53;
+}
+
+.form-error {
+  color: #a52828;
+  font-size: 0.95rem;
+}
+
 .status-dot {
   width: 0.55rem;
   height: 0.55rem;

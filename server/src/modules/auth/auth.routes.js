@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as authController from './auth.controller.js';
 import {
   forgotPasswordSchema,
+  completeProfileSchema,
   loginSchema,
   registerSchema,
   resetPasswordSchema,
@@ -18,5 +19,6 @@ router.post('/logout', authenticate, authController.logout);
 router.post('/forgot-password', passwordResetRateLimiter, validate(forgotPasswordSchema), authController.forgotPassword);
 router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
 router.get('/me', authenticate, authController.me);
+router.post('/complete-profile', authenticate, validate(completeProfileSchema), authController.completeProfile);
 
 export default router;

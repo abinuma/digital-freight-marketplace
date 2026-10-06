@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import * as userController from './user.controller.js';
-import { authenticate } from '../../shared/middleware/authenticate.js';
 import { authorize } from '../../shared/middleware/authorize.js';
 import { validate } from '../../shared/middleware/validate.js';
 import {
@@ -12,7 +11,6 @@ import {
 
 const router = Router();
 
-router.use(authenticate);
 router.get('/:id/reviews', validate(paginationQuerySchema), userController.getReviews);
 router.get('/:id/vehicle', validate(userIdParamsSchema), userController.getVehicle);
 router.put('/:id/vehicle', authorize('TRANSPORTER'), validate(upsertVehicleSchema), userController.updateVehicle);

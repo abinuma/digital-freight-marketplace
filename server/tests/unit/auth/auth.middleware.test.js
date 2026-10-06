@@ -7,20 +7,41 @@ vi.mock('../../../src/shared/auth/index.js', () => ({
 import { auth } from '../../../src/shared/auth/index.js';
 import { authenticate } from '../../../src/shared/middleware/authenticate.js';
 import { authorize } from '../../../src/shared/middleware/authorize.js';
+import { requireProfileComplete } from '../../../src/shared/middleware/requireProfileComplete.js';
 
 beforeEach(() => vi.clearAllMocks());
 
 describe('authentication middleware', () => {
   it('attaches the active user from the Better Auth session', async () => {
     auth.api.getSession.mockResolvedValue({
-      user: { id: 'user-id', email: 'user@example.com', role: 'TRANSPORTER', status: 'ACTIVE' },
+      user: { id: 'user-id', email: 'user@example.com', phone: '+251911234567', role: 'TRANSPORTER', status: 'ACTIVE' },
     });
     const req = { headers: { cookie: 'session=test' } };
     const next = vi.fn();
 
     await authenticate(req, {}, next);
 
-    expect(req.user).toEqual({ id: 'user-id', email: 'user@example.com', role: 'TRANSPORTER', status: 'ACTIVE' });
+    expect(req.user).toEqual({
+      id: 'user-id',
+      email: 'user@example.com',
+      phone: '+251911234567',
+      role: 'TRANSPORTER',
+      status: 'ACTIVE',
+      profileComplete: true,
+    });
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('allows an authenticated incomplete profile to reach profile-completion endpoints', async () => {
+    auth.api.getSession.mockResolvedValue({
+      user: { id: 'user-id', email: 'user@example.com', phone: null, role: null, status: 'ACTIVE' },
+    });
+    const req = { headers: { cookie: 'session=test' } };
+    const next = vi.fn();
+
+    await authenticate(req, {}, next);
+
+    expect(req.user).toMatchObject({ id: 'user-id', phone: null, role: null, profileComplete: false });
     expect(next).toHaveBeenCalledWith();
   });
 
@@ -66,6 +87,35 @@ describe('role authorization middleware', () => {
     const next = vi.fn();
 
     authorize('ADMIN')({}, {}, next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+  });
+});
+
+describe('profile completion middleware', () => {
+  it('allows a completed profile', () => {
+    const next = vi.fn();
+
+    requireProfileComplete({ user: { profileComplete: true } }, {}, next);
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('blocks marketplace access for an incomplete profile', () => {
+    const next = vi.fn();
+
+    requireProfileComplete({ user: { profileComplete: false } }, {}, next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({
+      statusCode: 403,
+      details: { code: 'PROFILE_INCOMPLETE' },
+    }));
+  });
+
+  it('requires authentication', () => {
+    const next = vi.fn();
+
+    requireProfileComplete({}, {}, next);
 
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
   });

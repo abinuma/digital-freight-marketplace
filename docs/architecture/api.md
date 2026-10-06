@@ -113,6 +113,12 @@ For validation errors, `details` contains field-level issues:
 | POST | `/auth/forgot-password` | No | Request password reset email |
 | POST | `/auth/reset-password` | No | Reset password with token |
 | GET | `/auth/me` | Yes | Get current authenticated user profile |
+| POST | `/auth/complete-profile` | Yes | Set the signed-in user's required phone number and marketplace role |
+
+`GET /auth/me` includes `profileComplete`. Incomplete accounts may access `/auth/me`, logout, and `POST /auth/complete-profile`; all other authenticated `/api/v1` routes return 403 with `error.details.code: PROFILE_INCOMPLETE` until phone and role are set.
+| POST | `/auth/complete-profile` | Yes | Set the signed-in user's required phone number and marketplace role |
+
+`GET /auth/me` includes `profileComplete`. A signed-in user with `profileComplete: false` may access `/auth/me`, logout, and `POST /auth/complete-profile`; other authenticated API routes return 403 with `error.details.code: PROFILE_INCOMPLETE` until phone and role are set.
 
 ### 5.2 User / Profile — `/api/v1/users`
 
