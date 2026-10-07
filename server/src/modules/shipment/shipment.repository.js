@@ -66,3 +66,36 @@ export function findShipmentForUpdate(id) {
 export function updateShipment(id, data) {
   return prisma.shipment.update({ where: { id }, data, select: shipmentListSelect });
 }
+
+export function transitionShipment(id, fromStatuses, status) {
+  return prisma.shipment.updateMany({
+    where: { id, status: { in: fromStatuses } },
+    data: { status },
+  });
+}
+
+export function cancelShipmentAndDeclinePendingBids(id) {
+  return prisma.$transaction(async (transaction) => {
+    const updated = await transaction.shipment.updateMany({
+      where: { id, status: { not: 'COMPLETED' } },
+      data: { status: 'CANCELLED' },
+    });
+
+    if (updated.count === 0) return false;
+
+    await transaction.bid.updateMany({
+      where: { shipmentId: id, status: 'PENDING' },
+      data: { status: 'DECLINED' },
+    });
+
+    return true;
+  });
+}
+
+export function findShipmentStatusById(id) {
+  return prisma.shipment.findUnique({ where: { id }, select: { id: true, shipperId: true, status: true } });
+}
+
+export function findShipmentAfterTransition(id) {
+  return prisma.shipment.findUnique({ where: { id }, select: shipmentListSelect });
+}

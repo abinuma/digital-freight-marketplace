@@ -5,6 +5,10 @@ vi.mock('../../../src/modules/shipment/shipment.repository.js', () => ({
   findShipments: vi.fn(),
   findShipmentById: vi.fn(),
   findShipmentForUpdate: vi.fn(),
+  findShipmentStatusById: vi.fn(),
+  findShipmentAfterTransition: vi.fn(),
+  transitionShipment: vi.fn(),
+  cancelShipmentAndDeclinePendingBids: vi.fn(),
   updateShipment: vi.fn(),
 }));
 
@@ -93,5 +97,72 @@ describe('shipment update service', () => {
     await expect(
       shipmentService.updateShipment({ id: draft.shipperId }, draft.id, { goodsType: 'Furniture' }),
     ).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it('publishes a draft owned by the shipper', async () => {
+    shipmentRepository.findShipmentStatusById.mockResolvedValue(draft);
+    shipmentRepository.transitionShipment.mockResolvedValue({ count: 1 });
+    shipmentRepository.findShipmentAfterTransition.mockResolvedValue({ ...draft, status: 'PUBLISHED' });
+
+    const result = await shipmentService.publishShipment({ id: draft.shipperId }, draft.id);
+
+    expect(shipmentRepository.transitionShipment).toHaveBeenCalledWith(draft.id, ['DRAFT'], 'PUBLISHED');
+    expect(result.status).toBe('PUBLISHED');
+  });
+
+  it('rejects publishing a shipment outside DRAFT', async () => {
+    shipmentRepository.findShipmentStatusById.mockResolvedValue({ ...draft, status: 'PUBLISHED' });
+
+    await expect(shipmentService.publishShipment({ id: draft.shipperId }, draft.id)).rejects.toMatchObject({ statusCode: 422 });
+    expect(shipmentRepository.transitionShipment).not.toHaveBeenCalled();
+  });
+
+  it('rejects status actions from a non-owner', async () => {
+    shipmentRepository.findShipmentStatusById.mockResolvedValue(draft);
+
+    await expect(shipmentService.publishShipment({ id: 'another-user' }, draft.id)).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it('cancels an in-progress shipment and declines pending bids', async () => {
+    shipmentRepository.findShipmentStatusById.mockResolvedValue({ ...draft, status: 'IN_PROGRESS' });
+    shipmentRepository.cancelShipmentAndDeclinePendingBids.mockResolvedValue(true);
+    shipmentRepository.findShipmentAfterTransition.mockResolvedValue({ ...draft, status: 'CANCELLED' });
+
+    const result = await shipmentService.cancelShipment({ id: draft.shipperId }, draft.id);
+
+    expect(shipmentRepository.cancelShipmentAndDeclinePendingBids).toHaveBeenCalledWith(draft.id);
+    expect(result.status).toBe('CANCELLED');
+  });
+
+  it('allows cancellation of any non-completed shipment', async () => {
+    for (const status of ['DRAFT', 'PUBLISHED']) {
+      shipmentRepository.findShipmentStatusById.mockResolvedValueOnce({ ...draft, status });
+      shipmentRepository.cancelShipmentAndDeclinePendingBids.mockResolvedValueOnce(true);
+      shipmentRepository.findShipmentAfterTransition.mockResolvedValueOnce({ ...draft, status: 'CANCELLED' });
+      await expect(shipmentService.cancelShipment({ id: draft.shipperId }, draft.id)).resolves.toMatchObject({ status: 'CANCELLED' });
+    }
+  });
+
+  it('rejects cancelling completed shipments', async () => {
+    shipmentRepository.findShipmentStatusById.mockResolvedValue({ ...draft, status: 'COMPLETED' });
+
+    await expect(shipmentService.cancelShipment({ id: draft.shipperId }, draft.id)).rejects.toMatchObject({ statusCode: 422 });
+    expect(shipmentRepository.cancelShipmentAndDeclinePendingBids).not.toHaveBeenCalled();
+  });
+
+  it('completes only an in-progress shipment', async () => {
+    shipmentRepository.findShipmentStatusById.mockResolvedValue({ ...draft, status: 'IN_PROGRESS' });
+    shipmentRepository.transitionShipment.mockResolvedValue({ count: 1 });
+    shipmentRepository.findShipmentAfterTransition.mockResolvedValue({ ...draft, status: 'COMPLETED' });
+
+    await expect(shipmentService.completeShipment({ id: draft.shipperId }, draft.id)).resolves.toMatchObject({ status: 'COMPLETED' });
+    expect(shipmentRepository.transitionShipment).toHaveBeenCalledWith(draft.id, ['IN_PROGRESS'], 'COMPLETED');
+  });
+
+  it('rejects completion before the shipment is in progress', async () => {
+    shipmentRepository.findShipmentStatusById.mockResolvedValue(draft);
+
+    await expect(shipmentService.completeShipment({ id: draft.shipperId }, draft.id)).rejects.toMatchObject({ statusCode: 422 });
+    expect(shipmentRepository.transitionShipment).not.toHaveBeenCalled();
   });
 });

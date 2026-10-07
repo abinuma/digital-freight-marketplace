@@ -56,3 +56,46 @@ export async function updateShipment(user, id, input) {
 
   return toApiShipment(await shipmentRepository.updateShipment(id, data));
 }
+
+async function getOwnedShipment(user, id) {
+  const shipment = await shipmentRepository.findShipmentStatusById(id);
+  if (!shipment) throw new AppError('Shipment was not found', 404);
+  if (shipment.shipperId !== user.id) throw new AppError('You can only manage your own shipments', 403);
+  return shipment;
+}
+
+async function applyTransition(user, id, allowedFrom, targetStatus) {
+  const shipment = await getOwnedShipment(user, id);
+  if (!allowedFrom.includes(shipment.status)) {
+    throw new AppError(`Shipment cannot transition from ${shipment.status} to ${targetStatus}`, 422);
+  }
+
+  const updated = await shipmentRepository.transitionShipment(id, allowedFrom, targetStatus);
+  if (updated.count === 0) {
+    throw new AppError('Shipment status changed before the requested action could be applied', 409);
+  }
+
+  return toApiShipment(await shipmentRepository.findShipmentAfterTransition(id));
+}
+
+export function publishShipment(user, id) {
+  return applyTransition(user, id, ['DRAFT'], 'PUBLISHED');
+}
+
+export async function cancelShipment(user, id) {
+  const shipment = await getOwnedShipment(user, id);
+  if (shipment.status === 'COMPLETED') {
+    throw new AppError('Completed shipments cannot be cancelled', 422);
+  }
+
+  const cancelled = await shipmentRepository.cancelShipmentAndDeclinePendingBids(id);
+  if (!cancelled) {
+    throw new AppError('Shipment status changed before the requested action could be applied', 409);
+  }
+
+  return toApiShipment(await shipmentRepository.findShipmentAfterTransition(id));
+}
+
+export function completeShipment(user, id) {
+  return applyTransition(user, id, ['IN_PROGRESS'], 'COMPLETED');
+}

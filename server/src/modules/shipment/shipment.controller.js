@@ -35,3 +35,30 @@ export async function updateShipment(req, res, next) {
     return next(error);
   }
 }
+
+export async function publishShipment(req, res, next) {
+  try {
+    const shipment = await shipmentService.publishShipment(req.user, req.params.id);
+    return res.json({ data: shipment });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function cancelShipment(req, res, next) {
+  try {
+    const shipment = await shipmentService.cancelShipment(req.user, req.params.id);
+    return res.json({ data: shipment });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function completeShipment(req, res, next) {
+  try {
+    const shipment = await shipmentService.completeShipment(req.user, req.params.id);
+    return res.json({ data: shipment });
+  } catch (error) {
+    return next(error);
+  }
+}
