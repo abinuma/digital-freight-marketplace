@@ -1,6 +1,7 @@
 import { AppError } from '../../shared/utils/AppError.js';
 import { formatPagination, getPagination } from '../../shared/utils/pagination.js';
 import * as shipmentRepository from './shipment.repository.js';
+import * as shipmentStorage from './shipment.storage.js';
 
 function toApiShipment(shipment) {
   return {
@@ -126,4 +127,43 @@ export async function cancelShipment(user, id) {
 
 export function completeShipment(user, id) {
   return applyTransition(user, id, ['IN_PROGRESS'], 'COMPLETED');
+}
+
+export async function uploadShipmentImages(user, id, files) {
+  await getOwnedShipment(user, id);
+  const currentCount = await shipmentRepository.countShipmentImages(id);
+  if (currentCount + files.length > 5) {
+    throw new AppError('A shipment may have no more than 5 images', 409);
+  }
+
+  const uploadedImages = [];
+  try {
+    for (const file of files) {
+      uploadedImages.push(await shipmentStorage.uploadShipmentImage(file.buffer, id));
+    }
+
+    const savedImages = await shipmentRepository.createShipmentImages(id, uploadedImages);
+    if (!savedImages) {
+      throw new AppError('A shipment may have no more than 5 images', 409);
+    }
+    return savedImages;
+  } catch (error) {
+    await shipmentStorage.deleteUploadedImages(uploadedImages);
+    if (error?.code === 'P2034') {
+      throw new AppError('Shipment images changed during upload. Please retry.', 409);
+    }
+    throw error;
+  }
+}
+
+export async function removeShipmentImage(user, shipmentId, imageId) {
+  await getOwnedShipment(user, shipmentId);
+  const image = await shipmentRepository.findShipmentImage(shipmentId, imageId);
+  if (!image) throw new AppError('Shipment image was not found', 404);
+
+  await shipmentStorage.deleteShipmentImage(image.url);
+  const result = await shipmentRepository.deleteShipmentImage(shipmentId, imageId);
+  if (result.count === 0) throw new AppError('Shipment image was not found', 404);
+
+  return { id: image.id, shipmentId, deleted: true };
 }

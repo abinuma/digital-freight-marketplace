@@ -62,3 +62,21 @@ export async function completeShipment(req, res, next) {
     return next(error);
   }
 }
+
+export async function uploadImages(req, res, next) {
+  try {
+    const images = await shipmentService.uploadShipmentImages(req.user, req.params.id, req.files);
+    return res.status(201).json({ data: images });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function removeImage(req, res, next) {
+  try {
+    const result = await shipmentService.removeShipmentImage(req.user, req.params.id, req.params.imageId);
+    return res.json({ data: result });
+  } catch (error) {
+    return next(error);
+  }
+}

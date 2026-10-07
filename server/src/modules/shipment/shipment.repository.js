@@ -99,3 +99,41 @@ export function findShipmentStatusById(id) {
 export function findShipmentAfterTransition(id) {
   return prisma.shipment.findUnique({ where: { id }, select: shipmentListSelect });
 }
+
+export function countShipmentImages(shipmentId) {
+  return prisma.shipmentImage.count({ where: { shipmentId } });
+}
+
+export function createShipmentImages(shipmentId, uploadedImages) {
+  return prisma.$transaction(async (transaction) => {
+    const currentCount = await transaction.shipmentImage.count({ where: { shipmentId } });
+    if (currentCount + uploadedImages.length > 5) return null;
+
+    const lastImage = await transaction.shipmentImage.findFirst({
+      where: { shipmentId },
+      orderBy: { order: 'desc' },
+      select: { order: true },
+    });
+    const firstOrder = (lastImage?.order ?? -1) + 1;
+
+    const images = [];
+    for (const [index, image] of uploadedImages.entries()) {
+      images.push(await transaction.shipmentImage.create({
+        data: { shipmentId, url: image.url, order: firstOrder + index },
+        select: { id: true, shipmentId: true, url: true, order: true, createdAt: true },
+      }));
+    }
+    return images;
+  }, { isolationLevel: 'Serializable' });
+}
+
+export function findShipmentImage(shipmentId, imageId) {
+  return prisma.shipmentImage.findFirst({
+    where: { id: imageId, shipmentId },
+    select: { id: true, url: true, order: true, createdAt: true },
+  });
+}
+
+export function deleteShipmentImage(shipmentId, imageId) {
+  return prisma.shipmentImage.deleteMany({ where: { id: imageId, shipmentId } });
+}

@@ -45,6 +45,10 @@ export const shipmentIdParamsSchema = {
   params: z.object({ id: shipmentId }),
 };
 
+export const shipmentImageParamsSchema = {
+  params: z.object({ id: shipmentId, imageId: shipmentId }),
+};
+
 export const shipmentListQuerySchema = {
   query: z.object({
     page: z.coerce.number().int().positive().optional(),

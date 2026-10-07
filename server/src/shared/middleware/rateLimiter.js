@@ -12,4 +12,11 @@ const makeLimiter = (windowMs, limit) => rateLimit({
 export const generalRateLimiter = makeLimiter(config.RATE_LIMIT_WINDOW_MS, config.RATE_LIMIT_MAX);
 export const authRateLimiter = makeLimiter(15 * 60 * 1000, 10);
 export const passwordResetRateLimiter = makeLimiter(15 * 60 * 1000, 3);
-export const uploadRateLimiter = makeLimiter(60 * 1000, 20);
+export const uploadRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user.id,
+  message: { error: { message: 'Too many requests. Please try again later.' } },
+});

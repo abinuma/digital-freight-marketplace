@@ -134,6 +134,8 @@ For validation errors, `details` contains field-level issues:
 
 `GET /shipments` accepts `page` and `limit` (default `1` and `20`), `pickupLocation` and `deliveryLocation` (case-insensitive partial matches), `goodsType` (case-insensitive exact match), `pickupDateFrom` and `pickupDateTo` (inclusive `YYYY-MM-DD` bounds), and `q` (case-insensitive search across goods description and special requirements). `sortBy` accepts `createdAt` (default, newest first) or `pickupDate` (earliest first). Results remain scoped by role: Transporters see only `PUBLISHED` shipments and Shippers see only their own shipments.
 
+`POST /shipments/:id/images` accepts multipart form data with one or more files in the `images` field. JPEG, PNG, and WebP files are allowed up to 5 MB each, with at most 5 images stored per shipment. `DELETE /shipments/:id/images/:imageId` removes an image owned by that shipment. Uploads are limited to 20 requests per authenticated user per minute.
+
 | Method | Endpoint | Auth | Roles | Description |
 |--------|----------|------|-------|-------------|
 | POST | `/shipments` | Yes | Shipper | Create a new shipment (DRAFT) |
