@@ -5,7 +5,14 @@ export function validate(schemas) {
   return (req, res, next) => {
     try {
       for (const key of ['body', 'query', 'params']) {
-        if (schemas[key]) req[key] = schemas[key].parse(req[key]);
+        if (schemas[key]) {
+          Object.defineProperty(req, key, {
+            configurable: true,
+            enumerable: true,
+            writable: true,
+            value: schemas[key].parse(req[key]),
+          });
+        }
       }
       next();
     } catch (error) {
