@@ -24,8 +24,36 @@ export async function createShipment(shipperId, input) {
 
 export async function listShipments(user, query) {
   const { page, limit, skip, take } = getPagination(query);
-  const where = user.role === 'SHIPPER' ? { shipperId: user.id } : { status: 'PUBLISHED' };
-  const { shipments, total } = await shipmentRepository.findShipments({ where, skip, take });
+  const filters = [];
+
+  if (query.pickupLocation) filters.push({ pickupLocation: { contains: query.pickupLocation, mode: 'insensitive' } });
+  if (query.deliveryLocation) filters.push({ deliveryLocation: { contains: query.deliveryLocation, mode: 'insensitive' } });
+  if (query.goodsType) filters.push({ goodsType: { equals: query.goodsType, mode: 'insensitive' } });
+
+  if (query.pickupDateFrom || query.pickupDateTo) {
+    filters.push({
+      pickupDate: {
+        ...(query.pickupDateFrom ? { gte: new Date(`${query.pickupDateFrom}T00:00:00.000Z`) } : {}),
+        ...(query.pickupDateTo ? { lte: new Date(`${query.pickupDateTo}T00:00:00.000Z`) } : {}),
+      },
+    });
+  }
+
+  if (query.q) {
+    filters.push({
+      OR: [
+        { goodsDescription: { contains: query.q, mode: 'insensitive' } },
+        { specialRequirements: { contains: query.q, mode: 'insensitive' } },
+      ],
+    });
+  }
+
+  const visibility = user.role === 'SHIPPER' ? { shipperId: user.id } : { status: 'PUBLISHED' };
+  const where = filters.length > 0 ? { AND: [visibility, ...filters] } : visibility;
+  const sortField = query.sortBy === 'pickupDate' ? 'pickupDate' : 'createdAt';
+  const sortDirection = sortField === 'pickupDate' ? 'asc' : 'desc';
+  const orderBy = [{ [sortField]: sortDirection }, { id: 'asc' }];
+  const { shipments, total } = await shipmentRepository.findShipments({ where, orderBy, skip, take });
 
   return {
     shipments: shipments.map(toApiShipment),

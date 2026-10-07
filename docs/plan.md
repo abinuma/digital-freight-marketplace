@@ -314,7 +314,7 @@ Implement shipment CRUD, status lifecycle, image upload, and the search/browse/f
    Per FR-200 through FR-205:
    - Filter by: `pickupLocation`, `deliveryLocation`, `goodsType`, date range.
    - Text search across `goodsDescription` and `specialRequirements` (FR-204).
-   - Sort by: `createdAt` desc (default), `pickupDate`, (distance from transporter location is a **Should** — implement if straightforward, otherwise defer and document).
+   - Sort by: `createdAt` desc (default), `pickupDate`. Defer distance sorting: the current Transporter profile stores location as free text, not coordinates, so calculating reliable distance requires a separate location data/design decision.
    - Pagination per [api.md § 7](./architecture/api.md): `?page=1&limit=20`, response includes `meta.pagination`.
 
 4. **Implement image upload**

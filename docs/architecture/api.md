@@ -132,6 +132,8 @@ For validation errors, `details` contains field-level issues:
 
 ### 5.3 Shipment Module — `/api/v1/shipments`
 
+`GET /shipments` accepts `page` and `limit` (default `1` and `20`), `pickupLocation` and `deliveryLocation` (case-insensitive partial matches), `goodsType` (case-insensitive exact match), `pickupDateFrom` and `pickupDateTo` (inclusive `YYYY-MM-DD` bounds), and `q` (case-insensitive search across goods description and special requirements). `sortBy` accepts `createdAt` (default, newest first) or `pickupDate` (earliest first). Results remain scoped by role: Transporters see only `PUBLISHED` shipments and Shippers see only their own shipments.
+
 | Method | Endpoint | Auth | Roles | Description |
 |--------|----------|------|-------|-------------|
 | POST | `/shipments` | Yes | Shipper | Create a new shipment (DRAFT) |

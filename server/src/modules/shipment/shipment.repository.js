@@ -26,12 +26,12 @@ export function createShipment(shipperId, data) {
   });
 }
 
-export async function findShipments({ where, skip, take }) {
+export async function findShipments({ where, orderBy, skip, take }) {
   const [shipments, total] = await Promise.all([
     prisma.shipment.findMany({
       where,
       select: shipmentListSelect,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      orderBy,
       skip,
       take,
     }),

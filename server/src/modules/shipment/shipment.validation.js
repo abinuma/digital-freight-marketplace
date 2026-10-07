@@ -49,5 +49,15 @@ export const shipmentListQuerySchema = {
   query: z.object({
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
-  }),
+    pickupLocation: z.string().trim().min(1).max(255).optional(),
+    deliveryLocation: z.string().trim().min(1).max(255).optional(),
+    goodsType: z.string().trim().min(1).max(50).optional(),
+    pickupDateFrom: z.iso.date().optional(),
+    pickupDateTo: z.iso.date().optional(),
+    q: z.string().trim().min(1).max(255).optional(),
+    sortBy: z.enum(['createdAt', 'pickupDate']).optional(),
+  }).refine(
+    ({ pickupDateFrom, pickupDateTo }) => !pickupDateFrom || !pickupDateTo || pickupDateFrom <= pickupDateTo,
+    { path: ['pickupDateTo'], message: 'pickupDateTo must be the same as or later than pickupDateFrom' },
+  ),
 };
