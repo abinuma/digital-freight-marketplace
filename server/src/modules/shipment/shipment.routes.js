@@ -1,9 +1,13 @@
 import { Router } from 'express';
 import * as shipmentController from './shipment.controller.js';
+import { authorize } from '../../shared/middleware/authorize.js';
+import { validate } from '../../shared/middleware/validate.js';
+import { createShipmentSchema, shipmentIdParamsSchema, shipmentListQuerySchema } from './shipment.validation.js';
 
 const router = Router();
 
-// Route handlers are added as each shipment capability is implemented.
-router.use(shipmentController.notImplemented);
+router.post('/', authorize('SHIPPER'), validate(createShipmentSchema), shipmentController.createShipment);
+router.get('/', validate(shipmentListQuerySchema), shipmentController.listShipments);
+router.get('/:id', validate(shipmentIdParamsSchema), shipmentController.getShipment);
 
 export default router;

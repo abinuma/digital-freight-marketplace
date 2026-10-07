@@ -1,5 +1,28 @@
-import { AppError } from '../../shared/utils/AppError.js';
+import * as shipmentService from './shipment.service.js';
 
-export function notImplemented(req, res, next) {
-  return next(new AppError('Shipment endpoint is not implemented yet', 501));
+export async function createShipment(req, res, next) {
+  try {
+    const shipment = await shipmentService.createShipment(req.user.id, req.body);
+    return res.status(201).json({ data: shipment });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function listShipments(req, res, next) {
+  try {
+    const { shipments, pagination } = await shipmentService.listShipments(req.user, req.query);
+    return res.json({ data: shipments, meta: { pagination } });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getShipment(req, res, next) {
+  try {
+    const shipment = await shipmentService.getShipment(req.user, req.params.id);
+    return res.json({ data: shipment });
+  } catch (error) {
+    return next(error);
+  }
 }
