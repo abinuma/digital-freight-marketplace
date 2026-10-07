@@ -42,3 +42,17 @@ export async function getShipment(user, id) {
 
   return toApiShipment(shipment);
 }
+
+export async function updateShipment(user, id, input) {
+  const shipment = await shipmentRepository.findShipmentForUpdate(id);
+  if (!shipment) throw new AppError('Shipment was not found', 404);
+  if (shipment.shipperId !== user.id) throw new AppError('You can only update your own shipments', 403);
+
+  const canEdit = shipment.status === 'DRAFT' || (shipment.status === 'PUBLISHED' && shipment.bids.length === 0);
+  if (!canEdit) throw new AppError('Shipment cannot be edited in its current state', 409);
+
+  const data = { ...input };
+  if (data.pickupDate !== undefined) data.pickupDate = new Date(`${data.pickupDate}T00:00:00.000Z`);
+
+  return toApiShipment(await shipmentRepository.updateShipment(id, data));
+}

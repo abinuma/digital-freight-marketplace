@@ -26,3 +26,12 @@ export async function getShipment(req, res, next) {
     return next(error);
   }
 }
+
+export async function updateShipment(req, res, next) {
+  try {
+    const shipment = await shipmentService.updateShipment(req.user, req.params.id, req.body);
+    return res.json({ data: shipment });
+  } catch (error) {
+    return next(error);
+  }
+}

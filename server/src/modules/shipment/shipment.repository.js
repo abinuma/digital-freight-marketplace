@@ -50,3 +50,19 @@ export function findShipmentById(id) {
     },
   });
 }
+
+export function findShipmentForUpdate(id) {
+  return prisma.shipment.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      shipperId: true,
+      status: true,
+      bids: { where: { status: 'ACCEPTED' }, select: { id: true }, take: 1 },
+    },
+  });
+}
+
+export function updateShipment(id, data) {
+  return prisma.shipment.update({ where: { id }, data, select: shipmentListSelect });
+}
