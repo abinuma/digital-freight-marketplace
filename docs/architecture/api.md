@@ -178,6 +178,8 @@ Bids are nested under shipments since they exist in that context.
 | PATCH | `/notifications/:id/read` | Yes | Owner | Mark a notification as read |
 | PATCH | `/notifications/read-all` | Yes | Owner | Mark all notifications as read |
 
+The notification list accepts `page` and `limit` (maximum 100) and returns pagination metadata. Each event notification is stored for its recipient and may also be delivered by email. Read actions are scoped to the authenticated user; marking an unknown or another user's notification returns 404. `read-all` returns the number of notifications changed.
+
 ### 5.7 Review Module — `/api/v1/shipments/:shipmentId/reviews`
 
 | Method | Endpoint | Auth | Roles | Description |

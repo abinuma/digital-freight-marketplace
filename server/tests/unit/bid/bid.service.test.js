@@ -9,7 +9,13 @@ vi.mock('../../../src/modules/bid/bid.repository.js', () => ({
   findVisibleShipmentBids: vi.fn(),
   findTransporterBids: vi.fn(),
   acceptBidAndTransitionShipment: vi.fn(),
+  acceptBidAndTransitionShipmentWithEvents: vi.fn(),
   declinePendingBid: vi.fn(),
+}));
+
+vi.mock('../../../src/modules/notification/notification.service.js', () => ({
+  bidReceived: vi.fn(),
+  bidStatusChanged: vi.fn(),
 }));
 
 import * as bidRepository from '../../../src/modules/bid/bid.repository.js';
@@ -84,11 +90,14 @@ describe('bid service business rules', () => {
   it('accepts a pending bid only for the owning shipper and published shipment', async () => {
     bidRepository.findShipmentForBid.mockResolvedValue({ id: shipmentId, shipperId: shipper.id, status: 'PUBLISHED' });
     bidRepository.findBidById.mockResolvedValue(pendingBid);
-    bidRepository.acceptBidAndTransitionShipment.mockResolvedValue({ ...pendingBid, status: 'ACCEPTED' });
+    bidRepository.acceptBidAndTransitionShipmentWithEvents.mockResolvedValue({
+      acceptedBid: { ...pendingBid, status: 'ACCEPTED' },
+      declinedBidIds: [],
+    });
 
     const result = await bidService.acceptBid(shipper, shipmentId, bidId);
 
-    expect(bidRepository.acceptBidAndTransitionShipment).toHaveBeenCalledWith({ id: bidId, shipmentId, shipperId: shipper.id });
+    expect(bidRepository.acceptBidAndTransitionShipmentWithEvents).toHaveBeenCalledWith({ id: bidId, shipmentId, shipperId: shipper.id });
     expect(result.status).toBe('ACCEPTED');
   });
 

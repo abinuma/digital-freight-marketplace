@@ -28,6 +28,14 @@ vi.mock('../../../src/modules/shipment/shipment.routes.js', async () => {
   const { Router } = await import('express');
   return { default: Router() };
 });
+vi.mock('../../../src/modules/admin/admin.routes.js', async () => {
+  const { Router } = await import('express');
+  return { default: Router() };
+});
+vi.mock('../../../src/modules/notification/notification.routes.js', async () => {
+  const { Router } = await import('express');
+  return { default: Router() };
+});
 vi.mock('../../../src/shared/middleware/authenticate.js', () => ({
   authenticate(req, res, next) {
     req.user = currentUser;

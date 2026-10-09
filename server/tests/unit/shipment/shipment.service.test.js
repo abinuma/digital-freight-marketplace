@@ -5,6 +5,7 @@ vi.mock('../../../src/modules/shipment/shipment.repository.js', () => ({
   createShipment: vi.fn(),
   findShipments: vi.fn(),
   findShipmentById: vi.fn(),
+  softRemoveShipmentWithAudit: vi.fn(),
   findShipmentForUpdate: vi.fn(),
   findShipmentStatusById: vi.fn(),
   findShipmentAfterTransition: vi.fn(),
@@ -15,6 +16,11 @@ vi.mock('../../../src/modules/shipment/shipment.repository.js', () => ({
   createShipmentImages: vi.fn(),
   findShipmentImage: vi.fn(),
   deleteShipmentImage: vi.fn(),
+}));
+
+vi.mock('../../../src/modules/notification/notification.service.js', () => ({
+  shipmentCompleted: vi.fn(),
+  shipmentRemoved: vi.fn(),
 }));
 
 vi.mock('../../../src/modules/shipment/shipment.storage.js', () => ({
@@ -71,7 +77,7 @@ describe('shipment update service', () => {
     const result = await shipmentService.listShipments({ id: draft.shipperId, role: 'SHIPPER' }, { page: '2', limit: '10' });
 
     expect(shipmentRepository.findShipments).toHaveBeenCalledWith({
-      where: { shipperId: draft.shipperId },
+      where: { shipperId: draft.shipperId, removedAt: null },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       skip: 10,
       take: 10,
@@ -98,7 +104,7 @@ describe('shipment update service', () => {
     expect(shipmentRepository.findShipments).toHaveBeenCalledWith({
       where: {
         AND: [
-          { status: 'PUBLISHED' },
+          { status: 'PUBLISHED', removedAt: null },
           { pickupLocation: { contains: 'addis', mode: 'insensitive' } },
           { deliveryLocation: { contains: 'hawassa', mode: 'insensitive' } },
           { goodsType: { equals: 'Furniture', mode: 'insensitive' } },
@@ -128,7 +134,7 @@ describe('shipment update service', () => {
     await shipmentService.listShipments({ id: 'transporter-id', role: 'TRANSPORTER' }, {});
 
     expect(shipmentRepository.findShipments).toHaveBeenCalledWith({
-      where: { status: 'PUBLISHED' },
+      where: { status: 'PUBLISHED', removedAt: null },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       skip: 0,
       take: 20,

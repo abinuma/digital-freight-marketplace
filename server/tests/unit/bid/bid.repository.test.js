@@ -23,7 +23,7 @@ describe('bid acceptance repository transaction', () => {
 
     expect(result).toEqual(acceptedBid);
     expect(shipment.updateMany).toHaveBeenCalledWith({
-      where: { id: 'shipment-id', shipperId: 'shipper-id', status: 'PUBLISHED' },
+      where: { id: 'shipment-id', shipperId: 'shipper-id', status: 'PUBLISHED', removedAt: null },
       data: { status: 'IN_PROGRESS' },
     });
     expect(bid.updateMany).toHaveBeenNthCalledWith(1, {

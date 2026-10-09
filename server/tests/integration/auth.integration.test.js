@@ -3,6 +3,12 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 
+vi.mock('../../src/modules/shipment/shipment.storage.js', () => ({
+  uploadShipmentImage: vi.fn(),
+  deleteShipmentImage: vi.fn(),
+  deleteUploadedImages: vi.fn(),
+}));
+
 const testDatabaseUrl = process.env.AUTH_INTEGRATION_DATABASE_URL;
 const runIntegrationTests = Boolean(testDatabaseUrl && process.env.AUTH_INTEGRATION_TESTS === '1');
 if (runIntegrationTests) {
