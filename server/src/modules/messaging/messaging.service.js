@@ -1,5 +1,6 @@
 import { AppError } from '../../shared/utils/AppError.js';
 import * as messagingRepository from './messaging.repository.js';
+import * as notificationService from '../notification/notification.service.js';
 
 async function requireShipmentParticipant(user, shipmentId) {
   const shipment = await messagingRepository.findShipmentParticipant(shipmentId, user.id);
@@ -19,5 +20,7 @@ export async function listMessages(user, shipmentId) {
 
 export async function sendMessage(user, shipmentId, content) {
   await requireShipmentParticipant(user, shipmentId);
-  return messagingRepository.createMessage(shipmentId, user.id, content);
+  const message = await messagingRepository.createMessage(shipmentId, user.id, content);
+  await notificationService.newMessage(shipmentId, user.id, content);
+  return message;
 }

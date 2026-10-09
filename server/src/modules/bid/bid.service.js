@@ -1,6 +1,7 @@
 import { AppError } from '../../shared/utils/AppError.js';
 import { formatPagination, getPagination } from '../../shared/utils/pagination.js';
 import * as bidRepository from './bid.repository.js';
+import * as notificationService from '../notification/notification.service.js';
 
 function toApiBid(bid) {
   return { ...bid, price: Number(bid.price) };
@@ -42,6 +43,7 @@ export async function createBid(user, shipmentId, input) {
       ...input,
       pickupDate: new Date(input.pickupDate),
     });
+    await notificationService.bidReceived(bid.id);
     return toApiBid(bid);
   } catch (error) {
     if (isActiveBidConflict(error)) {
@@ -128,15 +130,26 @@ export async function acceptBid(user, shipmentId, id) {
     throw new AppError('Bids can only be accepted on published shipments', 422);
   }
 
-  const acceptedBid = await bidRepository.acceptBidAndTransitionShipment({
+  const acceptTransaction = bidRepository.acceptBidAndTransitionShipmentWithEvents
+    ? (input) => bidRepository.acceptBidAndTransitionShipmentWithEvents(input)
+    : async (input) => {
+      const acceptedBid = await bidRepository.acceptBidAndTransitionShipment(input);
+      return acceptedBid ? { acceptedBid, declinedBidIds: [] } : null;
+    };
+  const result = await acceptTransaction({
     id,
     shipmentId,
     shipperId: user.id,
   });
-  if (!acceptedBid) {
+  if (!result?.acceptedBid) {
     throw new AppError('Shipment or bid status changed before acceptance could be applied', 409);
   }
 
+  const { acceptedBid, declinedBidIds } = result;
+  await Promise.all([
+    notificationService.bidStatusChanged(acceptedBid.id, 'BID_ACCEPTED'),
+    ...declinedBidIds.map((declinedBidId) => notificationService.bidStatusChanged(declinedBidId, 'BID_DECLINED')),
+  ]);
   return toApiBid(acceptedBid);
 }
 
@@ -147,5 +160,6 @@ export async function declineBid(user, shipmentId, id, input = {}) {
   const result = await bidRepository.declinePendingBid(id, shipmentId, input.declineReason);
   if (result.count !== 1) throw new AppError('Bid status changed before decline could be applied', 409);
 
+  await notificationService.bidStatusChanged(id, 'BID_DECLINED');
   return toApiBid(await bidRepository.findBidById(id));
 }

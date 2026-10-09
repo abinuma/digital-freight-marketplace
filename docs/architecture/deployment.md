@@ -32,6 +32,9 @@ All configuration is driven by environment variables — no secrets in source co
 | `BETTER_AUTH_SECRET` | (random 64-char string) | API host / `.env` |
 | `CORS_ORIGIN` | `https://app.example.com` | API host / `.env` |
 | `CLOUDINARY_URL` | `cloudinary://key:secret@cloud` | API host / `.env` |
+| `GMAIL_USER` | Gmail sender account | API host / `server/.env` |
+| `GMAIL_APP_PASSWORD` | Gmail App Password (not the account password) | API host / `server/.env` |
+| `EMAIL_FROM` | `Digital Freight Marketplace <sender@gmail.com>` (optional) | API host / `server/.env` |
 | `NODE_ENV` | `production` | API host / `.env` |
 | `PORT` | `5000` | API host / `.env` |
 | `LOG_LEVEL` | `info` | API host / `.env` |

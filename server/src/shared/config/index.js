@@ -11,6 +11,9 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url().optional(),
   BETTER_AUTH_SECRET: z.string().optional(),
   CLOUDINARY_URL: z.string().optional(),
+  GMAIL_USER: z.string().email().optional(),
+  GMAIL_APP_PASSWORD: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

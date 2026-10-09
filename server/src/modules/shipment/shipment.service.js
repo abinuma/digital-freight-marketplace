@@ -2,6 +2,7 @@ import { AppError } from '../../shared/utils/AppError.js';
 import { formatPagination, getPagination } from '../../shared/utils/pagination.js';
 import * as shipmentRepository from './shipment.repository.js';
 import * as shipmentStorage from './shipment.storage.js';
+import * as notificationService from '../notification/notification.service.js';
 
 function toApiShipment(shipment) {
   return {
@@ -104,6 +105,7 @@ async function applyTransition(user, id, allowedFrom, targetStatus) {
     throw new AppError('Shipment status changed before the requested action could be applied', 409);
   }
 
+  if (targetStatus === 'COMPLETED') await notificationService.shipmentCompleted(id);
   return toApiShipment(await shipmentRepository.findShipmentAfterTransition(id));
 }
 

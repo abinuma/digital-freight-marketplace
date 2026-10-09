@@ -5,8 +5,8 @@ import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { z } from 'zod';
 import { config } from '../config/index.js';
 import { prisma } from '../db/prisma.js';
-import { logger } from '../utils/logger.js';
 import { authSessionOptions } from './session.config.js';
+import * as notificationService from '../../modules/notification/notification.service.js';
 
 const requiredEnv = ['BETTER_AUTH_SECRET', 'BETTER_AUTH_URL', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'];
 const missingEnv = requiredEnv.filter((name) => !process.env[name]);
@@ -44,11 +44,7 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
     maxPasswordLength: 128,
-    ...(config.NODE_ENV === 'development' && {
-      sendResetPassword: async ({ user, url }) => {
-        logger.warn({ email: user.email, resetUrl: url }, 'Development password reset link (local testing only)');
-      },
-    }),
+    sendResetPassword: async ({ user, url }) => notificationService.passwordReset(user, url),
   },
   hooks: {
     before: createAuthMiddleware(async (context) => {
@@ -110,6 +106,7 @@ export const auth = betterAuth({
 
           return { data: { ...user, phone: phone.data, role: role.data } };
         },
+        after: async (user) => notificationService.welcome(user),
       },
     },
   },

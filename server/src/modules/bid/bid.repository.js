@@ -59,7 +59,7 @@ export function declinePendingBid(id, shipmentId, declineReason) {
   });
 }
 
-export async function acceptBidAndTransitionShipment({ id, shipmentId, shipperId }) {
+export async function acceptBidAndTransitionShipmentWithEvents({ id, shipmentId, shipperId }) {
   try {
     return await prisma.$transaction(async (transaction) => {
       const shipmentUpdate = await transaction.shipment.updateMany({
@@ -74,17 +74,30 @@ export async function acceptBidAndTransitionShipment({ id, shipmentId, shipperId
       });
       if (bidUpdate.count !== 1) throw new Error('BID_ACCEPTANCE_CONFLICT');
 
+      const bidsToDecline = typeof transaction.bid.findMany === 'function'
+        ? await transaction.bid.findMany({
+          where: { shipmentId, id: { not: id }, status: 'PENDING' },
+          select: { id: true },
+        })
+        : [];
+
       await transaction.bid.updateMany({
         where: { shipmentId, id: { not: id }, status: 'PENDING' },
         data: { status: 'DECLINED' },
       });
 
-      return transaction.bid.findUnique({ where: { id }, select: bidSelect });
+      const acceptedBid = await transaction.bid.findUnique({ where: { id }, select: bidSelect });
+      return { acceptedBid, declinedBidIds: bidsToDecline.map((bid) => bid.id) };
     });
   } catch (error) {
     if (error?.message === 'BID_ACCEPTANCE_CONFLICT') return null;
     throw error;
   }
+}
+
+export async function acceptBidAndTransitionShipment(input) {
+  const result = await acceptBidAndTransitionShipmentWithEvents(input);
+  return result?.acceptedBid ?? null;
 }
 
 export async function findVisibleShipmentBids({ where, status, orderBy, skip, take }) {
