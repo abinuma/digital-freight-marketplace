@@ -1,42 +1,52 @@
-import nodemailer from 'nodemailer';
 import { config } from '../../shared/config/index.js';
 import { logger } from '../../shared/utils/logger.js';
 import { buildNotificationEmail } from './email.templates.js';
 
-let transporter;
+const BREVO_SEND_EMAIL_URL = 'https://api.brevo.com/v3/smtp/email';
 
 export function isEmailConfigured() {
-  return Boolean(config.GMAIL_USER && config.GMAIL_APP_PASSWORD);
+  return Boolean(config.BREVO_API_KEY && config.EMAIL_FROM);
 }
 
-function getTransporter() {
-  if (!isEmailConfigured()) return null;
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: config.GMAIL_USER, pass: config.GMAIL_APP_PASSWORD },
-    });
-  }
-  return transporter;
+function parseSender(value) {
+  const match = value.match(/^\s*(.*?)\s*<([^<>]+)>\s*$/);
+  if (match) return { name: match[1], email: match[2] };
+  return { email: value.trim() };
 }
 
 export async function sendEmail({ to, ...emailInput }) {
-  const mailTransport = getTransporter();
-  if (!mailTransport) {
-    logger.warn({ type: emailInput.type, recipient: to }, 'Email skipped because Gmail SMTP is not configured');
+  if (!isEmailConfigured()) {
+    logger.warn({ type: emailInput.type, recipient: to }, 'Email skipped because Brevo is not configured');
     return { sent: false, reason: 'not_configured' };
   }
 
   try {
     const content = buildNotificationEmail(emailInput);
-    await mailTransport.sendMail({
-      from: config.EMAIL_FROM || config.GMAIL_USER,
-      to,
-      ...content,
+    const response = await globalThis.fetch(BREVO_SEND_EMAIL_URL, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': config.BREVO_API_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: parseSender(config.EMAIL_FROM),
+        to: [{ email: to, ...(emailInput.recipientName ? { name: emailInput.recipientName } : {}) }],
+        subject: content.subject,
+        htmlContent: content.html,
+        textContent: content.text,
+      }),
+      signal: globalThis.AbortSignal.timeout(10_000),
     });
-    return { sent: true };
+
+    const responseText = await response.text();
+    const result = responseText ? JSON.parse(responseText) : {};
+    if (!response.ok) {
+      throw new Error(`Brevo API returned ${response.status}: ${result.message || 'Email request failed'}`);
+    }
+    return { sent: true, messageId: result.messageId };
   } catch (error) {
-    logger.error({ err: error, type: emailInput.type, recipient: to }, 'Email delivery failed');
+    logger.error({ err: error, type: emailInput.type, recipient: to }, 'Brevo email delivery failed');
     return { sent: false, reason: 'delivery_failed' };
   }
 }

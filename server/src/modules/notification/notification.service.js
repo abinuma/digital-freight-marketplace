@@ -18,7 +18,7 @@ async function notify(recipient, email) {
 
 async function safely(type, action) {
   if (!isEmailConfigured()) {
-    logger.warn({ type }, 'Notification email skipped because Gmail SMTP is not configured');
+    logger.warn({ type }, 'Notification email skipped because Brevo is not configured');
     return;
   }
 
