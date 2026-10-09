@@ -597,8 +597,9 @@ Build the complete React frontend — all pages, components, API integration, an
 #### 7A. Frontend Foundation
 
 1. **Set up design system**
-   - Configure Tailwind CSS.
-   - Define color palette, typography (use a professional font, e.g., Inter), spacing scale, component tokens.
+   - Configure Tailwind CSS and define reusable color, typography, spacing, surface, and component tokens.
+   - Use the user-provided UXPilot PDF as the preferred visual reference: EthioFreight branding, cobalt-blue primary actions and headers, dark navy navigation, cool light-gray page surfaces, white cards, compact rounded controls, and restrained shadows. Match its page designs closely where they cover a planned workflow, and carry the same visual language into pages not shown.
+   - Use Inter as the primary typeface and keep the shared design responsive at the required widths.
    - Implement shared UI components in `client/src/shared/components/`:
      - `Button`, `Input`, `Textarea`, `Select`, `Modal`, `Card`, `Badge`, `Alert/Toast`, `Spinner/Skeleton`, `Pagination`.
    - Responsive breakpoints per NFR-200 (320px, 768px, 1920px).
@@ -689,7 +690,7 @@ Build the complete React frontend — all pages, components, API integration, an
 
 ### User Actions Required
 
-> No design input is required to begin. Use a neutral visual style, a text-based Digital Freight Marketplace mark, Addis Ababa as the initial map center, and the goods categories already documented in this plan. Revisit these defaults only if you provide branding or category requirements during this phase.
+> Use the user-provided `uxpilot-export-10-09-26.pdf` as the brand and visual reference for all frontend pages. Follow its EthioFreight branding and page designs as closely as the documented product requirements and architecture allow, including for pages not represented in the PDF. Implement the planned frontend in phase order rather than building every PDF screen at once. The documented goods categories and Addis Ababa map center remain the current product defaults.
 
 ---
 
