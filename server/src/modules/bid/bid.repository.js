@@ -31,31 +31,31 @@ export function findBidById(id) {
   return prisma.bid.findUnique({ where: { id }, select: bidSelect });
 }
 
-export function findOwnedPendingBid(id, transporterId) {
+export function findOwnedPendingBid(id, shipmentId, transporterId) {
   return prisma.bid.findFirst({
-    where: { id, transporterId, status: 'PENDING' },
+    where: { id, shipmentId, transporterId, status: 'PENDING' },
     select: bidSelect,
   });
 }
 
-export function updatePendingBid(id, transporterId, data) {
+export function updatePendingBid(id, shipmentId, transporterId, data) {
   return prisma.bid.updateMany({
-    where: { id, transporterId, status: 'PENDING' },
+    where: { id, shipmentId, transporterId, status: 'PENDING' },
     data,
   });
 }
 
-export function withdrawPendingBid(id, transporterId) {
+export function withdrawPendingBid(id, shipmentId, transporterId) {
   return prisma.bid.updateMany({
-    where: { id, transporterId, status: 'PENDING' },
+    where: { id, shipmentId, transporterId, status: 'PENDING' },
     data: { status: 'WITHDRAWN' },
   });
 }
 
-export async function findPendingBids({ where, orderBy, skip, take }) {
+export async function findVisibleShipmentBids({ where, orderBy, skip, take }) {
   const [bids, total] = await Promise.all([
-    prisma.bid.findMany({ where: { ...where, status: 'PENDING' }, select: bidSelect, orderBy, skip, take }),
-    prisma.bid.count({ where: { ...where, status: 'PENDING' } }),
+    prisma.bid.findMany({ where: { ...where, status: { not: 'WITHDRAWN' } }, select: bidSelect, orderBy, skip, take }),
+    prisma.bid.count({ where: { ...where, status: { not: 'WITHDRAWN' } } }),
   ]);
 
   return { bids, total };

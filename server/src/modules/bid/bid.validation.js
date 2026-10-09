@@ -13,6 +13,7 @@ const bidFields = {
 };
 
 export const createBidSchema = {
+  params: z.object({ shipmentId: bidId }),
   body: z.object({
     price: bidFields.price,
     pickupDate: bidFields.pickupDate,
@@ -29,17 +30,32 @@ const updateBidBody = z
   .refine((body) => Object.keys(body).length > 0, 'Provide at least one bid field to update');
 
 export const updateBidSchema = {
-  params: z.object({ id: bidId }),
+  params: z.object({ shipmentId: bidId, id: bidId }),
   body: updateBidBody,
 };
 
 export const declineBidSchema = {
-  params: z.object({ id: bidId }),
+  params: z.object({ shipmentId: bidId, id: bidId }),
   body: z.object({
     declineReason: z.string().trim().max(2000).optional(),
   }),
 };
 
 export const bidIdParamsSchema = {
-  params: z.object({ id: bidId }),
+  params: z.object({ shipmentId: bidId, id: bidId }),
+};
+
+export const bidListQuerySchema = {
+  query: z.object({
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+  }),
+};
+
+export const myBidsQuerySchema = {
+  query: z.object({
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+    status: z.enum(['PENDING', 'ACCEPTED', 'DECLINED', 'WITHDRAWN']).optional(),
+  }),
 };

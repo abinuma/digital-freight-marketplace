@@ -19,9 +19,10 @@ function isActiveBidConflict(error) {
   );
 }
 
-async function getPendingOwnedBid(id, transporterId) {
+async function getPendingOwnedBid(id, shipmentId, transporterId) {
   const bid = await bidRepository.findBidById(id);
   if (!bid) throw new AppError('Bid was not found', 404);
+  if (bid.shipmentId !== shipmentId) throw new AppError('Bid was not found', 404);
   if (bid.transporterId !== transporterId) throw new AppError('You can only manage your own bids', 403);
   if (bid.status !== 'PENDING') throw new AppError('Only pending bids can be updated or withdrawn', 422);
   return bid;
@@ -50,20 +51,20 @@ export async function createBid(user, shipmentId, input) {
   }
 }
 
-export async function updateBid(user, id, input) {
-  const existingBid = await getPendingOwnedBid(id, user.id);
+export async function updateBid(user, shipmentId, id, input) {
+  const existingBid = await getPendingOwnedBid(id, shipmentId, user.id);
   const data = { ...input };
   if (data.pickupDate !== undefined) data.pickupDate = new Date(data.pickupDate);
 
-  const result = await bidRepository.updatePendingBid(id, user.id, data);
+  const result = await bidRepository.updatePendingBid(id, shipmentId, user.id, data);
   if (result.count !== 1) throw new AppError('Bid status changed before the requested update could be applied', 409);
 
   return toApiBid(await bidRepository.findBidById(existingBid.id));
 }
 
-export async function withdrawBid(user, id) {
-  await getPendingOwnedBid(id, user.id);
-  const result = await bidRepository.withdrawPendingBid(id, user.id);
+export async function withdrawBid(user, shipmentId, id) {
+  await getPendingOwnedBid(id, shipmentId, user.id);
+  const result = await bidRepository.withdrawPendingBid(id, shipmentId, user.id);
   if (result.count !== 1) throw new AppError('Bid status changed before it could be withdrawn', 409);
 
   return toApiBid(await bidRepository.findBidById(id));
@@ -78,7 +79,7 @@ export async function listShipmentBids(user, shipmentId, query = {}) {
 
   const { page, limit, skip, take } = getPagination(query);
   const orderBy = [{ createdAt: 'desc' }, { id: 'asc' }];
-  const { bids, total } = await bidRepository.findPendingBids({
+  const { bids, total } = await bidRepository.findVisibleShipmentBids({
     where: { shipmentId }, orderBy, skip, take,
   });
 
@@ -89,16 +90,17 @@ export async function listMyBids(user, query = {}) {
   if (user.role !== 'TRANSPORTER') throw new AppError('Only Transporters can view their bids', 403);
 
   const { page, limit, skip, take } = getPagination(query);
-  const where = { transporterId: user.id };
+  const where = { transporterId: user.id, ...(query.status ? { status: query.status } : {}) };
   const orderBy = [{ createdAt: 'desc' }, { id: 'asc' }];
   const { bids, total } = await bidRepository.findTransporterBids({ where, orderBy, skip, take });
 
   return { bids: toApiBids(bids), pagination: formatPagination({ page, limit, total }) };
 }
 
-export async function getBid(user, id) {
+export async function getBid(user, shipmentId, id) {
   const bid = await bidRepository.findBidById(id);
   if (!bid) throw new AppError('Bid was not found', 404);
+  if (bid.shipmentId !== shipmentId) throw new AppError('Bid was not found', 404);
   const shipment = await bidRepository.findShipmentForBid(bid.shipmentId);
   const isShipperOwner = shipment?.shipperId === user.id;
   const isTransporterOwner = bid.transporterId === user.id;
