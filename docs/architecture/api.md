@@ -185,6 +185,8 @@ Bids are nested under shipments since they exist in that context.
 | POST | `/shipments/:shipmentId/reviews` | Yes | Shipper or Transporter (participant) | Create a review after completion |
 | GET | `/shipments/:shipmentId/reviews` | Yes | Any | Get reviews for a shipment |
 
+Review creation accepts a required integer `rating` from 1 to 5 and an optional `comment`. Only the Shipper and accepted Transporter of a completed shipment may review each other, once per shipment. Shipment review lists accept the standard `page` and `limit` query parameters and return pagination metadata.
+
 ### 5.8 Admin Module — `/api/v1/admin`
 
 All admin endpoints require `ADMIN` role.
