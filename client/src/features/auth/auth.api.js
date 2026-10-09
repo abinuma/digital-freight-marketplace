@@ -1,38 +1,30 @@
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
-
-async function readResponse(response) {
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const error = new Error(payload.error?.message || payload.message || 'The request could not be completed');
-    error.status = response.status;
-    throw error;
-  }
-  return payload;
-}
+import { apiClient, apiOrigin } from '../../shared/api/client.js';
 
 export async function getCurrentUser() {
-  const response = await fetch(`${apiBaseUrl}/api/v1/auth/me`, { credentials: 'include' });
-  return (await readResponse(response)).user;
+  const { data } = await apiClient.get('/auth/me');
+  return data.user;
+}
+
+export async function loginWithEmail(credentials) {
+  const { data } = await apiClient.post('/auth/login', credentials);
+  return data;
+}
+
+export async function logoutCurrentUser() {
+  const { data } = await apiClient.post('/auth/logout');
+  return data;
 }
 
 export async function startGoogleSignIn(callbackURL) {
-  const response = await fetch(`${apiBaseUrl}/api/auth/sign-in/social`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ provider: 'google', callbackURL }),
-  });
-  const result = await readResponse(response);
-  if (!result.url) throw new Error('Google sign-in did not return an authorization URL');
-  return result.url;
+  const { data } = await apiClient.post('/api/auth/sign-in/social', {
+    provider: 'google',
+    callbackURL,
+  }, { baseURL: apiOrigin });
+  if (!data.url) throw new Error('Google sign-in did not return an authorization URL');
+  return data.url;
 }
 
 export async function completeCurrentUserProfile(profile) {
-  const response = await fetch(`${apiBaseUrl}/api/v1/auth/complete-profile`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(profile),
-  });
-  return (await readResponse(response)).user;
+  const { data } = await apiClient.post('/auth/complete-profile', profile);
+  return data.user;
 }

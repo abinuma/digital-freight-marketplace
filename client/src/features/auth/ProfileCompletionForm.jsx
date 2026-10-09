@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { completeCurrentUserProfile } from './auth.api.js';
+import { useAuth } from './AuthContext.jsx';
 
-export function ProfileCompletionForm({ onComplete }) {
+export function ProfileCompletionForm({ onComplete = () => {} }) {
+  const { completeProfile } = useAuth();
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState('');
   const [error, setError] = useState('');
@@ -13,7 +14,7 @@ export function ProfileCompletionForm({ onComplete }) {
     setIsSaving(true);
 
     try {
-      const user = await completeCurrentUserProfile({ phone, role });
+      const user = await completeProfile({ phone, role });
       onComplete(user);
     } catch (requestError) {
       setError(requestError.message);
