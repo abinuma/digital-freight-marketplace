@@ -82,6 +82,7 @@ Owned by: `auth` module
 | phone | VARCHAR(20) | NULL until profile completion | Contact phone number |
 | role | ENUM | NULL until profile completion | `SHIPPER`, `TRANSPORTER`, `ADMIN`; users choose `SHIPPER` or `TRANSPORTER` during completion |
 | status | ENUM | NOT NULL, default `ACTIVE` | `ACTIVE`, `SUSPENDED` |
+| suspensionReason | VARCHAR(500) | NULL | Admin-provided reason for the current suspension; cleared when reactivated |
 | profilePhoto | VARCHAR(500) | NULL | URL to profile image |
 | location | VARCHAR(255) | NULL | User's city or region |
 | createdAt | TIMESTAMP | NOT NULL, default now | Registration timestamp |

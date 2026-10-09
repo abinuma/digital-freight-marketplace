@@ -80,6 +80,10 @@ export async function listAdminShipments(user, query = {}) {
   return { shipments: shipments.map(toApiShipment), pagination: formatPagination({ page, limit, total }) };
 }
 
+export function getAdminShipmentMetrics() {
+  return shipmentRepository.getAdminShipmentMetrics();
+}
+
 export async function softRemoveShipment(user, id) {
   if (user.role !== 'ADMIN') throw new AppError('You are not authorized to access this resource', 403);
 

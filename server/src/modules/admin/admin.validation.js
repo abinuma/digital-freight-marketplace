@@ -11,3 +11,22 @@ export const adminShipmentListSchema = {
 export const adminShipmentParamsSchema = {
   params: z.object({ id: z.uuid() }),
 };
+
+export const adminUserListSchema = {
+  query: z.object({
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+    q: z.string().trim().max(100).optional(),
+    role: z.enum(['SHIPPER', 'TRANSPORTER', 'ADMIN']).optional(),
+    status: z.enum(['ACTIVE', 'SUSPENDED']).optional(),
+  }),
+};
+
+export const adminUserParamsSchema = {
+  params: z.object({ id: z.uuid() }),
+};
+
+export const adminUserSuspendSchema = {
+  params: z.object({ id: z.uuid() }),
+  body: z.object({ reason: z.string().trim().min(1).max(500) }),
+};

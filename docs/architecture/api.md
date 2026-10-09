@@ -200,6 +200,10 @@ All admin endpoints require `ADMIN` role.
 | PATCH | `/admin/shipments/:id/remove` | Yes | Remove/hide a shipment listing |
 | GET | `/admin/metrics` | Yes | Get platform metrics (user counts, shipment stats) |
 
+The admin user list accepts `page`, `limit`, an optional `q` (case-insensitive name/email search), `role` (`SHIPPER`, `TRANSPORTER`, or `ADMIN`), and `status` (`ACTIVE` or `SUSPENDED`). It returns user records including their suspension reason and pagination metadata. Suspending a user requires a JSON body with a non-empty `reason` of at most 500 characters; activating a user clears that reason.
+
+The admin metrics response includes `totalUsers`, `usersByRole` (with `UNASSIGNED` for profiles without a role), `newRegistrationsLast30Days`, and `shipments` counts for `active`, `completed`, and `cancelled`. Active shipments are those in `PUBLISHED` or `IN_PROGRESS` status.
+
 The admin shipment list accepts `page`, `limit`, and an optional `status` (`DRAFT`, `PUBLISHED`, `IN_PROGRESS`, `COMPLETED`, or `CANCELLED`) query parameter.
 
 Removing a shipment sets its `removedAt` timestamp and preserves the shipment and its related records. Removed shipments remain visible in the admin list; non-admin shipment detail, browse, bid, messaging, and review endpoints treat them as not found.

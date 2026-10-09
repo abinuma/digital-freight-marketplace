@@ -103,7 +103,7 @@ Establish the monorepo structure, development tooling, shared infrastructure cod
 
 ### User Actions Required
 
-> No additional user decisions are needed to complete Phase 1. Neon is the selected database, Cloudinary is the selected file-storage provider, and Gmail is the selected email provider. Configure service credentials only when the phase that uses them begins.
+> No additional user decisions are needed to complete Phase 1. Neon is the selected database, Cloudinary is the selected file-storage provider, and Brevo is the selected transactional email provider. Configure service credentials only when the phase that uses them begins.
 
 ---
 
@@ -266,7 +266,7 @@ Better Auth's credential account is the sole password-hash store. Do not add a d
 
 ### User Actions Required
 
-> Use a mocked email sender in Phase 3 tests. Gmail is the selected provider; configure its credentials when Phase 6 implements notification email delivery. Set `BETTER_AUTH_SECRET` for local authentication when starting this phase.
+> Use a mocked email sender in Phase 3 tests. Brevo is the selected provider; configure its API key when Phase 6 implements notification email delivery. Set `BETTER_AUTH_SECRET` for local authentication when starting this phase.
 >
 > Configure a Google OAuth client and its local callback URL before testing Google sign-in. Store the client ID and secret in local environment variables, never in source control.
 >
@@ -549,7 +549,7 @@ Implement the remaining backend modules — messaging (FR-400-403), notification
 
 3. **Write tests**
    - Admin can list/search users, filter by role and status.
-   - Admin can suspend and reactivate users.
+   - Admin can suspend users with a recorded reason and reactivate them (which clears the reason).
    - Suspended user cannot log in.
    - Admin can view and remove shipments.
    - Non-admin users get 403 on all admin endpoints.
@@ -582,7 +582,7 @@ Implement the remaining backend modules — messaging (FR-400-403), notification
 
 ### User Actions Required
 
-> Gmail is the selected provider. Configure the required Gmail credentials for the email integration in this phase. Keep credentials in environment variables and use a mocked sender in automated tests.
+> Brevo is the selected provider. Configure a Brevo API key and verified sender for the email integration in this phase. Keep credentials in environment variables and use a mocked sender in automated tests.
 
 ---
 
@@ -840,7 +840,7 @@ Verify all items from [deployment.md § 12](./architecture/deployment.md):
 > 2. **Vercel account:** Create an account at vercel.com. Connect your GitHub repository. Configure the project root as `client/`.
 > 3. **Domain name (optional):** If you want a custom domain, purchase and configure DNS. Otherwise, use the default domains provided by the selected hosting services.
 > 4. **Neon production connection:** Create or select the production branch/database and configure its connection string securely in the API host.
-> 5. **Gmail email delivery:** Configure the Gmail credentials required by the selected integration on the API host.
+> 5. **Transactional email delivery:** Configure the Brevo API key and verified sender address on the API host.
 > 6. **Production file storage:** Ensure the selected storage account is production-ready and configure its credentials on the API host.
 > 7. **Production `BETTER_AUTH_SECRET`:** Generate a new, strong 64-character random string for production. Do NOT reuse the development secret.
 > 8. **Uptime monitoring:** Create an account on UptimeRobot (or similar) and configure a monitor for the production health check endpoint. Provide an email/Slack webhook for alerts.
@@ -864,7 +864,7 @@ Verify all items from [deployment.md § 12](./architecture/deployment.md):
 
 ### User Dependencies
 
-Neon, Cloudinary, and Gmail are the selected services. Any credentials, accounts, or external setup are called out only inside the phase that first needs them; no future-phase setup is requested in advance. Node.js version is not a project decision or Phase 1 completion requirement.
+Neon, Cloudinary, and Brevo are the selected services. Any credentials, accounts, or external setup are called out only inside the phase that first needs them; no future-phase setup is requested in advance. Node.js version is not a project decision or Phase 1 completion requirement.
 
 ---
 

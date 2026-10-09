@@ -47,6 +47,17 @@ export function findAdminShipments({ status, orderBy, skip, take }) {
   return findShipments({ where, orderBy, skip, take });
 }
 
+export async function getAdminShipmentMetrics() {
+  const counts = await prisma.shipment.groupBy({ by: ['status'], _count: { _all: true } });
+  const metrics = Object.fromEntries(['DRAFT', 'PUBLISHED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].map((status) => [status, 0]));
+  for (const { status, _count } of counts) metrics[status] = _count._all;
+  return {
+    active: metrics.PUBLISHED + metrics.IN_PROGRESS,
+    completed: metrics.COMPLETED,
+    cancelled: metrics.CANCELLED,
+  };
+}
+
 export function softRemoveShipment(id, removedAt) {
   return prisma.shipment.updateMany({
     where: { id, removedAt: null },
