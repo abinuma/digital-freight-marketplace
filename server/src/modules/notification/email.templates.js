@@ -41,6 +41,10 @@ export function buildNotificationEmail({ type, recipientName, shipment, bid, sen
       subject = `Shipment completed: ${shipmentLabel}`;
       message = `${shipmentLabel} has been marked as completed.`;
       break;
+    case 'SHIPMENT_REMOVED':
+      subject = `Shipment listing removed: ${shipmentLabel}`;
+      message = `The shipment listing for ${shipmentLabel} was removed by an administrator. Any pending bid you submitted has been closed.`;
+      break;
     case 'WELCOME':
       subject = 'Welcome to Digital Freight Marketplace';
       message = 'Your account has been created successfully.';

@@ -539,7 +539,7 @@ Implement the remaining backend modules — messaging (FR-400-403), notification
    | PATCH | `/admin/users/:id/suspend` | Suspend user — FR-601 |
    | PATCH | `/admin/users/:id/activate` | Reactivate user — FR-601 |
    | GET | `/admin/shipments` | List all shipments with status filter — FR-602 |
-   | PATCH | `/admin/shipments/:id/remove` | Remove/hide listing — FR-603 |
+   | PATCH | `/admin/shipments/:id/remove` | Remove listing with reason, audit action, close pending bids, notify affected transporters — FR-603 |
    | GET | `/admin/metrics` | Platform metrics — FR-604 |
 
 2. **Implement metrics**

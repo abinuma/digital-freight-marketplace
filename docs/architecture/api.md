@@ -204,7 +204,9 @@ The admin user list accepts `page`, `limit`, an optional `q` (case-insensitive n
 
 The admin metrics response includes `totalUsers`, `usersByRole` (with `UNASSIGNED` for profiles without a role), `newRegistrationsLast30Days`, and `shipments` counts for `active`, `completed`, and `cancelled`. Active shipments are those in `PUBLISHED` or `IN_PROGRESS` status.
 
-The admin shipment list accepts `page`, `limit`, and an optional `status` (`DRAFT`, `PUBLISHED`, `IN_PROGRESS`, `COMPLETED`, or `CANCELLED`) query parameter.
+The admin shipment list accepts `page`, `limit`, and an optional `status` (`DRAFT`, `PUBLISHED`, `IN_PROGRESS`, `COMPLETED`, or `CANCELLED`) query parameter. It includes each shipment's moderation history, with the reason, timestamp, and admin identity.
+
+Removing a shipment requires a JSON body with a non-empty `reason` of at most 500 characters. The operation atomically hides the listing, records the admin and reason in the moderation history, and declines pending bids. Transporters with pending bids receive an email notification through the configured transactional email provider. The response includes the moderation record ID and number of declined bids.
 
 Removing a shipment sets its `removedAt` timestamp and preserves the shipment and its related records. Removed shipments remain visible in the admin list; non-admin shipment detail, browse, bid, messaging, and review endpoints treat them as not found.
 

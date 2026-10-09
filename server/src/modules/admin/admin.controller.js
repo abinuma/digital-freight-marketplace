@@ -47,7 +47,7 @@ export async function listShipments(req, res, next) {
 
 export async function removeShipment(req, res, next) {
   try {
-    const result = await adminService.removeShipment(req.user, req.params.id);
+    const result = await adminService.removeShipment(req.user, req.params.id, req.body.reason);
     return res.json({ data: result });
   } catch (error) {
     return next(error);

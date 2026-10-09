@@ -8,8 +8,9 @@ export const adminShipmentListSchema = {
   }),
 };
 
-export const adminShipmentParamsSchema = {
+export const adminShipmentRemoveSchema = {
   params: z.object({ id: z.uuid() }),
+  body: z.object({ reason: z.string().trim().min(1).max(500) }),
 };
 
 export const adminUserListSchema = {

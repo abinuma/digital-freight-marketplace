@@ -4,7 +4,7 @@ import { authorize } from '../../shared/middleware/authorize.js';
 import { validate } from '../../shared/middleware/validate.js';
 import {
   adminShipmentListSchema,
-  adminShipmentParamsSchema,
+  adminShipmentRemoveSchema,
   adminUserListSchema,
   adminUserParamsSchema,
   adminUserSuspendSchema,
@@ -20,7 +20,7 @@ router.get('/admin/shipments', authorize('ADMIN'), validate(adminShipmentListSch
 router.patch(
   '/admin/shipments/:id/remove',
   authorize('ADMIN'),
-  validate(adminShipmentParamsSchema),
+  validate(adminShipmentRemoveSchema),
   adminController.removeShipment,
 );
 

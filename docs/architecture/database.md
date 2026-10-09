@@ -108,6 +108,18 @@ Owned by: `auth` module (Transporter profile extension)
 | createdAt | TIMESTAMP | NOT NULL | Record creation |
 | updatedAt | TIMESTAMP | NOT NULL | Last update |
 
+#### ShipmentModeration
+
+Owned by: `shipment` module. Each removal records the admin, reason, shipment, and timestamp in the same transaction that hides the listing and closes pending bids.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PK | Unique moderation action identifier |
+| shipmentId | UUID | FK → Shipment.id, NOT NULL | Moderated shipment |
+| adminId | UUID | FK → User.id, NOT NULL | Admin who removed the listing |
+| reason | VARCHAR(500) | NOT NULL | Reason supplied by the admin |
+| createdAt | TIMESTAMP | NOT NULL, default now | Moderation timestamp |
+
 ### 3.3 Shipment
 
 Owned by: `shipment` module

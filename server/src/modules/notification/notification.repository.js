@@ -35,6 +35,19 @@ export function findAcceptedTransporterForShipment(shipmentId) {
   });
 }
 
+export function findShipmentRemovalNotificationDetails(shipmentId, transporterIds) {
+  return Promise.all([
+    prisma.shipment.findUnique({
+      where: { id: shipmentId },
+      select: { goodsDescription: true, pickupLocation: true, deliveryLocation: true },
+    }),
+    prisma.user.findMany({
+      where: { id: { in: transporterIds } },
+      select: { name: true, email: true },
+    }),
+  ]).then(([shipment, transporters]) => shipment ? { shipment, transporters } : null);
+}
+
 export function findMessageNotificationDetails(shipmentId, senderId) {
   return prisma.shipment
     .findUnique({

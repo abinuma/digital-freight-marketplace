@@ -47,15 +47,16 @@ model User {
   createdAt        DateTime   @default(now()) @db.Timestamp(3)
   updatedAt        DateTime   @updatedAt @db.Timestamp(3)
 
-  vehicle         Vehicle?
-  shipments       Shipment[]
-  bids            Bid[]
-  messages        Message[]
-  reviewsGiven    Review[]       @relation("ReviewReviewer")
-  reviewsReceived Review[]       @relation("ReviewReviewee")
-  notifications   Notification[]
-  sessions        Session[]
-  accounts        Account[]
+  vehicle             Vehicle?
+  shipments           Shipment[]
+  bids                Bid[]
+  messages            Message[]
+  reviewsGiven        Review[]             @relation("ReviewReviewer")
+  reviewsReceived     Review[]             @relation("ReviewReviewee")
+  notifications       Notification[]
+  shipmentModerations ShipmentModeration[] @relation("ShipmentModeratedBy")
+  sessions            Session[]
+  accounts            Account[]
 
   @@index([role, status], map: "idx_user_role_status")
 }
@@ -91,17 +92,32 @@ model Shipment {
   createdAt           DateTime       @default(now()) @db.Timestamp(3)
   updatedAt           DateTime       @updatedAt @db.Timestamp(3)
 
-  shipper  User            @relation(fields: [shipperId], references: [id], onDelete: Restrict)
-  images   ShipmentImage[]
-  bids     Bid[]
-  messages Message[]
-  reviews  Review[]
+  shipper           User                 @relation(fields: [shipperId], references: [id], onDelete: Restrict)
+  images            ShipmentImage[]
+  bids              Bid[]
+  messages          Message[]
+  reviews           Review[]
+  moderationActions ShipmentModeration[]
 
   @@index([shipperId], map: "idx_shipment_shipper")
   @@index([status], map: "idx_shipment_status")
   @@index([goodsType], map: "idx_shipment_goods_type")
   @@index([pickupDate], map: "idx_shipment_pickup_date")
   @@index([createdAt(sort: Desc)], map: "idx_shipment_created")
+}
+
+model ShipmentModeration {
+  id         String   @id @default(uuid()) @db.Uuid
+  shipmentId String   @db.Uuid
+  adminId    String   @db.Uuid
+  reason     String   @db.VarChar(500)
+  createdAt  DateTime @default(now()) @db.Timestamp(3)
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  admin    User     @relation("ShipmentModeratedBy", fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([shipmentId, createdAt(sort: Desc)], map: "idx_shipment_moderation_shipment_created")
+  @@index([adminId], map: "idx_shipment_moderation_admin")
 }
 
 model ShipmentImage {

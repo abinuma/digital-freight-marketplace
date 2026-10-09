@@ -84,18 +84,33 @@ export function getAdminShipmentMetrics() {
   return shipmentRepository.getAdminShipmentMetrics();
 }
 
-export async function softRemoveShipment(user, id) {
+export async function softRemoveShipment(user, id, reason) {
   if (user.role !== 'ADMIN') throw new AppError('You are not authorized to access this resource', 403);
 
   const removedAt = new Date();
-  const result = await shipmentRepository.softRemoveShipment(id, removedAt);
-  if (result.count === 0) {
+  let result;
+  try {
+    result = await shipmentRepository.softRemoveShipmentWithAudit({ id, adminId: user.id, reason, removedAt });
+  } catch (error) {
+    if (error?.code === 'P2034') {
+      throw new AppError('Shipment or bids changed during moderation. Please retry.', 409);
+    }
+    throw error;
+  }
+  if (!result) {
     const shipment = await shipmentRepository.findShipmentById(id);
     if (!shipment) throw new AppError('Shipment was not found', 404);
     throw new AppError('Shipment has already been removed', 409);
   }
 
-  return { id, removedAt, removed: true };
+  await notificationService.shipmentRemoved(id, result.transporterIds);
+  return {
+    id,
+    moderationId: result.moderationId,
+    removedAt,
+    removed: true,
+    declinedBids: result.pendingBidIds.length,
+  };
 }
 
 export async function getShipment(user, id) {

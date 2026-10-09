@@ -42,9 +42,30 @@ export async function findShipments({ where, orderBy, skip, take }) {
   return { shipments, total };
 }
 
-export function findAdminShipments({ status, orderBy, skip, take }) {
+export async function findAdminShipments({ status, orderBy, skip, take }) {
   const where = status ? { status } : {};
-  return findShipments({ where, orderBy, skip, take });
+  const [shipments, total] = await Promise.all([
+    prisma.shipment.findMany({
+      where,
+      select: {
+        ...shipmentListSelect,
+        moderationActions: {
+          select: {
+            id: true,
+            reason: true,
+            createdAt: true,
+            admin: { select: { id: true, name: true, email: true } },
+          },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        },
+      },
+      orderBy,
+      skip,
+      take,
+    }),
+    prisma.shipment.count({ where }),
+  ]);
+  return { shipments, total };
 }
 
 export async function getAdminShipmentMetrics() {
@@ -58,11 +79,33 @@ export async function getAdminShipmentMetrics() {
   };
 }
 
-export function softRemoveShipment(id, removedAt) {
-  return prisma.shipment.updateMany({
-    where: { id, removedAt: null },
-    data: { removedAt },
-  });
+export async function softRemoveShipmentWithAudit({ id, adminId, reason, removedAt }) {
+  return prisma.$transaction(async (transaction) => {
+    const update = await transaction.shipment.updateMany({
+      where: { id, removedAt: null },
+      data: { removedAt },
+    });
+    if (update.count === 0) return null;
+
+    const pendingBids = await transaction.bid.findMany({
+      where: { shipmentId: id, status: 'PENDING' },
+      select: { id: true, transporterId: true },
+    });
+    await transaction.bid.updateMany({
+      where: { shipmentId: id, status: 'PENDING' },
+      data: { status: 'DECLINED' },
+    });
+    const moderation = await transaction.shipmentModeration.create({
+      data: { shipmentId: id, adminId, reason, createdAt: removedAt },
+      select: { id: true },
+    });
+
+    return {
+      moderationId: moderation.id,
+      pendingBidIds: pendingBids.map(({ id: bidId }) => bidId),
+      transporterIds: [...new Set(pendingBids.map(({ transporterId }) => transporterId))],
+    };
+  }, { isolationLevel: 'Serializable' });
 }
 
 export function findShipmentById(id) {

@@ -65,6 +65,18 @@ export function shipmentCompleted(shipmentId) {
   });
 }
 
+export function shipmentRemoved(shipmentId, transporterIds) {
+  if (transporterIds.length === 0) return Promise.resolve();
+  return safely('SHIPMENT_REMOVED', async () => {
+    const details = await notificationRepository.findShipmentRemovalNotificationDetails(shipmentId, transporterIds);
+    if (!details) return;
+    await Promise.all(details.transporters.map((transporter) => notify(transporter, {
+      type: 'SHIPMENT_REMOVED',
+      shipment: details.shipment,
+    })));
+  });
+}
+
 export function newMessage(shipmentId, senderId, content) {
   return safely('NEW_MESSAGE', async () => {
     const details = await notificationRepository.findMessageNotificationDetails(shipmentId, senderId);
