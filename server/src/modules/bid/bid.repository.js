@@ -16,7 +16,7 @@ const bidSelect = {
 export function findShipmentForBid(shipmentId) {
   return prisma.shipment.findUnique({
     where: { id: shipmentId },
-    select: { id: true, shipperId: true, status: true },
+    select: { id: true, shipperId: true, status: true, removedAt: true },
   });
 }
 
@@ -28,7 +28,10 @@ export function createBid(transporterId, shipmentId, data) {
 }
 
 export function findBidById(id) {
-  return prisma.bid.findUnique({ where: { id }, select: bidSelect });
+  return prisma.bid.findUnique({
+    where: { id },
+    select: { ...bidSelect, shipment: { select: { removedAt: true } } },
+  });
 }
 
 export function findOwnedPendingBid(id, shipmentId, transporterId) {
@@ -63,7 +66,7 @@ export async function acceptBidAndTransitionShipmentWithEvents({ id, shipmentId,
   try {
     return await prisma.$transaction(async (transaction) => {
       const shipmentUpdate = await transaction.shipment.updateMany({
-        where: { id: shipmentId, shipperId, status: 'PUBLISHED' },
+        where: { id: shipmentId, shipperId, status: 'PUBLISHED', removedAt: null },
         data: { status: 'IN_PROGRESS' },
       });
       if (shipmentUpdate.count !== 1) throw new Error('BID_ACCEPTANCE_CONFLICT');

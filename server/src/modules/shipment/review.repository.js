@@ -19,6 +19,7 @@ export function findShipmentReviewContext(shipmentId) {
       id: true,
       shipperId: true,
       status: true,
+      removedAt: true,
       bids: {
         where: { status: 'ACCEPTED' },
         select: { transporterId: true },

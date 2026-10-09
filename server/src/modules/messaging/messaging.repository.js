@@ -14,6 +14,7 @@ export function findShipmentParticipant(shipmentId, userId) {
     select: {
       id: true,
       shipperId: true,
+      removedAt: true,
       bids: {
         where: { transporterId: userId, status: { in: ['PENDING', 'ACCEPTED'] } },
         select: { id: true },

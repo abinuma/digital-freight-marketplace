@@ -1,0 +1,1 @@
+ALTER TABLE "Shipment" ADD COLUMN "removedAt" TIMESTAMP(3);

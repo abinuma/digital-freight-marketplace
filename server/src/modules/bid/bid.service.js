@@ -4,7 +4,9 @@ import * as bidRepository from './bid.repository.js';
 import * as notificationService from '../notification/notification.service.js';
 
 function toApiBid(bid) {
-  return { ...bid, price: Number(bid.price) };
+  const apiBid = { ...bid };
+  delete apiBid.shipment;
+  return { ...apiBid, price: Number(apiBid.price) };
 }
 
 function toApiBids(bids) {
@@ -23,6 +25,7 @@ function isActiveBidConflict(error) {
 async function getPendingOwnedBid(id, shipmentId, transporterId) {
   const bid = await bidRepository.findBidById(id);
   if (!bid) throw new AppError('Bid was not found', 404);
+  if (bid.shipment?.removedAt) throw new AppError('Shipment was not found', 404);
   if (bid.shipmentId !== shipmentId) throw new AppError('Bid was not found', 404);
   if (bid.transporterId !== transporterId) throw new AppError('You can only manage your own bids', 403);
   if (bid.status !== 'PENDING') throw new AppError('Only pending bids can be updated or withdrawn', 422);
@@ -34,6 +37,7 @@ export async function createBid(user, shipmentId, input) {
 
   const shipment = await bidRepository.findShipmentForBid(shipmentId);
   if (!shipment) throw new AppError('Shipment was not found', 404);
+  if (shipment.removedAt) throw new AppError('Shipment was not found', 404);
   if (shipment.status !== 'PUBLISHED') {
     throw new AppError('Bids can only be submitted on published shipments', 422);
   }
@@ -104,6 +108,7 @@ export async function getBid(user, shipmentId, id) {
   if (!bid) throw new AppError('Bid was not found', 404);
   if (bid.shipmentId !== shipmentId) throw new AppError('Bid was not found', 404);
   const shipment = await bidRepository.findShipmentForBid(bid.shipmentId);
+  if (shipment?.removedAt) throw new AppError('Shipment was not found', 404);
   const isShipperOwner = shipment?.shipperId === user.id;
   const isTransporterOwner = bid.transporterId === user.id;
   if (!isShipperOwner && !isTransporterOwner && user.role !== 'ADMIN') {
@@ -115,6 +120,7 @@ export async function getBid(user, shipmentId, id) {
 async function getShipperOwnedPendingBid(user, shipmentId, id) {
   const shipment = await bidRepository.findShipmentForBid(shipmentId);
   if (!shipment) throw new AppError('Shipment was not found', 404);
+  if (shipment.removedAt) throw new AppError('Shipment was not found', 404);
   if (shipment.shipperId !== user.id) throw new AppError('You can only manage bids on your own shipments', 403);
 
   const bid = await bidRepository.findBidById(id);

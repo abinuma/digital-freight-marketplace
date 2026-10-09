@@ -86,6 +86,7 @@ model Shipment {
   pickupDate          DateTime       @db.Date
   specialRequirements String?        @db.Text
   status              ShipmentStatus @default(DRAFT)
+  removedAt           DateTime?      @db.Timestamp(3)
   createdAt           DateTime       @default(now()) @db.Timestamp(3)
   updatedAt           DateTime       @updatedAt @db.Timestamp(3)
 

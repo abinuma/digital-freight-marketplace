@@ -127,6 +127,7 @@ Owned by: `shipment` module
 | pickupDate | DATE | NOT NULL | Preferred pickup date |
 | specialRequirements | TEXT | NULL | Free-text special instructions |
 | status | ENUM | NOT NULL, default `DRAFT` | `DRAFT`, `PUBLISHED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED` |
+| removedAt | TIMESTAMP | NULL | Admin soft-removal timestamp; non-admin shipment access is hidden after removal |
 | createdAt | TIMESTAMP | NOT NULL | Listing creation |
 | updatedAt | TIMESTAMP | NOT NULL | Last update |
 

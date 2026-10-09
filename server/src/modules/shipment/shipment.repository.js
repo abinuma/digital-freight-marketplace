@@ -15,6 +15,7 @@ const shipmentListSelect = {
   pickupDate: true,
   specialRequirements: true,
   status: true,
+  removedAt: true,
   createdAt: true,
   updatedAt: true,
 };
@@ -41,6 +42,18 @@ export async function findShipments({ where, orderBy, skip, take }) {
   return { shipments, total };
 }
 
+export function findAdminShipments({ status, orderBy, skip, take }) {
+  const where = status ? { status } : {};
+  return findShipments({ where, orderBy, skip, take });
+}
+
+export function softRemoveShipment(id, removedAt) {
+  return prisma.shipment.updateMany({
+    where: { id, removedAt: null },
+    data: { removedAt },
+  });
+}
+
 export function findShipmentById(id) {
   return prisma.shipment.findUnique({
     where: { id },
@@ -58,6 +71,7 @@ export function findShipmentForUpdate(id) {
       id: true,
       shipperId: true,
       status: true,
+      removedAt: true,
       bids: { where: { status: 'ACCEPTED' }, select: { id: true }, take: 1 },
     },
   });
@@ -93,7 +107,7 @@ export function cancelShipmentAndDeclinePendingBids(id) {
 }
 
 export function findShipmentStatusById(id) {
-  return prisma.shipment.findUnique({ where: { id }, select: { id: true, shipperId: true, status: true } });
+  return prisma.shipment.findUnique({ where: { id }, select: { id: true, shipperId: true, status: true, removedAt: true } });
 }
 
 export function findShipmentAfterTransition(id) {

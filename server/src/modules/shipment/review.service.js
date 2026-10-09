@@ -30,7 +30,7 @@ function toApiReview(review) {
 
 export async function createShipmentReview(user, shipmentId, input) {
   const shipment = await reviewRepository.findShipmentReviewContext(shipmentId);
-  if (!shipment) throw new AppError('Shipment was not found', 404);
+  if (!shipment || shipment.removedAt) throw new AppError('Shipment was not found', 404);
   if (shipment.status !== 'COMPLETED') {
     throw new AppError('Reviews can only be submitted after shipment completion', 422);
   }
@@ -62,7 +62,8 @@ export async function createShipmentReview(user, shipmentId, input) {
 }
 
 export async function getShipmentReviews(shipmentId, query = {}) {
-  if (!(await reviewRepository.findShipmentReviewContext(shipmentId))) {
+  const shipment = await reviewRepository.findShipmentReviewContext(shipmentId);
+  if (!shipment || shipment.removedAt) {
     throw new AppError('Shipment was not found', 404);
   }
 

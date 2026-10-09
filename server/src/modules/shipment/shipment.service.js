@@ -50,7 +50,9 @@ export async function listShipments(user, query) {
     });
   }
 
-  const visibility = user.role === 'SHIPPER' ? { shipperId: user.id } : { status: 'PUBLISHED' };
+  const visibility = user.role === 'SHIPPER'
+    ? { shipperId: user.id, removedAt: null }
+    : { status: 'PUBLISHED', removedAt: null };
   const where = filters.length > 0 ? { AND: [visibility, ...filters] } : visibility;
   const sortField = query.sortBy === 'pickupDate' ? 'pickupDate' : 'createdAt';
   const sortDirection = sortField === 'pickupDate' ? 'asc' : 'desc';
@@ -63,9 +65,38 @@ export async function listShipments(user, query) {
   };
 }
 
+export async function listAdminShipments(user, query = {}) {
+  if (user.role !== 'ADMIN') throw new AppError('You are not authorized to access this resource', 403);
+
+  const { page, limit, skip, take } = getPagination(query);
+  const orderBy = [{ createdAt: 'desc' }, { id: 'asc' }];
+  const { shipments, total } = await shipmentRepository.findAdminShipments({
+    status: query.status,
+    orderBy,
+    skip,
+    take,
+  });
+
+  return { shipments: shipments.map(toApiShipment), pagination: formatPagination({ page, limit, total }) };
+}
+
+export async function softRemoveShipment(user, id) {
+  if (user.role !== 'ADMIN') throw new AppError('You are not authorized to access this resource', 403);
+
+  const removedAt = new Date();
+  const result = await shipmentRepository.softRemoveShipment(id, removedAt);
+  if (result.count === 0) {
+    const shipment = await shipmentRepository.findShipmentById(id);
+    if (!shipment) throw new AppError('Shipment was not found', 404);
+    throw new AppError('Shipment has already been removed', 409);
+  }
+
+  return { id, removedAt, removed: true };
+}
+
 export async function getShipment(user, id) {
   const shipment = await shipmentRepository.findShipmentById(id);
-  if (!shipment) throw new AppError('Shipment was not found', 404);
+  if (!shipment || (shipment.removedAt && user.role !== 'ADMIN')) throw new AppError('Shipment was not found', 404);
 
   const canView = shipment.shipperId === user.id || shipment.status === 'PUBLISHED' || user.role === 'ADMIN';
   if (!canView) throw new AppError('You are not authorized to view this shipment', 403);
@@ -76,6 +107,7 @@ export async function getShipment(user, id) {
 export async function updateShipment(user, id, input) {
   const shipment = await shipmentRepository.findShipmentForUpdate(id);
   if (!shipment) throw new AppError('Shipment was not found', 404);
+  if (shipment.removedAt) throw new AppError('Shipment was not found', 404);
   if (shipment.shipperId !== user.id) throw new AppError('You can only update your own shipments', 403);
 
   const canEdit = shipment.status === 'DRAFT' || (shipment.status === 'PUBLISHED' && shipment.bids.length === 0);
@@ -90,6 +122,7 @@ export async function updateShipment(user, id, input) {
 async function getOwnedShipment(user, id) {
   const shipment = await shipmentRepository.findShipmentStatusById(id);
   if (!shipment) throw new AppError('Shipment was not found', 404);
+  if (shipment.removedAt) throw new AppError('Shipment was not found', 404);
   if (shipment.shipperId !== user.id) throw new AppError('You can only manage your own shipments', 403);
   return shipment;
 }

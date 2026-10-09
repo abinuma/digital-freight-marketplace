@@ -196,9 +196,13 @@ All admin endpoints require `ADMIN` role.
 | GET | `/admin/users` | Yes | List all users (with search, filter by role/status) |
 | PATCH | `/admin/users/:id/suspend` | Yes | Suspend a user account |
 | PATCH | `/admin/users/:id/activate` | Yes | Reactivate a suspended user |
-| GET | `/admin/shipments` | Yes | List all shipments (with filter by status) |
+| GET | `/admin/shipments` | Yes (Admin) | List all shipments (filter by status; paginated) |
 | PATCH | `/admin/shipments/:id/remove` | Yes | Remove/hide a shipment listing |
 | GET | `/admin/metrics` | Yes | Get platform metrics (user counts, shipment stats) |
+
+The admin shipment list accepts `page`, `limit`, and an optional `status` (`DRAFT`, `PUBLISHED`, `IN_PROGRESS`, `COMPLETED`, or `CANCELLED`) query parameter.
+
+Removing a shipment sets its `removedAt` timestamp and preserves the shipment and its related records. Removed shipments remain visible in the admin list; non-admin shipment detail, browse, bid, messaging, and review endpoints treat them as not found.
 
 ---
 

@@ -4,7 +4,7 @@ import * as notificationService from '../notification/notification.service.js';
 
 async function requireShipmentParticipant(user, shipmentId) {
   const shipment = await messagingRepository.findShipmentParticipant(shipmentId, user.id);
-  if (!shipment) throw new AppError('Shipment was not found', 404);
+  if (!shipment || shipment.removedAt) throw new AppError('Shipment was not found', 404);
 
   const isShipper = user.role === 'SHIPPER' && shipment.shipperId === user.id;
   const isActiveBidder = user.role === 'TRANSPORTER' && shipment.bids.length > 0;
