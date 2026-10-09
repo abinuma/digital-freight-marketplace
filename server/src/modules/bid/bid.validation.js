@@ -49,6 +49,7 @@ export const bidListQuerySchema = {
   query: z.object({
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
+    status: z.enum(['PENDING', 'ACCEPTED', 'DECLINED']).optional(),
   }),
 };
 

@@ -87,10 +87,11 @@ export async function acceptBidAndTransitionShipment({ id, shipmentId, shipperId
   }
 }
 
-export async function findVisibleShipmentBids({ where, orderBy, skip, take }) {
+export async function findVisibleShipmentBids({ where, status, orderBy, skip, take }) {
+  const bidWhere = { ...where, status: status ?? { not: 'WITHDRAWN' } };
   const [bids, total] = await Promise.all([
-    prisma.bid.findMany({ where: { ...where, status: { not: 'WITHDRAWN' } }, select: bidSelect, orderBy, skip, take }),
-    prisma.bid.count({ where: { ...where, status: { not: 'WITHDRAWN' } } }),
+    prisma.bid.findMany({ where: bidWhere, select: bidSelect, orderBy, skip, take }),
+    prisma.bid.count({ where: bidWhere }),
   ]);
 
   return { bids, total };

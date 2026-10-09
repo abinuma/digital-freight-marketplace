@@ -80,7 +80,7 @@ export async function listShipmentBids(user, shipmentId, query = {}) {
   const { page, limit, skip, take } = getPagination(query);
   const orderBy = [{ createdAt: 'desc' }, { id: 'asc' }];
   const { bids, total } = await bidRepository.findVisibleShipmentBids({
-    where: { shipmentId }, orderBy, skip, take,
+    where: { shipmentId }, status: query.status, orderBy, skip, take,
   });
 
   return { bids: toApiBids(bids), pagination: formatPagination({ page, limit, total }) };
