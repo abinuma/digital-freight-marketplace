@@ -109,3 +109,43 @@ export async function getBid(user, shipmentId, id) {
   }
   return toApiBid(bid);
 }
+
+async function getShipperOwnedPendingBid(user, shipmentId, id) {
+  const shipment = await bidRepository.findShipmentForBid(shipmentId);
+  if (!shipment) throw new AppError('Shipment was not found', 404);
+  if (shipment.shipperId !== user.id) throw new AppError('You can only manage bids on your own shipments', 403);
+
+  const bid = await bidRepository.findBidById(id);
+  if (!bid || bid.shipmentId !== shipmentId) throw new AppError('Bid was not found', 404);
+  if (bid.status !== 'PENDING') throw new AppError('Only pending bids can be accepted or declined', 422);
+  return { bid, shipment };
+}
+
+export async function acceptBid(user, shipmentId, id) {
+  if (user.role !== 'SHIPPER') throw new AppError('Only Shippers can accept bids', 403);
+  const { shipment } = await getShipperOwnedPendingBid(user, shipmentId, id);
+  if (shipment.status !== 'PUBLISHED') {
+    throw new AppError('Bids can only be accepted on published shipments', 422);
+  }
+
+  const acceptedBid = await bidRepository.acceptBidAndTransitionShipment({
+    id,
+    shipmentId,
+    shipperId: user.id,
+  });
+  if (!acceptedBid) {
+    throw new AppError('Shipment or bid status changed before acceptance could be applied', 409);
+  }
+
+  return toApiBid(acceptedBid);
+}
+
+export async function declineBid(user, shipmentId, id, input = {}) {
+  if (user.role !== 'SHIPPER') throw new AppError('Only Shippers can decline bids', 403);
+  await getShipperOwnedPendingBid(user, shipmentId, id);
+
+  const result = await bidRepository.declinePendingBid(id, shipmentId, input.declineReason);
+  if (result.count !== 1) throw new AppError('Bid status changed before decline could be applied', 409);
+
+  return toApiBid(await bidRepository.findBidById(id));
+}

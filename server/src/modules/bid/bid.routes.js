@@ -6,6 +6,7 @@ import {
   bidIdParamsSchema,
   bidListQuerySchema,
   createBidSchema,
+  declineBidSchema,
   myBidsQuerySchema,
   updateBidSchema,
 } from './bid.validation.js';
@@ -23,6 +24,18 @@ router.patch(
   authorize('TRANSPORTER'),
   validate(bidIdParamsSchema),
   bidController.withdrawBid,
+);
+router.patch(
+  '/shipments/:shipmentId/bids/:id/accept',
+  authorize('SHIPPER'),
+  validate(bidIdParamsSchema),
+  bidController.acceptBid,
+);
+router.patch(
+  '/shipments/:shipmentId/bids/:id/decline',
+  authorize('SHIPPER'),
+  validate(declineBidSchema),
+  bidController.declineBid,
 );
 
 export default router;

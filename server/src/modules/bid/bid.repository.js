@@ -52,6 +52,41 @@ export function withdrawPendingBid(id, shipmentId, transporterId) {
   });
 }
 
+export function declinePendingBid(id, shipmentId, declineReason) {
+  return prisma.bid.updateMany({
+    where: { id, shipmentId, status: 'PENDING' },
+    data: { status: 'DECLINED', declineReason: declineReason ?? null },
+  });
+}
+
+export async function acceptBidAndTransitionShipment({ id, shipmentId, shipperId }) {
+  try {
+    return await prisma.$transaction(async (transaction) => {
+      const shipmentUpdate = await transaction.shipment.updateMany({
+        where: { id: shipmentId, shipperId, status: 'PUBLISHED' },
+        data: { status: 'IN_PROGRESS' },
+      });
+      if (shipmentUpdate.count !== 1) throw new Error('BID_ACCEPTANCE_CONFLICT');
+
+      const bidUpdate = await transaction.bid.updateMany({
+        where: { id, shipmentId, status: 'PENDING' },
+        data: { status: 'ACCEPTED' },
+      });
+      if (bidUpdate.count !== 1) throw new Error('BID_ACCEPTANCE_CONFLICT');
+
+      await transaction.bid.updateMany({
+        where: { shipmentId, id: { not: id }, status: 'PENDING' },
+        data: { status: 'DECLINED' },
+      });
+
+      return transaction.bid.findUnique({ where: { id }, select: bidSelect });
+    });
+  } catch (error) {
+    if (error?.message === 'BID_ACCEPTANCE_CONFLICT') return null;
+    throw error;
+  }
+}
+
 export async function findVisibleShipmentBids({ where, orderBy, skip, take }) {
   const [bids, total] = await Promise.all([
     prisma.bid.findMany({ where: { ...where, status: { not: 'WITHDRAWN' } }, select: bidSelect, orderBy, skip, take }),

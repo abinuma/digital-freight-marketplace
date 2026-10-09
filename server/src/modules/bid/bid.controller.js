@@ -53,3 +53,21 @@ export async function withdrawBid(req, res, next) {
     return next(error);
   }
 }
+
+export async function acceptBid(req, res, next) {
+  try {
+    const bid = await bidService.acceptBid(req.user, req.params.shipmentId, req.params.id);
+    return res.json({ data: bid });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function declineBid(req, res, next) {
+  try {
+    const bid = await bidService.declineBid(req.user, req.params.shipmentId, req.params.id, req.body);
+    return res.json({ data: bid });
+  } catch (error) {
+    return next(error);
+  }
+}
