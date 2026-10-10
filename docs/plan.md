@@ -662,6 +662,10 @@ Build the complete React frontend — all pages, components, API integration, an
    - Browse Shipments -> Submit Bid -> Accept Bid -> Complete -> Review.
    - Admin: Login -> Suspend User -> Verify login blocked.
 
+**Implementation status:** The client has Vitest render tests for shared controls and mocked Playwright flows for shipper registration/shipment publishing, transporter login/bid submission, shipper bid acceptance/completion/review, and admin user suspension with suspended-account login rejection. Admin dashboard and user management screens use the existing authenticated admin APIs. Shipment review forms are available to eligible participants after completion. Admin shipment moderation UI remains outstanding under 7E.
+
+**User Action/Dependency:** Install Playwright Chromium with `npx playwright install chromium` before running `npm run test:e2e`. The browser binary is not installed in the current environment.
+
 ### Deliverables
 
 - Complete React frontend matching all specified pages and flows.

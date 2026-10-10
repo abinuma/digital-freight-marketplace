@@ -133,6 +133,11 @@ describe.skipIf(!runIntegrationTests)('Better Auth with the dedicated integratio
     const newPasswordLogin = await auth.api.signInEmail({ body: { email: testEmail, password: newPassword }, asResponse: true });
     expect(newPasswordLogin.status).toBe(200);
     sessionCookie(newPasswordLogin);
+
+    await prisma.user.update({ where: { email: testEmail }, data: { status: 'SUSPENDED' } });
+    const suspendedLogin = await auth.api.signInEmail({ body: { email: testEmail, password: newPassword }, asResponse: true });
+    expect(suspendedLogin.status).toBe(403);
+    expect((await suspendedLogin.json()).message).toContain('suspended');
   }, 60_000);
 
   it('builds the Google authorization redirect with the Better Auth callback URL', async () => {

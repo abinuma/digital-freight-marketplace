@@ -48,6 +48,16 @@ export const auth = betterAuth({
   },
   hooks: {
     before: createAuthMiddleware(async (context) => {
+      if (context.path === '/sign-in/email' && typeof context.body?.email === 'string') {
+        const account = await prisma.user.findUnique({
+          where: { email: context.body.email.toLowerCase() },
+          select: { status: true },
+        });
+        if (account?.status === 'SUSPENDED') {
+          throw new APIError('FORBIDDEN', { message: 'This account has been suspended' });
+        }
+      }
+
       const passwordField =
         context.path === '/sign-up/email'
           ? 'password'

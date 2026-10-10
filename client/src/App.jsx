@@ -31,6 +31,11 @@ import { ShipmentDiscoveryPage } from './features/transporter/pages/ShipmentDisc
 import { MyBidsPage } from './features/transporter/pages/MyBidsPage.jsx';
 import { ShipmentDetailPage as TransporterShipmentDetailPage } from './features/transporter/pages/ShipmentDetailPage.jsx';
 import { NetworkErrorToaster } from './shared/components/NetworkErrorToaster.jsx';
+import './features/admin/admin.css';
+import './features/shipper/reviews.css';
+import { AdminLayout } from './features/admin/AdminLayout.jsx';
+import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage.jsx';
+import { AdminUsersPage } from './features/admin/pages/AdminUsersPage.jsx';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,7 +80,10 @@ function App() {
                 </Route>
               </Route>
               <Route element={<RequireRole roles="ADMIN" />}>
-                <Route path="/admin/*" element={<AuthGate />} />
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboardPage />} />
+                  <Route path="users" element={<AdminUsersPage />} />
+                </Route>
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
