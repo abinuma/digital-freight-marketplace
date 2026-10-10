@@ -36,7 +36,7 @@ async function saveInAppNotification({ userId, type, title, message, referenceId
 
 export async function listNotifications(userId, query = {}) {
   const { page, limit, skip, take } = getPagination(query);
-  const { notifications, total } = await notificationRepository.findNotifications(userId, { skip, take });
+  const { notifications, total } = await notificationRepository.findNotifications(userId, { skip, take, unreadOnly: query.unreadOnly });
   return { notifications, pagination: formatPagination({ page, limit, total }) };
 }
 

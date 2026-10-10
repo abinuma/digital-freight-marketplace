@@ -180,9 +180,11 @@ Bids are nested under shipments since they exist in that context.
 
 ### 5.6 Notification Module — `/api/v1/notifications`
 
+`GET /notifications` accepts `page`, `limit`, and optional `unreadOnly=true` to filter unread notifications. The response pagination total reflects the selected filter, so clients can display an accurate unread count.
+
 | Method | Endpoint | Auth | Roles | Description |
 |--------|----------|------|-------|-------------|
-| GET | `/notifications` | Yes | Any | Get current user's notifications |
+| GET | `/notifications` | Yes | Any | Get current user's notifications (supports `unreadOnly=true`) |
 | PATCH | `/notifications/:id/read` | Yes | Owner | Mark a notification as read |
 | PATCH | `/notifications/read-all` | Yes | Owner | Mark all notifications as read |
 

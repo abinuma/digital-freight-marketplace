@@ -647,11 +647,11 @@ Build the complete React frontend — all pages, components, API integration, an
 
 #### 7F. Common Features
 
-1. **Notification dropdown/page** — List of notifications, mark as read, click to navigate.
-2. **Map components** — Reusable Leaflet map with marker placement for location selection and display per FR-203.
-3. **Messaging UI** — Chat-like thread within shipment context.
+1. **Notification dropdown/page** — List of notifications, accurate unread count, mark one or all as read, click to navigate.
+2. **Map components** — Shared Leaflet canvas with marker placement for location selection and shipment discovery per FR-203.
+3. **Messaging UI** — Shared chat-like thread within shipper and transporter shipment details.
 4. **Loading States** — Skeletons and spinners per NFR-205.
-5. **Error handling** — Toast notifications for API errors, inline form validation per NFR-202.
+5. **Error handling** — Global toast for network failures, inline API errors and form validation per NFR-202.
 
 #### 7G. Frontend Testing
 

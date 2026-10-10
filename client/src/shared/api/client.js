@@ -13,6 +13,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (axiosError) => {
     const response = axiosError.response;
+    if (!response && axiosError.code !== 'ERR_CANCELED' && typeof window !== 'undefined') window.dispatchEvent(new Event('app:network-error'));
     const payload = response?.data;
     const error = new Error(
       payload?.error?.message || payload?.message || axiosError.message || 'The request could not be completed',

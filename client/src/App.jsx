@@ -22,11 +22,15 @@ import { ShipmentListPage } from './features/shipper/pages/ShipmentListPage.jsx'
 import { ShipmentFormPage } from './features/shipper/pages/ShipmentFormPage.jsx';
 import { ShipmentDetailPage } from './features/shipper/pages/ShipmentDetailPage.jsx';
 import './features/transporter/transporter.css';
+import './features/notifications/notifications.css';
+import './features/messaging/messaging.css';
+import './shared/components/maps/maps.css';
 import { TransporterLayout } from './features/transporter/TransporterLayout.jsx';
 import { TransporterDashboardPage } from './features/transporter/pages/TransporterDashboardPage.jsx';
 import { ShipmentDiscoveryPage } from './features/transporter/pages/ShipmentDiscoveryPage.jsx';
 import { MyBidsPage } from './features/transporter/pages/MyBidsPage.jsx';
 import { ShipmentDetailPage as TransporterShipmentDetailPage } from './features/transporter/pages/ShipmentDetailPage.jsx';
+import { NetworkErrorToaster } from './shared/components/NetworkErrorToaster.jsx';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -76,6 +80,7 @@ function App() {
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          <NetworkErrorToaster />
         </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>

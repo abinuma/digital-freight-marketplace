@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import { Alert, Badge, Card, Skeleton } from '../../../shared/components/index.js';
-import { listAvailableShipments, listMyBids, listNotifications } from '../transporter.api.js';
+import { listAvailableShipments, listMyBids } from '../transporter.api.js';
+import { listNotifications } from '../../notifications/notifications.api.js';
 
 const metrics = [
   { key: 'PENDING', title: 'Pending bids', subtitle: 'Waiting for shipper response', tone: 'blue' },
@@ -13,7 +14,7 @@ export function TransporterDashboardPage() {
   const results = useQueries({ queries: [
     ...metrics.map(({ key }) => ({ queryKey: ['transporter', 'bidCount', key], queryFn: () => listMyBids({ status: key, limit: 1 }) })),
     { queryKey: ['transporter', 'availableCount'], queryFn: () => listAvailableShipments({ limit: 1 }) },
-    { queryKey: ['transporter', 'recentNotifications'], queryFn: () => listNotifications(12) },
+    { queryKey: ['notifications', 'recent'], queryFn: () => listNotifications({ limit: 12 }) },
   ] });
   const error = results.find((query) => query.isError);
   const recent = (results[4].data?.notifications || []).slice(0, 6);

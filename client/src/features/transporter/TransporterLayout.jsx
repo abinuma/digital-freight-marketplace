@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { Button } from '../../shared/components/index.js';
+import { NotificationBell } from '../notifications/NotificationBell.jsx';
 
 export function TransporterLayout() {
   const { user, logout } = useAuth();
@@ -16,7 +17,7 @@ export function TransporterLayout() {
     <div className="shipper-app transporter-app">
       <header className="shipper-topbar">
         <NavLink className="shipper-brand" to="/transporter" aria-label="EthioFreight home"><span className="shipper-brand__mark">E</span>EthioFreight</NavLink>
-        <div className="shipper-topbar__user"><span className="shipper-avatar">{initials}</span><span>{user?.name || 'Transporter'}</span><Button variant="ghost" size="sm" onClick={handleLogout}>Sign out</Button></div>
+        <div className="shipper-topbar__user"><NotificationBell /><span className="shipper-avatar">{initials}</span><span>{user?.name || 'Transporter'}</span><Button variant="ghost" size="sm" onClick={handleLogout}>Sign out</Button></div>
       </header>
       <div className="shipper-frame">
         <aside className="shipper-sidebar">

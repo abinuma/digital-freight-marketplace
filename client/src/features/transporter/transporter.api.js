@@ -26,16 +26,3 @@ export async function submitBid({ shipmentId, values, bidId }) {
 export async function withdrawBid({ shipmentId, bidId }) {
   return unwrap(await apiClient.patch(`/shipments/${shipmentId}/bids/${bidId}/withdraw`));
 }
-
-export async function getShipmentMessages(shipmentId) {
-  return unwrap(await apiClient.get(`/shipments/${shipmentId}/messages`));
-}
-
-export async function sendShipmentMessage({ shipmentId, content }) {
-  return unwrap(await apiClient.post(`/shipments/${shipmentId}/messages`, { content }));
-}
-
-export async function listNotifications(limit = 10) {
-  const response = await apiClient.get('/notifications', { params: { limit } });
-  return { notifications: response.data.data, pagination: response.data.meta.pagination };
-}

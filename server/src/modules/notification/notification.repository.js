@@ -15,8 +15,8 @@ export function createNotification(data) {
   return prisma.notification.create({ data, select: notificationSelect });
 }
 
-export async function findNotifications(userId, { skip, take }) {
-  const where = { userId };
+export async function findNotifications(userId, { skip, take, unreadOnly }) {
+  const where = { userId, ...(unreadOnly ? { read: false } : {}) };
   const [notifications, total] = await Promise.all([
     prisma.notification.findMany({
       where,

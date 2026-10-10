@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Alert, Badge, Button, Card, Input, Modal, Skeleton, Spinner, Textarea } from '../../../shared/components/index.js';
-import { useAuth } from '../../auth/AuthContext.jsx';
-import { getShipment, getShipmentMessages, listMyBids, sendShipmentMessage, submitBid, withdrawBid } from '../transporter.api.js';
+import { getShipment, listMyBids, submitBid, withdrawBid } from '../transporter.api.js';
+import { ShipmentConversation } from '../../messaging/ShipmentConversation.jsx';
 
 const tones = { DRAFT: 'neutral', PUBLISHED: 'brand', IN_PROGRESS: 'warning', COMPLETED: 'success', CANCELLED: 'danger', PENDING: 'warning', ACCEPTED: 'success', DECLINED: 'danger', WITHDRAWN: 'neutral' };
 const money = (amount) => new Intl.NumberFormat(undefined, { style: 'currency', currency: 'ETB', maximumFractionDigits: 2 }).format(amount);
@@ -16,7 +16,6 @@ const toLocalDateTime = (date) => {
   return value.toISOString().slice(0, 16);
 };
 const bidSchema = z.object({ price: z.coerce.number().positive('Enter an offer greater than zero').max(999_999_999_999.99), pickupDate: z.string().min(1, 'Choose your available pickup date and time').refine((value) => new Date(value).getTime() > Date.now(), 'Pickup time must be in the future'), message: z.string().max(5000) });
-const noMessages = [];
 
 export function ShipmentDetailPage() {
   const { id } = useParams();
@@ -57,7 +56,7 @@ export function ShipmentDetailPage() {
         <div className="shipper-detail-main">
           <Card className="shipper-detail-card"><div className="shipper-panel__heading"><div><h2>Route &amp; cargo</h2><p>Pickup schedule and cargo information</p></div></div><div className="shipper-route"><div className="shipper-route__stop"><span className="shipper-route__dot shipper-route__dot--start" /><div><small>PICKUP</small><strong>{shipment.pickupLocation}</strong>{shipment.pickupLat != null && <small>{Number(shipment.pickupLat).toFixed(4)}, {Number(shipment.pickupLng).toFixed(4)}</small>}</div></div><div className="shipper-route__line" /><div className="shipper-route__stop"><span className="shipper-route__dot shipper-route__dot--end" /><div><small>DELIVERY</small><strong>{shipment.deliveryLocation}</strong>{shipment.deliveryLat != null && <small>{Number(shipment.deliveryLat).toFixed(4)}, {Number(shipment.deliveryLng).toFixed(4)}</small>}</div></div></div><div className="shipper-info-grid"><div><span>Preferred pickup</span><strong>{dateLabel(shipment.pickupDate)}</strong></div><div><span>Category</span><strong>{shipment.goodsType}</strong></div><div><span>Estimated weight</span><strong>{shipment.weightKg} kg</strong></div><div><span>Listing posted</span><strong>{dateLabel(shipment.createdAt)}</strong></div></div>{shipment.specialRequirements && <div className="shipper-requirements"><h3>Special requirements</h3><p>{shipment.specialRequirements}</p></div>}</Card>
           {shipment.images?.length > 0 && <Card className="shipper-detail-card"><div className="shipper-panel__heading"><div><h2>Cargo photos</h2><p>Photos provided with this listing</p></div></div><div className="shipper-gallery">{shipment.images.map((image) => <figure key={image.id}><img src={image.url} alt="Shipment cargo" /></figure>)}</div></Card>}
-          {activeBid && <ConversationPanel shipmentId={id} />}
+          {activeBid && <ShipmentConversation shipmentId={id} />}
         </div>
         <aside className="transporter-offer-column">
           {ownBidQuery.isError && <Alert tone="danger" title="Your bid status could not be checked">{ownBidQuery.error.message}</Alert>}
@@ -68,7 +67,6 @@ export function ShipmentDetailPage() {
     </div>
   );
 }
-
 function BidEditor({ shipmentId, initialBid }) {
   const cache = useQueryClient();
   const [values, setValues] = useState({ price: initialBid ? String(initialBid.price) : '', pickupDate: toLocalDateTime(initialBid?.pickupDate), message: initialBid?.message || '' });
@@ -90,30 +88,4 @@ function BidEditor({ shipmentId, initialBid }) {
     finally { setIsSaving(false); }
   }
   return <Card className="shipper-detail-card transporter-bid-editor"><div className="shipper-panel__heading"><div><h2>{initialBid ? 'Update your offer' : 'Make an offer'}</h2><p>Send the shipper a clear price and pickup time.</p></div></div>{requestError && <Alert tone="danger" title="Your bid could not be saved">{requestError}</Alert>}<form onSubmit={submit} noValidate><label className="shipper-field"><span>Your price (ETB) <i>*</i></span><Input required type="number" min="0.01" step="0.01" value={values.price} onChange={(event) => update('price', event.target.value)} placeholder="Enter your offer" />{errors.price && <small className="shipper-field__error">{errors.price}</small>}</label><label className="shipper-field"><span>Available pickup time <i>*</i></span><Input required type="datetime-local" value={values.pickupDate} onChange={(event) => update('pickupDate', event.target.value)} />{errors.pickupDate && <small className="shipper-field__error">{errors.pickupDate}</small>}</label><label className="shipper-field"><span>Message to shipper</span><Textarea maxLength={5000} value={values.message} onChange={(event) => update('message', event.target.value)} placeholder="Introduce your service or ask a question" />{errors.message && <small className="shipper-field__error">{errors.message}</small>}</label><Button type="submit" disabled={isSaving}>{isSaving ? <><Spinner /> Sending…</> : initialBid ? 'Save offer changes' : 'Submit bid'}</Button></form></Card>;
-}
-
-function ConversationPanel({ shipmentId }) {
-  const { user } = useAuth();
-  const cache = useQueryClient();
-  const [content, setContent] = useState('');
-  const [error, setError] = useState('');
-  const [sending, setSending] = useState(false);
-  const query = useQuery({ queryKey: ['transporter', 'messages', shipmentId], queryFn: () => getShipmentMessages(shipmentId), refetchInterval: 30_000 });
-  const messages = query.data || noMessages;
-  const listRef = useRef(null);
-  useEffect(() => { if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight; }, [messages, listRef]);
-
-  async function send(event) {
-    event.preventDefault();
-    if (!content.trim()) return;
-    setSending(true);
-    setError('');
-    try {
-      await sendShipmentMessage({ shipmentId, content: content.trim() });
-      setContent('');
-      await cache.invalidateQueries({ queryKey: ['transporter', 'messages', shipmentId] });
-    } catch (sendError) { setError(sendError.message); }
-    finally { setSending(false); }
-  }
-  return <Card className="shipper-detail-card transporter-conversation"><div className="shipper-panel__heading"><div><h2>Shipment conversation</h2><p>Coordinate details with the shipper.</p></div></div>{error && <Alert tone="danger">{error}</Alert>}{query.isError && <Alert tone="danger">{query.error.message}</Alert>}<div className="transporter-message-list" ref={listRef}>{query.isPending ? <Skeleton /> : messages.length ? messages.map((message) => <article className={`transporter-message ${message.senderId === user?.id ? 'transporter-message--own' : ''}`} key={message.id}><p>{message.content}</p><time>{new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(message.createdAt))}</time></article>) : <p className="transporter-muted">No messages yet. Start the conversation with the shipper.</p>}</div><form onSubmit={send} className="transporter-message-form"><Textarea aria-label="Message to shipper" maxLength={5000} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Write a message…" /><Button type="submit" disabled={sending || !content.trim()}>{sending ? <Spinner /> : 'Send'}</Button></form></Card>;
 }
