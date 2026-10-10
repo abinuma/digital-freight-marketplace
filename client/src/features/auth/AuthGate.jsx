@@ -1,12 +1,23 @@
 import { useState } from 'react';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { Button } from '../../shared/components/index.js';
 import { useAuth } from './AuthContext.jsx';
 import { ProfileCompletionForm } from './ProfileCompletionForm.jsx';
 
 export function AuthGate() {
-  const { user, isLoading, isError, error, refreshUser, startGoogleSignIn } = useAuth();
+  const { user, isLoading, isError, error, refreshUser, startGoogleSignIn, logout } = useAuth();
+  const location = useLocation();
   const [isStartingSignIn, setIsStartingSignIn] = useState(false);
   const [actionError, setActionError] = useState('');
+
+  async function handleLogout() {
+    setActionError('');
+    try {
+      await logout();
+    } catch (requestError) {
+      setActionError(requestError.message);
+    }
+  }
 
   async function handleGoogleSignIn() {
     setActionError('');
@@ -22,6 +33,13 @@ export function AuthGate() {
 
   if (isLoading) {
     return <main className="landing" aria-live="polite"><p>Checking your sign-in…</p></main>;
+  }
+
+  if (location.pathname === '/' && !isError) {
+    if (!user) return <Navigate to="/login" replace />;
+    if (!user.profileComplete) return <Navigate to="/complete-profile" replace />;
+    const roleHome = { SHIPPER: '/shipper', TRANSPORTER: '/transporter', ADMIN: '/admin' };
+    return <Navigate to={roleHome[user.role] || '/login'} replace />;
   }
 
   if (user && !user.profileComplete) {
@@ -52,10 +70,16 @@ export function AuthGate() {
         </Button>
       )}
       {user && (
-        <div className="availability">
-          <span className="status-dot" aria-hidden="true" />
-          <span>Platform setup in progress</span>
-        </div>
+        <>
+          <div className="availability">
+            <span className="status-dot" aria-hidden="true" />
+            <span>Platform setup in progress</span>
+          </div>
+          <div className="auth-landing-actions">
+            <Link to="/profile">Manage profile</Link>
+            <Button variant="secondary" onClick={handleLogout}>Log out</Button>
+          </div>
+        </>
       )}
       {isError && <Button variant="secondary" className="secondary-button" onClick={() => refreshUser().catch(() => undefined)}>Try again</Button>}
     </main>

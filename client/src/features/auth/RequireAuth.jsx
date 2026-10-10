@@ -21,7 +21,7 @@ export function RequireAuth() {
       </main>
     );
   }
-  if (!isAuthenticated) return <Navigate to="/" replace state={{ from: location }} />;
+  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />;
 
   if (location.pathname === '/complete-profile' && user.profileComplete) {
     return <Navigate to={roleHome[user.role] || '/'} replace />;

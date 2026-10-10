@@ -126,9 +126,12 @@ For validation errors, `details` contains field-level issues:
 |--------|----------|------|-------|-------------|
 | GET | `/users/:id` | Yes | Any | Get user public profile |
 | PATCH | `/users/:id` | Yes | Owner | Update profile (name, phone, location, photo) |
+| POST | `/users/:id/profile-photo` | Yes | Owner | Upload a profile photo to Cloudinary |
 | GET | `/users/:id/vehicle` | Yes | Any | Get transporter's vehicle details |
 | PUT | `/users/:id/vehicle` | Yes | Transporter (owner) | Create or update vehicle details |
 | GET | `/users/:id/reviews` | Yes | Any | Get reviews received by a user |
+
+`POST /users/:id/profile-photo` accepts a single multipart file in the `photo` field. JPEG, PNG, and WebP images are supported up to 5 MB. The endpoint verifies the file signature, requires the authenticated user to match `:id`, and uses the authenticated upload rate limit.
 
 ### 5.3 Shipment Module — `/api/v1/shipments`
 

@@ -2,6 +2,7 @@ import { AppError } from '../../shared/utils/AppError.js';
 import { formatPagination, getPagination } from '../../shared/utils/pagination.js';
 import * as reviewService from '../shipment/review.service.js';
 import * as userRepository from './user.repository.js';
+import * as userStorage from './user.storage.js';
 
 function ensureOwner(actorId, targetId) {
   if (actorId !== targetId) throw new AppError('You can only update your own profile', 403);
@@ -25,6 +26,29 @@ export async function updateProfile(actorId, targetId, input) {
     const { image, ...profile } = user;
     return { ...profile, profilePhoto: image };
   } catch (error) {
+    if (isMissingRecord(error)) throw new AppError('User profile was not found', 404);
+    throw error;
+  }
+}
+
+export async function uploadProfilePhoto(actorId, targetId, file) {
+  ensureOwner(actorId, targetId);
+  const existingProfile = await userRepository.findProfilePhotoByUserId(targetId);
+  if (!existingProfile) throw new AppError('User profile was not found', 404);
+
+  const uploaded = await userStorage.uploadProfilePhoto(file.buffer, targetId);
+  try {
+    const user = await userRepository.updateUserProfile(targetId, { profilePhoto: uploaded.url });
+    const { image, ...profile } = user;
+    if (existingProfile.image && existingProfile.image !== image) {
+      const currentProfile = await userRepository.findProfilePhotoByUserId(targetId);
+      if (currentProfile?.image === image) {
+        await userStorage.deleteManagedProfilePhoto(existingProfile.image, targetId).catch(() => undefined);
+      }
+    }
+    return { ...profile, profilePhoto: image };
+  } catch (error) {
+    await userStorage.deleteUploadedProfilePhoto(uploaded.publicId).catch(() => undefined);
     if (isMissingRecord(error)) throw new AppError('User profile was not found', 404);
     throw error;
   }

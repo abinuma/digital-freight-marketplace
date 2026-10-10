@@ -10,6 +10,21 @@ export async function loginWithEmail(credentials) {
   return data;
 }
 
+export async function registerWithEmail(details) {
+  const { data } = await apiClient.post('/auth/register', details);
+  return data;
+}
+
+export async function requestPasswordReset(email) {
+  const { data } = await apiClient.post('/auth/forgot-password', { email });
+  return data;
+}
+
+export async function resetPassword({ token, newPassword }) {
+  const { data } = await apiClient.post('/auth/reset-password', { token, newPassword });
+  return data;
+}
+
 export async function logoutCurrentUser() {
   const { data } = await apiClient.post('/auth/logout');
   return data;

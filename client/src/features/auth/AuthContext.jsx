@@ -5,6 +5,7 @@ import {
   getCurrentUser,
   loginWithEmail,
   logoutCurrentUser,
+  registerWithEmail,
   startGoogleSignIn as requestGoogleSignIn,
 } from './auth.api.js';
 
@@ -46,6 +47,11 @@ export function AuthProvider({ children }) {
     return refreshUser();
   }, [refreshUser]);
 
+  const register = useCallback(async (details) => {
+    await registerWithEmail(details);
+    return refreshUser();
+  }, [refreshUser]);
+
   const logout = useCallback(async () => {
     await logoutCurrentUser();
     queryClient.clear();
@@ -71,6 +77,7 @@ export function AuthProvider({ children }) {
     isError,
     error: error || null,
     login,
+    register,
     logout,
     refreshUser,
     completeProfile,
@@ -81,6 +88,7 @@ export function AuthProvider({ children }) {
     isError,
     error,
     login,
+    register,
     logout,
     refreshUser,
     completeProfile,

@@ -1,0 +1,36 @@
+.profile-screen { width: min(100% - 2rem, 70rem); margin: 0 auto; padding: 2rem 0 3rem; }
+.profile-screen__header { margin-bottom: 1.5rem; }
+.profile-screen__header .eyebrow { margin: 0 0 0.4rem; }
+.profile-screen__header h1 { margin: 0; color: #202b3c; font-family: var(--font-display); font-size: clamp(1.65rem, 4vw, 2rem); letter-spacing: -0.04em; }
+.profile-screen__header p:last-child { margin: 0.4rem 0 0; color: #778293; }
+.profile-status { margin-bottom: 1rem; }
+.profile-grid { display: grid; grid-template-columns: minmax(15rem, 0.8fr) minmax(0, 1.6fr); align-items: start; gap: 1rem; }
+.profile-card { display: grid; gap: 1rem; padding: clamp(1rem, 3vw, 1.4rem); }
+.profile-card--photo { justify-items: center; text-align: center; }
+.profile-card h2 { justify-self: stretch; margin: 0; color: #28364b; font-family: var(--font-display); font-size: 1rem; }
+.profile-avatar { display: grid; width: 6rem; height: 6rem; overflow: hidden; place-items: center; border-radius: 50%; background: #e7edff; color: #2446b8; font-size: 1.55rem; font-weight: 750; }
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-card__hint { margin: 0; color: #7a8493; font-size: 0.77rem; }
+.profile-photo-form { display: grid; width: 100%; justify-items: stretch; gap: 0.65rem; }
+.profile-photo-form input[type="file"] { width: 100%; color: #586579; font-size: 0.73rem; }
+.profile-photo-form input[type="file"]::file-selector-button { margin-right: 0.5rem; padding: 0.45rem 0.6rem; border: 1px solid #d9dfe7; border-radius: 0.4rem; background: #fff; color: #344155; cursor: pointer; }
+.profile-photo-form > button { width: 100%; }
+.profile-file-name { overflow: hidden; margin: 0; color: #69778b; font-size: 0.72rem; text-overflow: ellipsis; white-space: nowrap; }
+.profile-settings-form { display: grid; gap: 0.9rem; }
+.profile-field { display: grid; gap: 0.35rem; }
+.profile-field label { color: #344155; font-size: 0.8rem; font-weight: 650; }
+.profile-field .ui-input { min-height: 2.65rem; border-color: #d9dfe7; border-radius: 0.45rem; font-size: 0.84rem; }
+.profile-field .ui-input:disabled { background: #f4f5f7; }
+.profile-settings-form > button { justify-self: start; min-width: 9rem; }
+.profile-card--vehicle { grid-column: 2; }
+.profile-loading { display: grid; min-height: 7rem; place-items: center; }
+
+@media (max-width: 767px) {
+  .profile-screen { width: min(100% - 1.25rem, 42rem); padding-top: 1.25rem; }
+  .profile-grid { grid-template-columns: minmax(0, 1fr); }
+  .profile-card--vehicle { grid-column: auto; }
+}
+
+@media (min-width: 1920px) {
+  .profile-screen { width: min(100% - 4rem, 80rem); padding-top: 3rem; }
+}

@@ -17,6 +17,15 @@ export async function updateProfile(req, res, next) {
   }
 }
 
+export async function uploadProfilePhoto(req, res, next) {
+  try {
+    const user = await userService.uploadProfilePhoto(req.user.id, req.params.id, req.file);
+    return res.json({ data: user });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function getVehicle(req, res, next) {
   try {
     return res.json({ data: await userService.getVehicle(req.params.id) });

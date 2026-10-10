@@ -40,6 +40,10 @@ export function updateUserProfile(id, input) {
   return prisma.user.update({ where: { id }, data, select: publicUserSelect });
 }
 
+export function findProfilePhotoByUserId(id) {
+  return prisma.user.findUnique({ where: { id }, select: { image: true } });
+}
+
 export async function findVehicleByUserId(userId) {
   const vehicle = await prisma.vehicle.findUnique({ where: { userId }, select: vehicleSelect });
   return vehicle ? { ...vehicle, capacityTons: Number(vehicle.capacityTons) } : null;

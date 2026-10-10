@@ -222,6 +222,7 @@ Better Auth's credential account is the sole password-hash store. Do not add a d
    |--------|----------|-------------|
    | GET | `/users/:id` | Public profile |
    | PATCH | `/users/:id` | Update profile (owner only) (FR-005) |
+   | POST | `/users/:id/profile-photo` | Upload profile photo (owner only) |
    | GET | `/users/:id/vehicle` | Vehicle details |
    | PUT | `/users/:id/vehicle` | Create/update vehicle (Transporter owner only) (FR-006) |
    | GET | `/users/:id/reviews` | Reviews received |
