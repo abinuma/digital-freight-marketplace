@@ -38,7 +38,7 @@ async function installApiMocks(page, initialRole = null) {
     const method = request.method()
     const user = state.role ? {
       id: `${state.role.toLowerCase()}-test-1`,
-      name: state.role === 'SHIPPER' ? 'Test Shipper' : 'Test Transporter',
+      name: { SHIPPER: 'Test Shipper', TRANSPORTER: 'Test Transporter', ADMIN: 'Test Admin' }[state.role],
       email: 'test@example.com',
       role: state.role,
       profileComplete: true,
@@ -163,7 +163,7 @@ test('log in, browse a shipment, and submit a bid', async ({ page }) => {
   await page.getByLabel('Message to shipper').fill('I can transport this cargo safely.')
   await page.getByRole('button', { name: 'Submit bid' }).click()
 
-  await expect(page.getByRole('heading', { name: 'Your offer' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Your offer', exact: true })).toBeVisible()
   await expect(page.getByText('PENDING')).toBeVisible()
   expect(state.bids).toHaveLength(1)
 })
@@ -185,7 +185,7 @@ test('accept a bid, complete its shipment, and submit a review', async ({ page }
 
   await page.getByRole('button', { name: 'Mark delivered' }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Mark delivered' }).click()
-  await expect(page.getByText('COMPLETED')).toBeVisible()
+  await expect(page.getByText('COMPLETED', { exact: true })).toBeVisible()
   await page.getByRole('radio', { name: '5 stars' }).click()
   await page.getByLabel('Comment').fill('Delivered carefully and on schedule.')
   await page.getByRole('button', { name: 'Submit review' }).click()
@@ -205,10 +205,12 @@ test('admin suspends a user and the suspended account cannot log in', async ({ p
   await page.getByRole('button', { name: 'Suspend', exact: true }).click()
   await page.getByLabel('Reason for suspension').fill('Repeated marketplace policy violations')
   await page.getByRole('dialog').getByRole('button', { name: 'Suspend account' }).click()
-  await expect(page.getByText('SUSPENDED')).toBeVisible()
+  await expect(page.getByText('SUSPENDED', { exact: true })).toBeVisible()
   expect(state.targetSuspended).toBe(true)
 
-  await page.getByRole('button', { name: 'Sign out' }).click()
+  state.role = null
+  await page.reload()
+  await expect(page.getByLabel('Email Address')).toBeVisible()
   await page.getByLabel('Email Address').fill('shipper@example.com')
   await page.getByLabel('Password', { exact: true }).fill('StrongPass1')
   await page.getByRole('button', { name: 'Sign In' }).click()

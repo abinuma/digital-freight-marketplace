@@ -15,7 +15,7 @@ app.disable('x-powered-by');
 app.use(helmet());
 app.use(cors({ origin: config.CORS_ORIGIN, credentials: true }));
 app.use((req, res, next) => {
-  res.on('finish', () => logger.info({ method: req.method, path: req.originalUrl, statusCode: res.statusCode }, 'HTTP request'));
+  res.on('finish', () => logger.info({ method: req.method, path: req.path, statusCode: res.statusCode }, 'HTTP request'));
   next();
 });
 app.use('/api', generalRateLimiter);

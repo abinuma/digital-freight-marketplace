@@ -731,7 +731,11 @@ Perform comprehensive quality assurance, apply all security hardening measures, 
 
 4. **Review rate limiting** — verify all limits match [security.md § 8](./architecture/security.md).
 
+**Progress (2026-10-10):** Code review found and fixed two disclosure risks: HTTP access logs now record the request path without query parameters, and production 5xx responses omit attached error details. `npm audit` reports no vulnerabilities in `client/`; the server has 7 high and 0 critical findings. The registry's automatic remediation proposes downgrading Prisma 7 to 6.19.3 and Nodemon 3 to 1.14.10, which would change the established toolchain. No dependency changes were made; resolve this with a compatible upstream patch or an explicitly approved dependency strategy before marking the audit complete.
+
 #### 8B. Quality Assurance
+
+**Progress (2026-10-10):** Server and client ESLint pass; client Vitest passes (2 tests), and the client production build succeeds with a warning that the main JavaScript chunk is 695.31 kB minified. The server Vitest suite is not green: under the sandbox it failed in default mode with temporary bundled-module `ENOENT` errors; a single-worker run confirmed 65 failures and 11 failed files, primarily because local Supertest sockets are denied (`EACCES`), Neon connections are unavailable, and Cloudinary configuration is invalid for a user-service suite. 44 tests passed and 3 were skipped in that run. On follow-up, `npx playwright test` launched Chromium and the Vite test server but did not return results before it was stopped; no report artifacts were produced. Auth integration tests, explicitly enabled by the local `server/.env`, remain blocked: with a temporary valid-format Cloudinary placeholder they timed out in setup before executing tests. No database writes were knowingly made. Source review shows global focus-visible styles and reusable loading indicators; responsive breakpoints exist, but actual 320px/768px/1920px workflow verification and keyboard accessibility need browser execution. Performance targets and query plans have not been measured against a running API/database.
 
 1. **Run full test suite** — all unit, integration, and E2E tests pass.
 
