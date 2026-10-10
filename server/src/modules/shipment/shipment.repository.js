@@ -42,6 +42,37 @@ export async function findShipments({ where, orderBy, skip, take }) {
   return { shipments, total };
 }
 
+export async function getShipperDashboardSummary(shipperId) {
+  const where = { shipperId, removedAt: null };
+  const [statusGroups, bidsReceived, messages, recentShipments] = await Promise.all([
+    prisma.shipment.groupBy({ by: ['status'], where, _count: { _all: true } }),
+    prisma.bid.count({ where: { shipment: where, status: { not: 'WITHDRAWN' } } }),
+    prisma.message.count({ where: { shipment: where } }),
+    prisma.shipment.findMany({
+      where,
+      select: shipmentListSelect,
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      take: 5,
+    }),
+  ]);
+
+  const recentBidGroups = recentShipments.length
+    ? await prisma.bid.groupBy({
+      by: ['shipmentId'],
+      where: { shipmentId: { in: recentShipments.map(({ id }) => id) }, status: { not: 'WITHDRAWN' } },
+      _count: { _all: true },
+    })
+    : [];
+
+  return {
+    statusCounts: statusGroups.map(({ status, _count }) => ({ status, count: _count._all })),
+    bidsReceived,
+    messages,
+    recentShipments,
+    recentBidCounts: Object.fromEntries(recentBidGroups.map(({ shipmentId, _count }) => [shipmentId, _count._all])),
+  };
+}
+
 export async function findAdminShipments({ status, orderBy, skip, take }) {
   const where = status ? { status } : {};
   const [shipments, total] = await Promise.all([

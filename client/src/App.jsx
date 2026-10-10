@@ -2,6 +2,8 @@ import './App.css';
 import './shared/components/components.css';
 import './features/auth/auth-pages.css';
 import './features/profile/profile.css';
+import './features/shipper/shipper.css';
+import 'leaflet/dist/leaflet.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './features/auth/AuthContext.jsx';
@@ -14,6 +16,11 @@ import { ResetPasswordPage } from './features/auth/ResetPasswordPage.jsx';
 import { RequireAuth } from './features/auth/RequireAuth.jsx';
 import { RequireRole } from './features/auth/RequireRole.jsx';
 import { ProfilePage } from './features/profile/ProfilePage.jsx';
+import { ShipperLayout } from './features/shipper/ShipperLayout.jsx';
+import { ShipperDashboardPage } from './features/shipper/pages/ShipperDashboardPage.jsx';
+import { ShipmentListPage } from './features/shipper/pages/ShipmentListPage.jsx';
+import { ShipmentFormPage } from './features/shipper/pages/ShipmentFormPage.jsx';
+import { ShipmentDetailPage } from './features/shipper/pages/ShipmentDetailPage.jsx';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,7 +48,13 @@ function App() {
               <Route path="/complete-profile" element={<AuthGate />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route element={<RequireRole roles="SHIPPER" />}>
-                <Route path="/shipper/*" element={<AuthGate />} />
+                <Route path="/shipper" element={<ShipperLayout />}>
+                  <Route index element={<ShipperDashboardPage />} />
+                  <Route path="shipments" element={<ShipmentListPage />} />
+                  <Route path="shipments/new" element={<ShipmentFormPage />} />
+                  <Route path="shipments/:id" element={<ShipmentDetailPage />} />
+                  <Route path="shipments/:id/edit" element={<ShipmentFormPage />} />
+                </Route>
               </Route>
               <Route element={<RequireRole roles="TRANSPORTER" />}>
                 <Route path="/transporter/*" element={<AuthGate />} />

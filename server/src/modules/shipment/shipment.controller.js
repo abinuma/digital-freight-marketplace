@@ -18,6 +18,15 @@ export async function listShipments(req, res, next) {
   }
 }
 
+export async function getShipperDashboardSummary(req, res, next) {
+  try {
+    const summary = await shipmentService.getShipperDashboardSummary(req.user);
+    return res.json({ data: summary });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function getShipment(req, res, next) {
   try {
     const shipment = await shipmentService.getShipment(req.user, req.params.id);

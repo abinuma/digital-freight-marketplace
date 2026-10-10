@@ -135,7 +135,9 @@ For validation errors, `details` contains field-level issues:
 
 ### 5.3 Shipment Module — `/api/v1/shipments`
 
-`GET /shipments` accepts `page` and `limit` (default `1` and `20`), `pickupLocation` and `deliveryLocation` (case-insensitive partial matches), `goodsType` (case-insensitive exact match), `pickupDateFrom` and `pickupDateTo` (inclusive `YYYY-MM-DD` bounds), and `q` (case-insensitive search across goods description and special requirements). `sortBy` accepts `createdAt` (default, newest first) or `pickupDate` (earliest first). Results remain scoped by role: Transporters see only `PUBLISHED` shipments and Shippers see only their own shipments.
+`GET /shipments` accepts `page` and `limit` (default `1` and `20`), `pickupLocation` and `deliveryLocation` (case-insensitive partial matches), `goodsType` (case-insensitive exact match), `pickupDateFrom` and `pickupDateTo` (inclusive `YYYY-MM-DD` bounds), and `q` (case-insensitive search across goods description and special requirements). `sortBy` accepts `createdAt` (default, newest first) or `pickupDate` (earliest first). Shippers may also filter their own shipments by `status` (`DRAFT`, `PUBLISHED`, `IN_PROGRESS`, `COMPLETED`, or `CANCELLED`). Results remain scoped by role: Transporters see only `PUBLISHED` shipments and Shippers see only their own shipments.
+
+`GET /shipments/dashboard/summary` is restricted to Shippers and returns status counts, non-withdrawn bid and shipment-message totals, and the five most recently created owned shipments with their non-withdrawn bid counts. The message total is cumulative; it is not an unread-message count.
 
 `POST /shipments/:id/images` accepts multipart form data with one or more files in the `images` field. JPEG, PNG, and WebP files are allowed up to 5 MB each, with at most 5 images stored per shipment. `DELETE /shipments/:id/images/:imageId` removes an image owned by that shipment. Uploads are limited to 20 requests per authenticated user per minute.
 
@@ -143,6 +145,7 @@ For validation errors, `details` contains field-level issues:
 |--------|----------|------|-------|-------------|
 | POST | `/shipments` | Yes | Shipper | Create a new shipment (DRAFT) |
 | GET | `/shipments` | Yes | Any | List/search shipments (Transporters see PUBLISHED; Shippers see own) |
+| GET | `/shipments/dashboard/summary` | Yes | Shipper | Get own shipment, bid, and message counts plus recent shipments |
 | GET | `/shipments/:id` | Yes | Any | Get shipment detail |
 | PATCH | `/shipments/:id` | Yes | Shipper (owner) | Update shipment fields |
 | PATCH | `/shipments/:id/publish` | Yes | Shipper (owner) | Publish a DRAFT shipment |

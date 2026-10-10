@@ -627,10 +627,10 @@ Build the complete React frontend — all pages, components, API integration, an
 
 #### 7C. Shipper Pages
 
-1. **Shipper dashboard** — Overview of own shipments (by status), received bids count, messages per FR-107.
+1. **Shipper dashboard** — Overview of own shipments (by status), received bids count, messages per FR-107. The authenticated dashboard summary endpoint provides these totals and the latest five shipments; message totals are cumulative, not unread counts.
 2. **Create/Edit shipment form** — All fields from FR-101, map picker (Leaflet) for locations, date picker, image upload (drag-and-drop or file input), save as draft or publish.
 3. **Shipment detail page** — Full info, images, status badge, action buttons (publish, cancel, complete), list of received bids with Transporter profile/rating, accept/decline bid buttons.
-4. **My shipments list** — Paginated, filterable by status.
+4. **My shipments list** — Paginated, filterable by status through the shipper-scoped `status` query on `GET /shipments`.
 
 #### 7D. Transporter Pages
 

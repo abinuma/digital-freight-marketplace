@@ -53,6 +53,7 @@ export const shipmentListQuerySchema = {
   query: z.object({
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
+    status: z.enum(['DRAFT', 'PUBLISHED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
     pickupLocation: z.string().trim().min(1).max(255).optional(),
     deliveryLocation: z.string().trim().min(1).max(255).optional(),
     goodsType: z.string().trim().min(1).max(50).optional(),

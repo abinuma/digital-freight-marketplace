@@ -16,6 +16,7 @@ import { createShipmentReviewSchema, shipmentReviewsSchema } from './review.vali
 
 const router = Router();
 
+router.get('/dashboard/summary', authorize('SHIPPER'), shipmentController.getShipperDashboardSummary);
 router.post('/', authorize('SHIPPER'), validate(createShipmentSchema), shipmentController.createShipment);
 router.get('/', validate(shipmentListQuerySchema), shipmentController.listShipments);
 router.post('/:shipmentId/reviews', validate(createShipmentReviewSchema), reviewController.createShipmentReview);

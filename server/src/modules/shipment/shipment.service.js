@@ -31,6 +31,7 @@ export async function listShipments(user, query) {
   if (query.pickupLocation) filters.push({ pickupLocation: { contains: query.pickupLocation, mode: 'insensitive' } });
   if (query.deliveryLocation) filters.push({ deliveryLocation: { contains: query.deliveryLocation, mode: 'insensitive' } });
   if (query.goodsType) filters.push({ goodsType: { equals: query.goodsType, mode: 'insensitive' } });
+  if (query.status && user.role === 'SHIPPER') filters.push({ status: query.status });
 
   if (query.pickupDateFrom || query.pickupDateTo) {
     filters.push({
@@ -62,6 +63,29 @@ export async function listShipments(user, query) {
   return {
     shipments: shipments.map(toApiShipment),
     pagination: formatPagination({ page, limit, total }),
+  };
+}
+
+export async function getShipperDashboardSummary(user) {
+  if (user.role !== 'SHIPPER') throw new AppError('Only Shippers can view the shipper dashboard', 403);
+  const summary = await shipmentRepository.getShipperDashboardSummary(user.id);
+  const counts = { DRAFT: 0, PUBLISHED: 0, IN_PROGRESS: 0, COMPLETED: 0, CANCELLED: 0 };
+  for (const { status, count } of summary.statusCounts) counts[status] = count;
+
+  return {
+    counts: {
+      drafts: counts.DRAFT,
+      activePostings: counts.PUBLISHED,
+      inTransit: counts.IN_PROGRESS,
+      completed: counts.COMPLETED,
+      cancelled: counts.CANCELLED,
+      bidsReceived: summary.bidsReceived,
+      messages: summary.messages,
+    },
+    recentShipments: summary.recentShipments.map((shipment) => ({
+      ...toApiShipment(shipment),
+      bidCount: summary.recentBidCounts[shipment.id] || 0,
+    })),
   };
 }
 
