@@ -58,5 +58,6 @@ export const myBidsQuerySchema = {
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
     status: z.enum(['PENDING', 'ACCEPTED', 'DECLINED', 'WITHDRAWN']).optional(),
+    shipmentId: bidId.optional(),
   }),
 };

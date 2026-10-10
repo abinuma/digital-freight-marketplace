@@ -149,6 +149,13 @@ export function findShipmentById(id) {
   });
 }
 
+export function hasTransporterBid(shipmentId, transporterId) {
+  return prisma.bid.findFirst({
+    where: { shipmentId, transporterId, status: { in: ['PENDING', 'ACCEPTED'] } },
+    select: { id: true },
+  });
+}
+
 export function findShipmentForUpdate(id) {
   return prisma.shipment.findUnique({
     where: { id },

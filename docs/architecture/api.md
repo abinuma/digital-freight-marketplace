@@ -139,6 +139,8 @@ For validation errors, `details` contains field-level issues:
 
 `GET /shipments/dashboard/summary` is restricted to Shippers and returns status counts, non-withdrawn bid and shipment-message totals, and the five most recently created owned shipments with their non-withdrawn bid counts. The message total is cumulative; it is not an unread-message count.
 
+`GET /shipments/:id` is available to the owning Shipper, Admins, and Transporters for published shipments or shipments where they have a pending or accepted bid.
+
 `POST /shipments/:id/images` accepts multipart form data with one or more files in the `images` field. JPEG, PNG, and WebP files are allowed up to 5 MB each, with at most 5 images stored per shipment. `DELETE /shipments/:id/images/:imageId` removes an image owned by that shipment. Uploads are limited to 20 requests per authenticated user per minute.
 
 | Method | Endpoint | Auth | Roles | Description |
@@ -146,7 +148,7 @@ For validation errors, `details` contains field-level issues:
 | POST | `/shipments` | Yes | Shipper | Create a new shipment (DRAFT) |
 | GET | `/shipments` | Yes | Any | List/search shipments (Transporters see PUBLISHED; Shippers see own) |
 | GET | `/shipments/dashboard/summary` | Yes | Shipper | Get own shipment, bid, and message counts plus recent shipments |
-| GET | `/shipments/:id` | Yes | Any | Get shipment detail |
+| GET | `/shipments/:id` | Yes | Shipper (owner), Admin, or Transporter (published shipment or own pending/accepted bid) | Get shipment detail |
 | PATCH | `/shipments/:id` | Yes | Shipper (owner) | Update shipment fields |
 | PATCH | `/shipments/:id/publish` | Yes | Shipper (owner) | Publish a DRAFT shipment |
 | PATCH | `/shipments/:id/cancel` | Yes | Shipper (owner) | Cancel a shipment |
@@ -162,7 +164,7 @@ Bids are nested under shipments since they exist in that context.
 |--------|----------|------|-------|-------------|
 | POST | `/shipments/:shipmentId/bids` | Yes | Transporter | Submit a bid |
 | GET | `/shipments/:shipmentId/bids` | Yes | Shipper (owner) | List all bids on a shipment |
-|  GET | `/bids/my` | Yes | Transporter | List current transporter's bids across all shipments |
+| GET | `/bids/my` | Yes | Transporter | List own bids; supports status, shipmentId, page, and limit filters |
 | GET | `/shipments/:shipmentId/bids/:id` | Yes | Shipper (owner) or Transporter (owner) | Get bid detail |
 | PATCH | `/shipments/:shipmentId/bids/:id` | Yes | Transporter (owner) | Update bid (price, date, message) |
 | PATCH | `/shipments/:shipmentId/bids/:id/withdraw` | Yes | Transporter (owner) | Withdraw a bid |

@@ -96,7 +96,11 @@ export async function listMyBids(user, query = {}) {
   if (user.role !== 'TRANSPORTER') throw new AppError('Only Transporters can view their bids', 403);
 
   const { page, limit, skip, take } = getPagination(query);
-  const where = { transporterId: user.id, ...(query.status ? { status: query.status } : {}) };
+  const where = {
+    transporterId: user.id,
+    ...(query.status ? { status: query.status } : {}),
+    ...(query.shipmentId ? { shipmentId: query.shipmentId } : {}),
+  };
   const orderBy = [{ createdAt: 'desc' }, { id: 'asc' }];
   const { bids, total } = await bidRepository.findTransporterBids({ where, orderBy, skip, take });
 

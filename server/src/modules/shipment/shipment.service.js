@@ -141,7 +141,11 @@ export async function getShipment(user, id) {
   const shipment = await shipmentRepository.findShipmentById(id);
   if (!shipment || (shipment.removedAt && user.role !== 'ADMIN')) throw new AppError('Shipment was not found', 404);
 
-  const canView = shipment.shipperId === user.id || shipment.status === 'PUBLISHED' || user.role === 'ADMIN';
+  const normallyVisible = shipment.shipperId === user.id || shipment.status === 'PUBLISHED' || user.role === 'ADMIN';
+  const hasTransporterBid = !normallyVisible && user.role === 'TRANSPORTER'
+    ? await shipmentRepository.hasTransporterBid(id, user.id)
+    : false;
+  const canView = normallyVisible || Boolean(hasTransporterBid);
   if (!canView) throw new AppError('You are not authorized to view this shipment', 403);
 
   return toApiShipment(shipment);

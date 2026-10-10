@@ -21,6 +21,12 @@ import { ShipperDashboardPage } from './features/shipper/pages/ShipperDashboardP
 import { ShipmentListPage } from './features/shipper/pages/ShipmentListPage.jsx';
 import { ShipmentFormPage } from './features/shipper/pages/ShipmentFormPage.jsx';
 import { ShipmentDetailPage } from './features/shipper/pages/ShipmentDetailPage.jsx';
+import './features/transporter/transporter.css';
+import { TransporterLayout } from './features/transporter/TransporterLayout.jsx';
+import { TransporterDashboardPage } from './features/transporter/pages/TransporterDashboardPage.jsx';
+import { ShipmentDiscoveryPage } from './features/transporter/pages/ShipmentDiscoveryPage.jsx';
+import { MyBidsPage } from './features/transporter/pages/MyBidsPage.jsx';
+import { ShipmentDetailPage as TransporterShipmentDetailPage } from './features/transporter/pages/ShipmentDetailPage.jsx';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,7 +63,12 @@ function App() {
                 </Route>
               </Route>
               <Route element={<RequireRole roles="TRANSPORTER" />}>
-                <Route path="/transporter/*" element={<AuthGate />} />
+                <Route path="/transporter" element={<TransporterLayout />}>
+                  <Route index element={<TransporterDashboardPage />} />
+                  <Route path="shipments" element={<ShipmentDiscoveryPage />} />
+                  <Route path="shipments/:id" element={<TransporterShipmentDetailPage />} />
+                  <Route path="bids" element={<MyBidsPage />} />
+                </Route>
               </Route>
               <Route element={<RequireRole roles="ADMIN" />}>
                 <Route path="/admin/*" element={<AuthGate />} />

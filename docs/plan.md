@@ -634,10 +634,10 @@ Build the complete React frontend — all pages, components, API integration, an
 
 #### 7D. Transporter Pages
 
-1. **Transporter dashboard** — Overview of submitted bids (by status), available shipments count, messages.
+1. **Transporter dashboard** — Overview of submitted bids (by status), available shipments count, and recent shipment-message notifications.
 2. **Shipment discovery page** — Paginated list + map view (Leaflet) of PUBLISHED shipments, filter sidebar (pickup location, delivery location, goods type, date range), search bar per FR-200-205.
-3. **Shipment detail page** — Full info, bid form (if no active bid), own bid status/details, messaging thread.
-4. **My bids list** — Paginated, filterable by status.
+3. **Shipment detail page** — Full info, bid form (if no active bid), own bid status/details, and a messaging thread for transporters with a pending or accepted bid.
+4. **My bids list** — Paginated, filterable by status; the `/bids/my` endpoint also supports filtering to one shipment.
 
 #### 7E. Admin Pages
 
