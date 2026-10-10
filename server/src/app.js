@@ -9,6 +9,7 @@ import { generalRateLimiter } from './shared/middleware/rateLimiter.js';
 import { notFound } from './shared/middleware/notFound.js';
 import { logger } from './shared/utils/logger.js';
 import apiRouter from './index.js';
+import apiDocsRouter from './modules/api-docs/api-docs.routes.js';
 
 export const app = express();
 app.disable('x-powered-by');
@@ -19,6 +20,8 @@ app.use((req, res, next) => {
   next();
 });
 app.use('/api', generalRateLimiter);
+
+app.use('/api/docs', apiDocsRouter);
 
 // Better Auth must receive the request before Express body parsers consume it.
 app.all('/api/auth/*splat', toNodeHandler(auth));

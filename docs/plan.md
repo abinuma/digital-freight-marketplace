@@ -756,6 +756,8 @@ Perform comprehensive quality assurance, apply all security hardening measures, 
 
 #### 8C. API Documentation
 
+**Progress (2026-10-10):** Added an OpenAPI 3.1 document covering 37 paths and 45 operations across implemented API groups, including request inputs, cookie authentication, and standard responses. Added `/api/docs` Swagger UI and `/api/docs/json`. Verified all operation parameter/response component references and confirmed server ESLint passes. Updated deployment docs and root `.env.example` to include Better Auth URL and Google OAuth configuration required by the implemented auth provider.
+
 1. **Generate/finalize OpenAPI specification** per [api.md § 9](./architecture/api.md).
    - All endpoints documented with request/response schemas.
    - Swagger UI available at `/api/docs`.

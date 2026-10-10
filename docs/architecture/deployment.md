@@ -30,6 +30,9 @@ All configuration is driven by environment variables — no secrets in source co
 |----------|---------|-----------|
 | `DATABASE_URL` | Neon PostgreSQL connection URI with TLS | API host / `server/.env` |
 | `BETTER_AUTH_SECRET` | (random 64-char string) | API host / `.env` |
+| `BETTER_AUTH_URL` | `http://localhost:5000` locally; deployed API origin in hosted environments | API host / `server/.env` |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID | API host / `server/.env` |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | API host / `server/.env` |
 | `CORS_ORIGIN` | `https://app.example.com` | API host / `.env` |
 | `CLOUDINARY_URL` | `cloudinary://key:secret@cloud` | API host / `.env` |
 | `BREVO_API_KEY` | Brevo transactional email API key | API host / `server/.env` |
