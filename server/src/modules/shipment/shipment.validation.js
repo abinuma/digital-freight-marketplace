@@ -3,6 +3,7 @@ import { z } from 'zod';
 const shipmentId = z.uuid();
 
 const coordinate = (minimum, maximum) => z.number().min(minimum).max(maximum).optional();
+const pickupDate = z.iso.date().refine((date) => date >= new Date().toISOString().slice(0, 10), 'pickupDate must be today or later');
 
 export const createShipmentSchema = {
   body: z.object({
@@ -15,7 +16,7 @@ export const createShipmentSchema = {
     deliveryLocation: z.string().trim().min(1).max(255),
     deliveryLat: coordinate(-90, 90),
     deliveryLng: coordinate(-180, 180),
-    pickupDate: z.iso.date(),
+    pickupDate,
     specialRequirements: z.string().trim().max(2000).optional(),
   }),
 };
@@ -31,7 +32,7 @@ const updateShipmentBody = z
     deliveryLocation: z.string().trim().min(1).max(255).optional(),
     deliveryLat: coordinate(-90, 90).nullable(),
     deliveryLng: coordinate(-180, 180).nullable(),
-    pickupDate: z.iso.date().optional(),
+    pickupDate: pickupDate.optional(),
     specialRequirements: z.string().trim().max(2000).nullable().optional(),
   })
   .refine((body) => Object.keys(body).length > 0, 'Provide at least one shipment field to update');

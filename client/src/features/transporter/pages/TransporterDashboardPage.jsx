@@ -12,9 +12,9 @@ const metrics = [
 
 export function TransporterDashboardPage() {
   const results = useQueries({ queries: [
-    ...metrics.map(({ key }) => ({ queryKey: ['transporter', 'bidCount', key], queryFn: () => listMyBids({ status: key, limit: 1 }) })),
-    { queryKey: ['transporter', 'availableCount'], queryFn: () => listAvailableShipments({ limit: 1 }) },
-    { queryKey: ['notifications', 'recent'], queryFn: () => listNotifications({ limit: 12 }) },
+    ...metrics.map(({ key }) => ({ queryKey: ['transporter', 'bidCount', key], queryFn: () => listMyBids({ status: key, limit: 1 }), refetchInterval: 15_000 })),
+    { queryKey: ['transporter', 'availableCount'], queryFn: () => listAvailableShipments({ limit: 1 }), refetchInterval: 15_000 },
+    { queryKey: ['notifications', 'recent'], queryFn: () => listNotifications({ limit: 12 }), refetchInterval: 15_000 },
   ] });
   const error = results.find((query) => query.isError);
   const recent = (results[4].data?.notifications || []).slice(0, 6);

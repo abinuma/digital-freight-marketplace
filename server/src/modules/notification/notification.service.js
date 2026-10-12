@@ -125,32 +125,28 @@ export function shipmentRemoved(shipmentId, transporterIds) {
   });
 }
 
-export function newMessage(shipmentId, senderId, content) {
+export function newMessage(conversationId, shipmentId, transporterId, senderId, content) {
   return safely('NEW_MESSAGE', async () => {
-    const details = await notificationRepository.findMessageNotificationDetails(shipmentId, senderId);
+    const details = await notificationRepository.findMessageNotificationDetails(shipmentId, transporterId, senderId);
     if (!details) return;
     const fromShipper = senderId === details.shipment.shipperId;
-    const activeTransporters = details.shipment.bids.map(({ transporter }) => transporter);
-    const inAppRecipients = fromShipper ? activeTransporters : [details.shipment.shipper];
-    await Promise.all(inAppRecipients.map((recipient) => saveInAppNotification({
+    const transporter = details.shipment.bids[0]?.transporter;
+    const recipient = fromShipper ? transporter : details.shipment.shipper;
+    if (!recipient) return;
+    await saveInAppNotification({
       userId: recipient.id,
       type: 'NEW_MESSAGE',
       title: `New message about ${details.shipment.goodsDescription}`,
       message: `${details.sender?.name || 'A participant'} sent a message about your shipment.`,
-      referenceId: shipmentId,
-    })));
+      referenceId: conversationId,
+    });
 
-    // Email to a shipper's message goes only to the accepted transporter, as configured for this project.
-    const acceptedTransporter = details.shipment.bids.find(({ status }) => status === 'ACCEPTED')?.transporter;
-    const emailRecipient = fromShipper ? acceptedTransporter : details.shipment.shipper;
-    if (emailRecipient) {
-      await notify(emailRecipient, {
-        type: 'NEW_MESSAGE',
-        shipment: details.shipment,
-        senderName: details.sender?.name,
-        content,
-      });
-    }
+    await notify(recipient, {
+      type: 'NEW_MESSAGE',
+      shipment: details.shipment,
+      senderName: details.sender?.name,
+      content,
+    });
   });
 }
 

@@ -1,13 +1,13 @@
 import { z } from 'zod';
 
-const shipmentId = z.uuid();
+const conversationId = z.uuid();
 
-export const shipmentMessagesSchema = {
-  params: z.object({ shipmentId }),
+export const conversationMessagesSchema = {
+  params: z.object({ conversationId }),
 };
 
 export const createMessageSchema = {
-  params: z.object({ shipmentId }),
+  params: z.object({ conversationId }),
   body: z.object({
     content: z.string().trim().min(1).max(5000),
   }),

@@ -13,7 +13,7 @@ const statusTone = { DRAFT: 'neutral', PUBLISHED: 'brand', IN_PROGRESS: 'warning
 const shortDate = (date) => date ? new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(date)) : '—';
 
 export function ShipperDashboardPage() {
-  const query = useQuery({ queryKey: ['shipper', 'dashboard'], queryFn: getDashboardSummary });
+  const query = useQuery({ queryKey: ['shipper', 'dashboard'], queryFn: getDashboardSummary, refetchInterval: 15_000 });
   const summary = query.data;
 
   return (

@@ -47,16 +47,17 @@ model User {
   createdAt        DateTime   @default(now()) @db.Timestamp(3)
   updatedAt        DateTime   @updatedAt @db.Timestamp(3)
 
-  vehicle             Vehicle?
-  shipments           Shipment[]
-  bids                Bid[]
-  messages            Message[]
-  reviewsGiven        Review[]             @relation("ReviewReviewer")
-  reviewsReceived     Review[]             @relation("ReviewReviewee")
-  notifications       Notification[]
-  shipmentModerations ShipmentModeration[] @relation("ShipmentModeratedBy")
-  sessions            Session[]
-  accounts            Account[]
+  vehicle                    Vehicle?
+  shipments                  Shipment[]
+  bids                       Bid[]
+  messages                   Message[]
+  conversationsAsTransporter Conversation[]       @relation("ConversationTransporter")
+  reviewsGiven               Review[]             @relation("ReviewReviewer")
+  reviewsReceived            Review[]             @relation("ReviewReviewee")
+  notifications              Notification[]
+  shipmentModerations        ShipmentModeration[] @relation("ShipmentModeratedBy")
+  sessions                   Session[]
+  accounts                   Account[]
 
   @@index([role, status], map: "idx_user_role_status")
 }
@@ -96,6 +97,7 @@ model Shipment {
   images            ShipmentImage[]
   bids              Bid[]
   messages          Message[]
+  conversations     Conversation[]
   reviews           Review[]
   moderationActions ShipmentModeration[]
 
@@ -151,16 +153,34 @@ model Bid {
 }
 
 model Message {
-  id         String   @id @default(uuid()) @db.Uuid
-  shipmentId String   @db.Uuid
-  senderId   String   @db.Uuid
-  content    String   @db.Text
-  createdAt  DateTime @default(now()) @db.Timestamp(3)
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String?  @db.Uuid
+  shipmentId     String   @db.Uuid
+  senderId       String   @db.Uuid
+  content        String   @db.Text
+  createdAt      DateTime @default(now()) @db.Timestamp(3)
 
-  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
-  sender   User     @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  shipment     Shipment      @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  sender       User          @relation(fields: [senderId], references: [id], onDelete: Restrict)
 
   @@index([shipmentId, createdAt], map: "idx_message_shipment")
+}
+
+model Conversation {
+  id            String   @id @default(uuid()) @db.Uuid
+  shipmentId    String   @db.Uuid
+  transporterId String   @db.Uuid
+  createdAt     DateTime @default(now()) @db.Timestamp(3)
+  updatedAt     DateTime @updatedAt @db.Timestamp(3)
+
+  shipment    Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  transporter User      @relation("ConversationTransporter", fields: [transporterId], references: [id], onDelete: Restrict)
+  messages    Message[]
+
+  @@unique([shipmentId, transporterId], map: "idx_conversation_shipment_transporter")
+  @@index([transporterId, updatedAt(sort: Desc)], map: "idx_conversation_transporter_updated")
+  @@index([shipmentId, updatedAt(sort: Desc)], map: "idx_conversation_shipment_updated")
 }
 
 model Review {

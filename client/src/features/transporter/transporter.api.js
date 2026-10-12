@@ -3,7 +3,8 @@ import { apiClient } from '../../shared/api/client.js';
 const unwrap = (response) => response.data.data;
 
 export async function listAvailableShipments(params) {
-  const response = await apiClient.get('/shipments', { params });
+  const query = Object.fromEntries(Object.entries(params).filter(([, value]) => value !== '' && value != null));
+  const response = await apiClient.get('/shipments', { params: query });
   return { shipments: response.data.data, pagination: response.data.meta.pagination };
 }
 

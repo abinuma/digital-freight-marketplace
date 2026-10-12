@@ -14,7 +14,7 @@ export function ShipmentDiscoveryPage() {
   const [page, setPage] = useState(1);
   const [view, setView] = useState('list');
   const [filterError, setFilterError] = useState('');
-  const query = useQuery({ queryKey: ['transporter', 'discover', filters, page], queryFn: () => listAvailableShipments({ ...filters, page, limit: 10 }) });
+  const query = useQuery({ queryKey: ['transporter', 'discover', filters, page], queryFn: () => listAvailableShipments({ ...filters, page, limit: 10 }), refetchInterval: 15_000 });
   const shipments = query.data?.shipments || [];
 
   function updateDraft(name, value) { setDraft((current) => ({ ...current, [name]: value })); }

@@ -26,6 +26,7 @@ export function TransporterLayout() {
             <NavLink end to="/transporter">▦ <span>Dashboard</span></NavLink>
             <NavLink to="/transporter/shipments">⌕ <span>Find shipments</span></NavLink>
             <NavLink to="/transporter/bids">▤ <span>My bids</span></NavLink>
+            <NavLink to="/transporter/messages">✉ <span>Messages</span></NavLink>
             <NavLink to="/profile">◉ <span>My profile</span></NavLink>
           </nav>
           <div className="shipper-sidebar__help"><span>Need help?</span><small>We’re here to help with your deliveries.</small></div>

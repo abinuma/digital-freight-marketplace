@@ -1,4 +1,3 @@
-.transporter-app .shipper-sidebar nav a.active { box-shadow: inset 3px 0 #6b8cff; }
 .transporter-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .transporter-dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(16rem, .75fr); gap: 1rem; align-items: stretch; }
 .transporter-dashboard-grid > .shipper-panel { align-content: start; }

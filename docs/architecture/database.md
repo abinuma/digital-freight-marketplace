@@ -182,12 +182,27 @@ Owned by: `messaging` module
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | id | UUID | PK | Unique message identifier |
+| conversationId | UUID | FK → Conversation.id, NULL for ambiguous legacy messages | Private shipper/transporter thread |
 | shipmentId | UUID | FK → Shipment.id, NOT NULL | Shipment context |
 | senderId | UUID | FK → User.id, NOT NULL | User who sent the message |
 | content | TEXT | NOT NULL | Message body |
 | createdAt | TIMESTAMP | NOT NULL | Sent timestamp |
 
-### 3.7 Review
+### 3.7 Conversation
+
+Owned by: `messaging` module. One conversation exists for each shipment/transporter pair; its shipper is the shipment owner.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PK | Unique conversation identifier |
+| shipmentId | UUID | FK → Shipment.id, NOT NULL | Shipment being discussed |
+| transporterId | UUID | FK → User.id, NOT NULL | Private transporter participant |
+| createdAt | TIMESTAMP | NOT NULL | Conversation creation time |
+| updatedAt | TIMESTAMP | NOT NULL | Last conversation activity, used for ordering |
+
+**Unique constraint:** `(shipmentId, transporterId)` prevents two private conversations for the same pair.
+
+### 3.8 Review
 
 Owned by: `shipment` module (post-completion)
 
@@ -203,7 +218,7 @@ Owned by: `shipment` module (post-completion)
 
 **Unique constraint:** `(shipmentId, reviewerId)` — one review per user per shipment.
 
-### 3.8 Notification
+### 3.9 Notification
 
 Owned by: `notification` module
 
@@ -237,6 +252,10 @@ Indexes are created to support the primary query patterns identified in the func
 | Bid | `idx_bid_transporter` | transporterId | Transporter's bid history |
 | Bid | `idx_bid_shipment_transporter` | shipmentId, transporterId | Unique active bid check |
 | Message | `idx_message_shipment` | shipmentId, createdAt | Message thread loading |
+| Message | `idx_message_conversation_created` | conversationId, createdAt | Private thread loading |
+| Conversation | `idx_conversation_shipment_transporter` | shipmentId, transporterId | One conversation per shipper/transporter pair |
+| Conversation | `idx_conversation_transporter_updated` | transporterId, updatedAt DESC | Transporter conversation list |
+| Conversation | `idx_conversation_shipment_updated` | shipmentId, updatedAt DESC | Shipper conversation list |
 | Notification | `idx_notification_user` | userId, read, createdAt DESC | User's notification list |
 | Review | `idx_review_reviewee` | revieweeId | Profile rating calculation |
 
@@ -252,6 +271,7 @@ Each module owns specific tables. No module writes directly to another module's 
 | shipment | Shipment, ShipmentImage, Review |
 | bid | Bid |
 | messaging | Message |
+| messaging | Conversation |
 | notification | Notification |
 | admin | No owned tables — reads from auth and shipment tables via their services |
 

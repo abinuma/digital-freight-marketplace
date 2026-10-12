@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Alert, Badge, Button, Card, Input, Modal, Skeleton, Spinner, Textarea } from '../../../shared/components/index.js';
 import { getShipment, listMyBids, submitBid, withdrawBid } from '../transporter.api.js';
-import { ShipmentConversation } from '../../messaging/ShipmentConversation.jsx';
 import { ShipmentReviews } from '../../shipper/components/ShipmentReviews.jsx';
 
 const tones = { DRAFT: 'neutral', PUBLISHED: 'brand', IN_PROGRESS: 'warning', COMPLETED: 'success', CANCELLED: 'danger', PENDING: 'warning', ACCEPTED: 'success', DECLINED: 'danger', WITHDRAWN: 'neutral' };
@@ -24,8 +23,8 @@ export function ShipmentDetailPage() {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [actionError, setActionError] = useState('');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
-  const shipmentQuery = useQuery({ queryKey: ['transporter', 'shipment', id], queryFn: () => getShipment(id) });
-  const ownBidQuery = useQuery({ queryKey: ['transporter', 'bidForShipment', id], queryFn: () => listMyBids({ shipmentId: id, limit: 1 }), enabled: Boolean(shipmentQuery.data) });
+  const shipmentQuery = useQuery({ queryKey: ['transporter', 'shipment', id], queryFn: () => getShipment(id), refetchInterval: 15_000 });
+  const ownBidQuery = useQuery({ queryKey: ['transporter', 'bidForShipment', id], queryFn: () => listMyBids({ shipmentId: id, limit: 1 }), enabled: Boolean(shipmentQuery.data), refetchInterval: 15_000 });
   const shipment = shipmentQuery.data;
   const latestBid = ownBidQuery.data?.bids?.[0] || null;
   const activeBid = latestBid && ['PENDING', 'ACCEPTED'].includes(latestBid.status) ? latestBid : null;
@@ -57,7 +56,7 @@ export function ShipmentDetailPage() {
         <div className="shipper-detail-main">
           <Card className="shipper-detail-card"><div className="shipper-panel__heading"><div><h2>Route &amp; cargo</h2><p>Pickup schedule and cargo information</p></div></div><div className="shipper-route"><div className="shipper-route__stop"><span className="shipper-route__dot shipper-route__dot--start" /><div><small>PICKUP</small><strong>{shipment.pickupLocation}</strong>{shipment.pickupLat != null && <small>{Number(shipment.pickupLat).toFixed(4)}, {Number(shipment.pickupLng).toFixed(4)}</small>}</div></div><div className="shipper-route__line" /><div className="shipper-route__stop"><span className="shipper-route__dot shipper-route__dot--end" /><div><small>DELIVERY</small><strong>{shipment.deliveryLocation}</strong>{shipment.deliveryLat != null && <small>{Number(shipment.deliveryLat).toFixed(4)}, {Number(shipment.deliveryLng).toFixed(4)}</small>}</div></div></div><div className="shipper-info-grid"><div><span>Preferred pickup</span><strong>{dateLabel(shipment.pickupDate)}</strong></div><div><span>Category</span><strong>{shipment.goodsType}</strong></div><div><span>Estimated weight</span><strong>{shipment.weightKg} kg</strong></div><div><span>Listing posted</span><strong>{dateLabel(shipment.createdAt)}</strong></div></div>{shipment.specialRequirements && <div className="shipper-requirements"><h3>Special requirements</h3><p>{shipment.specialRequirements}</p></div>}</Card>
           {shipment.images?.length > 0 && <Card className="shipper-detail-card"><div className="shipper-panel__heading"><div><h2>Cargo photos</h2><p>Photos provided with this listing</p></div></div><div className="shipper-gallery">{shipment.images.map((image) => <figure key={image.id}><img src={image.url} alt="Shipment cargo" /></figure>)}</div></Card>}
-          {activeBid && <ShipmentConversation shipmentId={id} />}
+          {activeBid && <Link className="shipper-text-link" to={`/transporter/messages?shipmentId=${id}`}>✉ Open conversation with shipper</Link>}
           {shipment.status === 'COMPLETED' && <ShipmentReviews shipmentId={id} canReview={latestBid?.status === 'ACCEPTED'} />}
         </div>
         <aside className="transporter-offer-column">

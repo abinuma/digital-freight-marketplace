@@ -8,7 +8,7 @@ import { listNotifications, markAllNotificationsRead, markNotificationRead } fro
 const recentKey = ['notifications', 'recent'];
 const unreadKey = ['notifications', 'unread'];
 const destinationFor = (role, notification) => {
-  if (notification.type === 'NEW_MESSAGE') return role === 'SHIPPER' ? `/shipper/shipments/${notification.referenceId}` : `/transporter/shipments/${notification.referenceId}`;
+  if (notification.type === 'NEW_MESSAGE') return role === 'SHIPPER' ? `/shipper/messages?conversationId=${notification.referenceId}` : `/transporter/messages?conversationId=${notification.referenceId}`;
   if (notification.type === 'BID_RECEIVED') return '/shipper/shipments';
   if (notification.type === 'BID_ACCEPTED' || notification.type === 'BID_DECLINED') return '/transporter/bids';
   if (notification.type === 'SHIPMENT_COMPLETED') return `/transporter/shipments/${notification.referenceId}`;

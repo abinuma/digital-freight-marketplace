@@ -159,6 +159,7 @@ Stories include acceptance criteria and trace back to functional requirement IDs
 - I can send and receive messages within the context of a shipment.
 - I can only message Transporters who have active bids or accepted arrangements on my shipment.
 - Messaging history is persisted and retrievable.
+- Each Transporter has a private conversation with me, and my previous conversations appear on a Messages page.
 
 **Traces to:** FR-400, FR-401, FR-403
 
@@ -274,6 +275,7 @@ Stories include acceptance criteria and trace back to functional requirement IDs
 **Acceptance Criteria:**
 - I can send and receive messages in the context of a shipment I have an active bid or arrangement on.
 - I see an unread message indicator.
+- My previous shipment conversations appear on a Messages page and remain readable after a bid closes.
 
 **Traces to:** FR-400, FR-401, FR-402, FR-403
 

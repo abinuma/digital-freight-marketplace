@@ -64,6 +64,8 @@ Beyond role checks, the **service layer** verifies ownership:
 | Update/withdraw bid | `bid.transporterId === req.user.id` |
 | Accept/decline bid | `shipment.shipperId === req.user.id` |
 
+Messaging uses a private `Conversation` per `(shipmentId, transporterId)`. The shipper who owns the shipment and that transporter are the only readers. Participants can read history after a bid closes, while sending requires a `PENDING` or `ACCEPTED` bid.
+
 ---
 
 ## 4. Input Validation

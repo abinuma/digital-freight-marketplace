@@ -10,7 +10,6 @@
 .shipper-sidebar nav { display: grid; gap: .25rem; }
 .shipper-sidebar nav a { display: flex; min-height: 2.75rem; align-items: center; gap: .8rem; padding: .65rem .8rem; border-radius: .55rem; color: #c8d2df; font-size: .84rem; font-weight: 600; text-decoration: none; }
 .shipper-sidebar nav a:hover, .shipper-sidebar nav a.active { background: #293c56; color: #fff; }
-.shipper-sidebar nav a.active { box-shadow: inset 3px 0 #6b8cff; }
 .shipper-sidebar__help { display: grid; gap: .35rem; margin: auto .1rem 0; padding: 1rem; border: 1px solid #35465e; border-radius: .75rem; color: #fff; font-size: .8rem; font-weight: 700; }
 .shipper-sidebar__help small { color: #b3c0d0; font-size: .72rem; font-weight: 400; line-height: 1.5; }
 .shipper-main { min-width: 0; }
@@ -119,6 +118,8 @@
 .shipper-field--full { grid-column: 1 / -1; }
 .shipper-field__error { color: #b23333 !important; font-size: .7rem !important; }
 .shipper-field .ui-input, .shipper-field .ui-select { min-height: 2.75rem; border-color: #dce2e9; border-radius: .55rem; font-size: .8rem; font-weight: 400; }
+.shipper-field .ui-input[aria-invalid="true"] { border-color: #b23333; }
+.shipper-field .ui-input[aria-invalid="true"]:focus { border-color: #b23333; box-shadow: 0 0 0 3px rgb(178 51 51 / 14%); }
 .shipper-field .ui-textarea { min-height: 6rem; }
 .shipper-map-field { display: grid; gap: .4rem; }
 .shipper-map-field__head { display: flex; justify-content: space-between; gap: .5rem; color: #3a4b62; font-size: .73rem; font-weight: 700; }
@@ -148,7 +149,6 @@
   .shipper-sidebar__label, .shipper-sidebar__help { display: none; }
   .shipper-sidebar nav { display: flex; overflow-x: auto; gap: .25rem; }
   .shipper-sidebar nav a { min-height: 2.5rem; flex: 0 0 auto; padding: .5rem .7rem; font-size: .76rem; }
-  .shipper-sidebar nav a.active { box-shadow: inset 0 -2px #6b8cff; }
   .shipper-page { width: min(100% - 1.25rem, 48rem); gap: 1rem; padding: 1.25rem 0 2rem; }
   .shipper-page__heading { align-items: flex-start; }
   .shipper-page__heading > .ui-button { flex: 0 0 auto; padding: .55rem .7rem; font-size: .72rem; }

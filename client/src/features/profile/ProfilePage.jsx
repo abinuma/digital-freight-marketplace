@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
-import { Alert, Button, Card, Input, Spinner } from '../../shared/components/index.js';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Alert, Button, Card, Input, Spinner, Toast } from '../../shared/components/index.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { getVehicle, updateProfile, updateVehicle, uploadProfilePhoto } from './profile.api.js';
 
@@ -21,6 +22,8 @@ const maxPhotoSize = 5 * 1024 * 1024;
 
 export function ProfilePage() {
   const { user, refreshUser } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [profile, setProfile] = useState({ name: user.name || '', phone: user.phone || '', location: user.location || '' });
   const [vehicle, setVehicle] = useState({ type: '', capacityTons: '', plateNumber: '' });
   const [hasVehicle, setHasVehicle] = useState(false);
@@ -54,6 +57,12 @@ export function ProfilePage() {
   useEffect(() => () => {
     if (photoPreview) URL.revokeObjectURL(photoPreview);
   }, [photoPreview]);
+
+  useEffect(() => {
+    if (status?.tone !== 'success') return undefined;
+    const timeout = window.setTimeout(() => setStatus(null), 3500);
+    return () => window.clearTimeout(timeout);
+  }, [status]);
 
   function changeProfile(event) {
     const { name, value } = event.target;
@@ -154,13 +163,15 @@ export function ProfilePage() {
 
   const initials = (user.name || 'EF').split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
   const avatar = photoPreview || user.profilePhoto;
+  const backPath = location.key === 'default' ? (user.role === 'SHIPPER' ? '/shipper' : user.role === 'TRANSPORTER' ? '/transporter' : '/admin') : -1;
 
   return (
     <main className="profile-screen">
       <header className="profile-screen__header">
-        <div><p className="eyebrow">Account settings</p><h1>Your Profile</h1><p>Manage your contact information and account details.</p></div>
+        <div><Button type="button" variant="secondary" size="sm" onClick={() => navigate(backPath)}>← Back</Button><p className="eyebrow">Account settings</p><h1>Your Profile</h1><p>Manage your contact information and account details.</p></div>
       </header>
-      {status && <Alert tone={status.tone} className="profile-status">{status.text}</Alert>}
+      {status?.tone === 'danger' && <Alert tone="danger" className="profile-status">{status.text}</Alert>}
+      {status?.tone === 'success' && <Toast tone="success" className="profile-success-toast">{status.text}</Toast>}
       <div className="profile-grid">
         <Card className="profile-card profile-card--photo">
           <h2>Profile Photo</h2>

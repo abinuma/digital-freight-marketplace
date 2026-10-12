@@ -88,7 +88,7 @@ export function findShipmentRemovalNotificationDetails(shipmentId, transporterId
   ]).then(([shipment, transporters]) => shipment ? { shipment, transporters } : null);
 }
 
-export function findMessageNotificationDetails(shipmentId, senderId) {
+export function findMessageNotificationDetails(shipmentId, transporterId, senderId) {
   return prisma.shipment
     .findUnique({
       where: { id: shipmentId },
@@ -99,7 +99,7 @@ export function findMessageNotificationDetails(shipmentId, senderId) {
         deliveryLocation: true,
         shipper: { select: { id: true, name: true, email: true } },
         bids: {
-          where: { status: { in: ['PENDING', 'ACCEPTED'] } },
+          where: { transporterId, status: { in: ['PENDING', 'ACCEPTED'] } },
           select: {
             status: true,
             transporter: { select: { id: true, name: true, email: true } },

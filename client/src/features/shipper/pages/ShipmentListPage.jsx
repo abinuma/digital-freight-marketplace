@@ -11,7 +11,7 @@ const formatDate = (date) => new Intl.DateTimeFormat(undefined, { day: 'numeric'
 export function ShipmentListPage() {
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
-  const query = useQuery({ queryKey: ['shipper', 'shipments', { status, page }], queryFn: () => listShipments({ status: status || undefined, page, limit: 10 }) });
+  const query = useQuery({ queryKey: ['shipper', 'shipments', { status, page }], queryFn: () => listShipments({ status: status || undefined, page, limit: 10 }), refetchInterval: 15_000 });
   const shipments = query.data?.shipments || [];
 
   function changeStatus(event) {

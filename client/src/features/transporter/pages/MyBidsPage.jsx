@@ -16,7 +16,7 @@ export function MyBidsPage() {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
   const cache = useQueryClient();
-  const query = useQuery({ queryKey: ['transporter', 'myBids', status, page], queryFn: () => listMyBids({ status: status || undefined, page, limit: 10 }) });
+  const query = useQuery({ queryKey: ['transporter', 'myBids', status, page], queryFn: () => listMyBids({ status: status || undefined, page, limit: 10 }), refetchInterval: 15_000 });
   const bids = query.data?.bids || [];
   const shipmentQueries = useQueries({ queries: bids.map((bid) => ({ queryKey: ['transporter', 'bidShipment', bid.shipmentId], queryFn: () => getShipment(bid.shipmentId), staleTime: 60_000 })) });
 

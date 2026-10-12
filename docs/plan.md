@@ -128,19 +128,19 @@ Define the complete Prisma schema matching [database.md](./architecture/database
    - `Shipment` (§ 3.3) with enum `ShipmentStatus` (`DRAFT`, `PUBLISHED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
    - `ShipmentImage` (§ 3.4) with `ON DELETE CASCADE` from `Shipment`.
    - `Bid` (§ 3.5) with enum `BidStatus` (`PENDING`, `ACCEPTED`, `DECLINED`, `WITHDRAWN`), partial unique index `(shipmentId, transporterId)` for active bids.
-   - `Message` (§ 3.6).
-   - `Review` (§ 3.7) with unique constraint `(shipmentId, reviewerId)` and CHECK `rating >= 1 AND rating <= 5`.
-   - `Notification` (§ 3.8).
+   - `Message` (§ 3.6) and `Conversation` (§ 3.7), with one private conversation per shipment/transporter pair.
+   - `Review` (§ 3.8) with unique constraint `(shipmentId, reviewerId)` and CHECK `rating >= 1 AND rating <= 5`.
+   - `Notification` (§ 3.9).
    - Better Auth session/account tables as required by the library.
 
 2. **Define indexes**
    All indexes from [database.md § 4](./architecture/database.md):
-   - `idx_user_email`, `idx_user_role_status`, `idx_shipment_shipper`, `idx_shipment_status`, `idx_shipment_goods_type`, `idx_shipment_pickup_date`, `idx_shipment_created`, `idx_bid_shipment`, `idx_bid_transporter`, `idx_bid_shipment_transporter`, `idx_message_shipment`, `idx_notification_user`, `idx_review_reviewee`.
+   - `idx_user_email`, `idx_user_role_status`, `idx_shipment_shipper`, `idx_shipment_status`, `idx_shipment_goods_type`, `idx_shipment_pickup_date`, `idx_shipment_created`, `idx_bid_shipment`, `idx_bid_transporter`, `idx_bid_shipment_transporter`, `idx_message_shipment`, `idx_message_conversation_created`, `idx_conversation_shipment_transporter`, `idx_conversation_transporter_updated`, `idx_conversation_shipment_updated`, `idx_notification_user`, `idx_review_reviewee`.
 
 3. **Configure data integrity rules**
    Per [database.md § 7](./architecture/database.md):
    - ON DELETE CASCADE for ShipmentImage.
-   - ON DELETE RESTRICT for Bid → Shipment and Message → Shipment.
+   - ON DELETE RESTRICT for Bid → Shipment, Message → Shipment, and Conversation → Shipment/User.
 
 4. **Generate and apply initial migration**
    ```bash
@@ -456,12 +456,15 @@ Implement the remaining backend modules — messaging (FR-400-403), notification
 
    | Method | Endpoint | Role | Description |
    |--------|----------|------|-------------|
-   | GET | `/shipments/:shipmentId/messages` | Shipper (owner) or Transporter (with bid) | Get message thread — FR-400, FR-401 |
-   | POST | `/shipments/:shipmentId/messages` | Shipper (owner) or Transporter (with bid) | Send message — FR-400 |
+   | GET | `/messages/conversations` | Shipper or Transporter | List the current user's private shipment conversations |
+   | GET | `/messages/conversations/:conversationId` | Conversation participant | Read the conversation history |
+   | POST | `/messages/conversations/:conversationId` | Participant with PENDING or ACCEPTED bid | Send a private message |
 
 2. **Implement access control**
-   - Messaging only allowed between parties with an active bid or accepted arrangement on the shipment (FR-403).
-   - Service layer verifies participant identity.
+   - Each shipment/transporter pair has a separate private conversation; shippers only see conversations on their shipments.
+   - Transporters only see their own conversations. Prior conversation history remains readable after a bid closes; sending is limited to PENDING or ACCEPTED bids.
+   - Service layer verifies participant identity for list, read, and send operations.
+   - New message notifications and email are sent only to the other participant in that private conversation.
 
 3. **Write tests**
    - Authorized parties can exchange messages.
@@ -649,7 +652,7 @@ Build the complete React frontend — all pages, components, API integration, an
 
 1. **Notification dropdown/page** — List of notifications, accurate unread count, mark one or all as read, click to navigate.
 2. **Map components** — Shared Leaflet canvas with marker placement for location selection and shipment discovery per FR-203.
-3. **Messaging UI** — Shared chat-like thread within shipper and transporter shipment details.
+3. **Messaging UI** — Dedicated shipper and transporter Messages pages with searchable conversation lists, chronological private chat history, shipment context, and links from shipment details. Conversations refresh automatically while open.
 4. **Loading States** — Skeletons and spinners per NFR-205.
 5. **Error handling** — Global toast for network failures, inline API errors and form validation per NFR-202.
 

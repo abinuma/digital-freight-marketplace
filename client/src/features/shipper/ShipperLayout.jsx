@@ -24,8 +24,9 @@ export function ShipperLayout() {
           <p className="shipper-sidebar__label">SHIPPER WORKSPACE</p>
           <nav aria-label="Shipper navigation">
             <NavLink end to="/shipper">▦ <span>Dashboard</span></NavLink>
-            <NavLink to="/shipper/shipments">▤ <span>My shipments</span></NavLink>
+            <NavLink end to="/shipper/shipments">▤ <span>My shipments</span></NavLink>
             <NavLink to="/shipper/shipments/new">＋ <span>Post a shipment</span></NavLink>
+            <NavLink to="/shipper/messages">✉ <span>Messages</span></NavLink>
             <NavLink to="/profile">◉ <span>My profile</span></NavLink>
           </nav>
           <div className="shipper-sidebar__help"><span>Need help?</span><small>We’re here to help with your shipments.</small></div>

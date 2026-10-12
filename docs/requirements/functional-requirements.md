@@ -102,10 +102,10 @@ PENDING ──→ ACCEPTED
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-400 | The system shall provide a messaging channel between a Shipper and a Transporter within the context of a specific shipment. | Should |
-| FR-401 | Messages shall be persisted in the database and retrievable by both parties. | Should |
+| FR-400 | The system shall provide a private messaging channel between a Shipper and each Transporter within the context of a specific shipment. | Should |
+| FR-401 | Messages shall be persisted and retrievable by both participants, and users shall be able to view their shipment conversations in a dedicated Messages page. | Should |
 | FR-402 | Users shall see a visual indicator (badge/count) for unread messages. | Could |
-| FR-403 | Messaging shall only be available between parties who have an active bid or accepted arrangement on a shipment. | Should |
+| FR-403 | Sending messages shall only be available between parties who have a pending or accepted bid on a shipment; participants may read conversation history after the bid closes. | Should |
 
 ---
 

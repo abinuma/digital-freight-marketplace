@@ -12,13 +12,15 @@ const formSchema = z.object({
   weightKg: z.coerce.number().positive('Weight must be greater than zero').max(99_999_999.99),
   pickupLocation: z.string().trim().min(1, 'Enter a pickup location').max(255),
   deliveryLocation: z.string().trim().min(1, 'Enter a delivery location').max(255),
-  pickupDate: z.iso.date('Choose a pickup date'),
+  pickupDate: z.iso.date('Choose a pickup date').refine((date) => date >= new Date().toISOString().slice(0, 10), 'Pickup date must be today or later'),
   specialRequirements: z.string().max(2000),
 });
 const empty = { goodsDescription: '', goodsType: '', weightKg: '', pickupLocation: '', pickupLat: null, pickupLng: null, deliveryLocation: '', deliveryLat: null, deliveryLng: null, pickupDate: '', specialRequirements: '' };
 const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
 
 function fieldError(errors, name) { return errors[name] ? <small className="shipper-field__error">{errors[name]}</small> : null; }
+
+function todayDate() { return new Date().toISOString().slice(0, 10); }
 
 export function ShipmentFormPage() {
   const { id: routeId } = useParams();
@@ -113,7 +115,7 @@ function ShipmentForm({ routeId, initialShipment }) {
         <Card className="shipper-form-card"><div className="shipper-form-section"><span className="shipper-step">02</span><div><h2>Route &amp; timing</h2><p>Set the pickup and destination locations.</p></div></div>
           <div className="shipper-form-grid"><label className="shipper-field"><span>Pickup location <i>*</i></span><Input required maxLength={255} value={values.pickupLocation} onChange={(event) => setField('pickupLocation', event.target.value)} placeholder="City, area, or address" />{fieldError(errors, 'pickupLocation')}</label><label className="shipper-field"><span>Delivery location <i>*</i></span><Input required maxLength={255} value={values.deliveryLocation} onChange={(event) => setField('deliveryLocation', event.target.value)} placeholder="City, area, or address" />{fieldError(errors, 'deliveryLocation')}</label>
             <LocationPicker label="Pickup pin" value={{ lat: values.pickupLat, lng: values.pickupLng }} onChange={({ lat, lng }) => { setField('pickupLat', lat); setField('pickupLng', lng); }} /><LocationPicker label="Delivery pin" value={{ lat: values.deliveryLat, lng: values.deliveryLng }} onChange={({ lat, lng }) => { setField('deliveryLat', lat); setField('deliveryLng', lng); }} />
-            <label className="shipper-field"><span>Pickup date <i>*</i></span><Input required type="date" value={values.pickupDate} onChange={(event) => setField('pickupDate', event.target.value)} />{fieldError(errors, 'pickupDate')}</label>
+            <label className="shipper-field"><span>Pickup date <i>*</i></span><Input required type="date" min={todayDate()} value={values.pickupDate} aria-invalid={Boolean(errors.pickupDate)} aria-describedby={errors.pickupDate ? 'pickup-date-error' : undefined} onChange={(event) => { const value = event.target.value; setField('pickupDate', value); setErrors((current) => ({ ...current, pickupDate: value && value < todayDate() ? 'Choose today or a future date.' : undefined })); }} />{errors.pickupDate && <small id="pickup-date-error" className="shipper-field__error" role="alert">{errors.pickupDate}</small>}</label>
           </div>
         </Card>
         <Card className="shipper-form-card"><div className="shipper-form-section"><span className="shipper-step">03</span><div><h2>Preferences</h2><p>Share handling instructions and cargo photos.</p></div></div>

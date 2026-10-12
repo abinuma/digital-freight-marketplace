@@ -168,12 +168,15 @@ Bids are nested under shipments since they exist in that context.
 | PATCH | `/shipments/:shipmentId/bids/:id/accept` | Yes | Shipper (shipment owner) | Accept a bid |
 | PATCH | `/shipments/:shipmentId/bids/:id/decline` | Yes | Shipper (shipment owner) | Decline a bid |
 
-### 5.5 Messaging Module — `/api/v1/shipments/:shipmentId/messages`
+### 5.5 Messaging Module — `/api/v1/messages`
 
 | Method | Endpoint | Auth | Roles | Description |
 |--------|----------|------|-------|-------------|
-| GET | `/shipments/:shipmentId/messages` | Yes | Shipper (owner) or Transporter (with bid) | Get message thread for a shipment |
-| POST | `/shipments/:shipmentId/messages` | Yes | Shipper (owner) or Transporter (with bid) | Send a message |
+| GET | `/messages/conversations` | Yes | Shipper or Transporter | List private conversations for the current user |
+| GET | `/messages/conversations/:conversationId` | Yes | Conversation participants | Read messages in chronological order; prior bid conversations remain readable |
+| POST | `/messages/conversations/:conversationId` | Yes | Conversation participants with a PENDING or ACCEPTED bid | Send a message |
+
+Each conversation is unique to a shipment and transporter. Shippers can access conversations on their shipments; transporters can access only their own conversations. Messages cannot be sent after a bid is declined or withdrawn.
 
 ### 5.6 Notification Module — `/api/v1/notifications`
 

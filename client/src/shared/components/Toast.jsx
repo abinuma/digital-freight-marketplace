@@ -1,8 +1,8 @@
 import { Alert } from './Alert.jsx';
 
-export function Toast({ onDismiss, children, ...props }) {
+export function Toast({ className = '', onDismiss, children, ...props }) {
   return (
-    <div className="ui-toast" role="status">
+    <div className={`ui-toast ${className}`.trim()} role="status">
       <Alert {...props}>{children}</Alert>
       {onDismiss && <button className="ui-toast__dismiss" type="button" onClick={onDismiss} aria-label="Dismiss notification">×</button>}
     </div>
