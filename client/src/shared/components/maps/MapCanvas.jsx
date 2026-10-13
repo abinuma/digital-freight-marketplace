@@ -10,7 +10,7 @@ function ClickHandler({ onPick }) {
 
 export function MapCanvas({ points = [], center = addisAbaba, zoom = 6, scrollWheelZoom = false, onPick, className = '' }) {
   return (
-    <MapContainer center={center} zoom={zoom} scrollWheelZoom={scrollWheelZoom} className={`shared-map ${className}`.trim()}>
+    <MapContainer center={center} zoom={zoom} scrollWheelZoom={scrollWheelZoom} className={`shared-map block bg-gray-100 font-sans ${className}`.trim()}>
       <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <ClickHandler onPick={onPick} />
       {points.map((point) => <CircleMarker key={point.id} center={Array.isArray(point.position) ? point.position : [point.position.lat, point.position.lng]} radius={point.radius || 8} pathOptions={{ color: point.color || '#2446b8', fillColor: point.fillColor || '#5574d2', fillOpacity: .82 }}>

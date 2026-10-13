@@ -47,7 +47,7 @@ export async function getShipperDashboardSummary(shipperId) {
   const [statusGroups, bidsReceived, messages, recentShipments] = await Promise.all([
     prisma.shipment.groupBy({ by: ['status'], where, _count: { _all: true } }),
     prisma.bid.count({ where: { shipment: where, status: { not: 'WITHDRAWN' } } }),
-    prisma.message.count({ where: { shipment: where } }),
+    prisma.message.count({ where: { conversation: { shipperId } } }),
     prisma.shipment.findMany({
       where,
       select: shipmentListSelect,

@@ -174,9 +174,11 @@ Bids are nested under shipments since they exist in that context.
 |--------|----------|------|-------|-------------|
 | GET | `/messages/conversations` | Yes | Shipper or Transporter | List private conversations for the current user |
 | GET | `/messages/conversations/:conversationId` | Yes | Conversation participants | Read messages in chronological order; prior bid conversations remain readable |
-| POST | `/messages/conversations/:conversationId` | Yes | Conversation participants with a PENDING or ACCEPTED bid | Send a message |
+| GET | `/messages/conversations/:conversationId/bids` | Yes | Conversation participants | List bids and shipment context for this participant pair |
+| GET | `/messages/conversations/:conversationId/last-message` | Yes | Conversation participants | Get the thread's latest message |
+| POST | `/messages/conversations/:conversationId` | Yes | Conversation participants | Send a message with `content` |
 
-Each conversation is unique to a shipment and transporter. Shippers can access conversations on their shipments; transporters can access only their own conversations. Messages cannot be sent after a bid is declined or withdrawn.
+Each conversation is unique to a shipper and transporter, regardless of the number of shipments or bids between them. Chat messages are independent of bid records. Bid navigation changes only the shipment/bid context panel; it never changes the private chat history or message composer.
 
 ### 5.6 Notification Module — `/api/v1/notifications`
 

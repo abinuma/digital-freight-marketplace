@@ -125,26 +125,26 @@ export function shipmentRemoved(shipmentId, transporterIds) {
   });
 }
 
-export function newMessage(conversationId, shipmentId, transporterId, senderId, content) {
+export function newMessage(conversationId, senderId, content) {
   return safely('NEW_MESSAGE', async () => {
-    const details = await notificationRepository.findMessageNotificationDetails(shipmentId, transporterId, senderId);
-    if (!details) return;
-    const fromShipper = senderId === details.shipment.shipperId;
-    const transporter = details.shipment.bids[0]?.transporter;
-    const recipient = fromShipper ? transporter : details.shipment.shipper;
+    const conversation = await notificationRepository.findMessageNotificationDetails(conversationId);
+    if (!conversation) return;
+    const participants = [conversation.shipper, conversation.transporter];
+    const sender = participants.find((participant) => participant.id === senderId);
+    if (!sender) return;
+    const recipient = participants.find((participant) => participant.id !== senderId);
     if (!recipient) return;
+
     await saveInAppNotification({
       userId: recipient.id,
       type: 'NEW_MESSAGE',
-      title: `New message about ${details.shipment.goodsDescription}`,
-      message: `${details.sender?.name || 'A participant'} sent a message about your shipment.`,
+      title: 'New message',
+      message: `${sender.name} sent you a message.`,
       referenceId: conversationId,
     });
-
     await notify(recipient, {
       type: 'NEW_MESSAGE',
-      shipment: details.shipment,
-      senderName: details.sender?.name,
+      senderName: sender.name,
       content,
     });
   });

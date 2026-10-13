@@ -88,31 +88,13 @@ export function findShipmentRemovalNotificationDetails(shipmentId, transporterId
   ]).then(([shipment, transporters]) => shipment ? { shipment, transporters } : null);
 }
 
-export function findMessageNotificationDetails(shipmentId, transporterId, senderId) {
-  return prisma.shipment
-    .findUnique({
-      where: { id: shipmentId },
-      select: {
-        shipperId: true,
-        goodsDescription: true,
-        pickupLocation: true,
-        deliveryLocation: true,
-        shipper: { select: { id: true, name: true, email: true } },
-        bids: {
-          where: { transporterId, status: { in: ['PENDING', 'ACCEPTED'] } },
-          select: {
-            status: true,
-            transporter: { select: { id: true, name: true, email: true } },
-          },
-        },
-      },
-    })
-    .then(async (shipment) => {
-      if (!shipment) return null;
-      const sender = await prisma.user.findUnique({
-        where: { id: senderId },
-        select: { id: true, name: true },
-      });
-      return { shipment, sender };
-    });
+export function findMessageNotificationDetails(conversationId) {
+  return prisma.conversation.findUnique({
+    where: { id: conversationId },
+    select: {
+      shipper: { select: { id: true, name: true, email: true } },
+      transporter: { select: { id: true, name: true, email: true } },
+    },
+  });
 }
+

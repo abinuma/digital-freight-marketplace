@@ -34,8 +34,8 @@ export function buildNotificationEmail({ type, recipientName, shipment, bid, sen
       message = `Your bid for ${shipmentLabel} was declined.`;
       break;
     case 'NEW_MESSAGE':
-      subject = `New shipment message: ${shipmentLabel}`;
-      message = `${senderName || 'A participant'} sent a message about ${shipmentLabel}${content ? `: ${content}` : '.'}`;
+      subject = 'New message';
+      message = `${senderName || 'A participant'} sent you a message${content ? `: ${content}` : '.'}`;
       break;
     case 'SHIPMENT_COMPLETED':
       subject = `Shipment completed: ${shipmentLabel}`;

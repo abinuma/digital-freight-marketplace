@@ -54,18 +54,18 @@ export function ResetPasswordPage() {
       footer={<Link to="/login">← Back to Login</Link>}
     >
       {isComplete ? (
-        <div className="auth-success" role="status"><p>Your password was updated successfully.</p><Link className="ui-button ui-button--primary auth-submit" to="/login">Go to Sign In</Link></div>
+        <div className={`     grid gap-4 text-slate-500 text-base text-center   auth-success`} role="status"><p>Your password was updated successfully.</p><Link className={`inline-flex min-h-10 items-center justify-center gap-2 py-3 px-4 border rounded-lg cursor-pointer font-bold leading-tight no-underline transition  disabled:cursor-not-allowed disabled:opacity-50 ui-button bg-blue-700 text-white   ui-button--primary w-full min-h-10 rounded-lg text-sm auth-submit`} to="/login">Go to Sign In</Link></div>
       ) : (
-        <form className="auth-form" onSubmit={handleSubmit} noValidate>
+        <form className={`grid gap-4      auth-form`} onSubmit={handleSubmit} noValidate>
           <AuthField id="password" label="New Password" error={fieldErrors.password}>
             <PasswordInput id="password" name="password" value={form.password} onChange={updateField} autoComplete="new-password" error={fieldErrors.password} />
           </AuthField>
           <AuthField id="confirmPassword" label="Confirm Password" error={fieldErrors.confirmPassword}>
             <PasswordInput id="confirmPassword" name="confirmPassword" value={form.confirmPassword} onChange={updateField} autoComplete="new-password" error={fieldErrors.confirmPassword} />
           </AuthField>
-          <p className="password-hint">Use 8 or more characters with uppercase, lowercase, and a number.</p>
-          {formError && <p className="auth-form__error" role="alert">{formError}</p>}
-          <Button type="submit" className="auth-submit" disabled={isSubmitting}>{isSubmitting ? 'Updating…' : 'Update Password'}</Button>
+          <p className={`mt-0.5 mx-0 mb-0 text-slate-500 text-sm password-hint`}>Use 8 or more characters with uppercase, lowercase, and a number.</p>
+          {formError && <p className={`m-0 text-slate-500 text-sm auth-form__error`} role="alert">{formError}</p>}
+          <Button type="submit" className={`w-full min-h-10 rounded-lg text-sm auth-submit`} disabled={isSubmitting}>{isSubmitting ? 'Updating…' : 'Update Password'}</Button>
         </form>
       )}
     </AuthPageLayout>

@@ -1,8 +1,3 @@
-import './App.css';
-import './shared/components/components.css';
-import './features/auth/auth-pages.css';
-import './features/profile/profile.css';
-import './features/shipper/shipper.css';
 import 'leaflet/dist/leaflet.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
@@ -21,10 +16,6 @@ import { ShipperDashboardPage } from './features/shipper/pages/ShipperDashboardP
 import { ShipmentListPage } from './features/shipper/pages/ShipmentListPage.jsx';
 import { ShipmentFormPage } from './features/shipper/pages/ShipmentFormPage.jsx';
 import { ShipmentDetailPage } from './features/shipper/pages/ShipmentDetailPage.jsx';
-import './features/transporter/transporter.css';
-import './features/notifications/notifications.css';
-import './features/messaging/messaging.css';
-import './shared/components/maps/maps.css';
 import { TransporterLayout } from './features/transporter/TransporterLayout.jsx';
 import { TransporterDashboardPage } from './features/transporter/pages/TransporterDashboardPage.jsx';
 import { ShipmentDiscoveryPage } from './features/transporter/pages/ShipmentDiscoveryPage.jsx';
@@ -32,8 +23,6 @@ import { MyBidsPage } from './features/transporter/pages/MyBidsPage.jsx';
 import { ShipmentDetailPage as TransporterShipmentDetailPage } from './features/transporter/pages/ShipmentDetailPage.jsx';
 import { MessagesPage } from './features/messaging/MessagesPage.jsx';
 import { NetworkErrorToaster } from './shared/components/NetworkErrorToaster.jsx';
-import './features/admin/admin.css';
-import './features/shipper/reviews.css';
 import { AdminLayout } from './features/admin/AdminLayout.jsx';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage.jsx';
 import { AdminUsersPage } from './features/admin/pages/AdminUsersPage.jsx';
@@ -64,22 +53,22 @@ function App() {
               <Route path="/complete-profile" element={<AuthGate />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route element={<RequireRole roles="SHIPPER" />}>
+                <Route path="/shipper/messages" element={<MessagesPage />} />
                 <Route path="/shipper" element={<ShipperLayout />}>
                   <Route index element={<ShipperDashboardPage />} />
                   <Route path="shipments" element={<ShipmentListPage />} />
                   <Route path="shipments/new" element={<ShipmentFormPage />} />
                   <Route path="shipments/:id" element={<ShipmentDetailPage />} />
                   <Route path="shipments/:id/edit" element={<ShipmentFormPage />} />
-                  <Route path="messages" element={<MessagesPage />} />
                 </Route>
               </Route>
               <Route element={<RequireRole roles="TRANSPORTER" />}>
+                <Route path="/transporter/messages" element={<MessagesPage />} />
                 <Route path="/transporter" element={<TransporterLayout />}>
                   <Route index element={<TransporterDashboardPage />} />
                   <Route path="shipments" element={<ShipmentDiscoveryPage />} />
                   <Route path="shipments/:id" element={<TransporterShipmentDetailPage />} />
                   <Route path="bids" element={<MyBidsPage />} />
-                  <Route path="messages" element={<MessagesPage />} />
                 </Route>
               </Route>
               <Route element={<RequireRole roles="ADMIN" />}>

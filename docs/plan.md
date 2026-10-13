@@ -128,19 +128,19 @@ Define the complete Prisma schema matching [database.md](./architecture/database
    - `Shipment` (§ 3.3) with enum `ShipmentStatus` (`DRAFT`, `PUBLISHED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
    - `ShipmentImage` (§ 3.4) with `ON DELETE CASCADE` from `Shipment`.
    - `Bid` (§ 3.5) with enum `BidStatus` (`PENDING`, `ACCEPTED`, `DECLINED`, `WITHDRAWN`), partial unique index `(shipmentId, transporterId)` for active bids.
-   - `Message` (§ 3.6) and `Conversation` (§ 3.7), with one private conversation per shipment/transporter pair.
+   - `Message` (§ 3.6) and `Conversation` (§ 3.7), with one private conversation per shipper/transporter pair and messages independent of bids and shipments.
    - `Review` (§ 3.8) with unique constraint `(shipmentId, reviewerId)` and CHECK `rating >= 1 AND rating <= 5`.
    - `Notification` (§ 3.9).
    - Better Auth session/account tables as required by the library.
 
 2. **Define indexes**
    All indexes from [database.md § 4](./architecture/database.md):
-   - `idx_user_email`, `idx_user_role_status`, `idx_shipment_shipper`, `idx_shipment_status`, `idx_shipment_goods_type`, `idx_shipment_pickup_date`, `idx_shipment_created`, `idx_bid_shipment`, `idx_bid_transporter`, `idx_bid_shipment_transporter`, `idx_message_shipment`, `idx_message_conversation_created`, `idx_conversation_shipment_transporter`, `idx_conversation_transporter_updated`, `idx_conversation_shipment_updated`, `idx_notification_user`, `idx_review_reviewee`.
+   - `idx_user_email`, `idx_user_role_status`, `idx_shipment_shipper`, `idx_shipment_status`, `idx_shipment_goods_type`, `idx_shipment_pickup_date`, `idx_shipment_created`, `idx_bid_shipment`, `idx_bid_transporter`, `idx_bid_shipment_transporter`, `idx_message_conversation_created`, `idx_conversation_shipper_transporter`, `idx_conversation_transporter_updated`, `idx_conversation_shipper_updated`, `idx_notification_user`, `idx_review_reviewee`.
 
 3. **Configure data integrity rules**
    Per [database.md § 7](./architecture/database.md):
    - ON DELETE CASCADE for ShipmentImage.
-   - ON DELETE RESTRICT for Bid → Shipment, Message → Shipment, and Conversation → Shipment/User.
+   - ON DELETE RESTRICT for Bid → Shipment and Conversation → User.
 
 4. **Generate and apply initial migration**
    ```bash
@@ -458,11 +458,12 @@ Implement the remaining backend modules — messaging (FR-400-403), notification
    |--------|----------|------|-------------|
    | GET | `/messages/conversations` | Shipper or Transporter | List the current user's private shipment conversations |
    | GET | `/messages/conversations/:conversationId` | Conversation participant | Read the conversation history |
-   | POST | `/messages/conversations/:conversationId` | Participant with PENDING or ACCEPTED bid | Send a private message |
+   | GET | `/messages/conversations/:conversationId/bids` | Conversation participant | List bids and shipment context for the participant pair |
+   | POST | `/messages/conversations/:conversationId` | Conversation participant | Send a private message |
 
 2. **Implement access control**
-   - Each shipment/transporter pair has a separate private conversation; shippers only see conversations on their shipments.
-   - Transporters only see their own conversations. Prior conversation history remains readable after a bid closes; sending is limited to PENDING or ACCEPTED bids.
+   - Each shipper/transporter pair has one private conversation independent of bids and shipments.
+   - Transporters only see their own conversations. Chat remains readable and writable regardless of bid status; bid navigation changes only the bid context panel.
    - Service layer verifies participant identity for list, read, and send operations.
    - New message notifications and email are sent only to the other participant in that private conversation.
 
@@ -570,7 +571,7 @@ Implement the remaining backend modules — messaging (FR-400-403), notification
 
 | # | Criterion | Verification |
 |---|-----------|--------------|
-| 1 | Authorized parties can send and retrieve messages within a shipment context | Integration test |
+| 1 | Conversation participants can send and retrieve a continuous private chat independent of bid or shipment context | Integration test |
 | 2 | Unauthorized messaging attempts return 403 | Integration test |
 | 3 | Notifications are created on bid and message events | Integration test |
 | 4 | Email dispatch is triggered for notification events (verified via mock) | Integration test |

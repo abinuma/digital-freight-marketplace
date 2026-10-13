@@ -70,7 +70,23 @@ export const openApiDocument = {
     '/messages/conversations/{conversationId}': {
       parameters: [{ name: 'conversationId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
       get: { tags: ['Messaging'], summary: 'Read a private shipper/transporter conversation', responses: { '200': { $ref: '#/components/responses/DataResult' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' } } },
-      post: { tags: ['Messaging'], summary: 'Send a message to an active bid conversation', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['content'], properties: { content: { type: 'string', minLength: 1, maxLength: 5000 } } } } } }, responses: { '201': { $ref: '#/components/responses/DataResult' }, '400': { $ref: '#/components/responses/ValidationError' }, '403': { $ref: '#/components/responses/Forbidden' }, '409': { $ref: '#/components/responses/Conflict' } } },
+      post: { tags: ['Messaging'], summary: 'Send a message in a private participant conversation', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['content'], properties: { content: { type: 'string', minLength: 1, maxLength: 5000 } } } } } }, responses: { '201': { $ref: '#/components/responses/DataResult' }, '400': { $ref: '#/components/responses/ValidationError' }, '403': { $ref: '#/components/responses/Forbidden' } } },
+    },
+    '/messages/conversations/{conversationId}/bids': {
+      get: {
+        tags: ['Messaging'],
+        summary: 'List bids for a private participant conversation',
+        parameters: [{ name: 'conversationId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: { '200': { $ref: '#/components/responses/DataResult' }, '403': { $ref: '#/components/responses/Forbidden' } },
+      },
+    },
+    '/messages/conversations/{conversationId}/last-message': {
+      get: {
+        tags: ['Messaging'],
+        summary: 'Get the latest message in a private conversation',
+        parameters: [{ name: 'conversationId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: { '200': { $ref: '#/components/responses/DataResult' }, '403': { $ref: '#/components/responses/Forbidden' } },
+      },
     },
     '/notifications': { get: { tags: ['Notifications'], summary: 'List own notifications', parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Limit' }, { name: 'unreadOnly', in: 'query', schema: { type: 'boolean' } }], responses: { '200': { $ref: '#/components/responses/PaginatedResult' }, '401': { $ref: '#/components/responses/Unauthorized' } } } },
     '/notifications/read-all': { patch: { tags: ['Notifications'], summary: 'Mark all own notifications as read', responses: { '200': { $ref: '#/components/responses/DataResult' }, '401': { $ref: '#/components/responses/Unauthorized' } } } },

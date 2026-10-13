@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Alert, Button, Card, Input, Spinner, Toast } from '../../shared/components/index.js';
+import { Alert, Button, Toast } from '../../shared/components/index.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { getVehicle, updateProfile, updateVehicle, uploadProfilePhoto } from './profile.api.js';
+import { PersonalInformationCard } from './components/PersonalInformationCard.jsx';
+import { ProfilePhotoCard } from './components/ProfilePhotoCard.jsx';
+import { VehicleDetailsCard } from './components/VehicleDetailsCard.jsx';
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, 'Enter your name').max(100),
@@ -41,16 +44,19 @@ export function ProfilePage() {
   useEffect(() => {
     if (user.role !== 'TRANSPORTER') return undefined;
     let isCurrent = true;
-    getVehicle(user.id).then((result) => {
-      if (!isCurrent) return;
-      setVehicle({ type: result.type, capacityTons: String(result.capacityTons), plateNumber: result.plateNumber });
-      setHasVehicle(true);
-    }).catch((error) => {
-      if (!isCurrent || error.status === 404) return;
-      setVehicleLoadError(error.message);
-    }).finally(() => {
-      if (isCurrent) setIsLoadingVehicle(false);
-    });
+    getVehicle(user.id)
+      .then((result) => {
+        if (!isCurrent) return;
+        setVehicle({ type: result.type, capacityTons: String(result.capacityTons), plateNumber: result.plateNumber });
+        setHasVehicle(true);
+      })
+      .catch((error) => {
+        if (!isCurrent || error.status === 404) return;
+        setVehicleLoadError(error.message);
+      })
+      .finally(() => {
+        if (isCurrent) setIsLoadingVehicle(false);
+      });
     return () => { isCurrent = false; };
   }, [user.id, user.role]);
 
@@ -84,7 +90,6 @@ export function ProfilePage() {
       setFieldErrors(Object.fromEntries(parsed.error.issues.map((issue) => [issue.path[0], issue.message])));
       return;
     }
-
     setFieldErrors({});
     setProfileBusy(true);
     try {
@@ -147,7 +152,6 @@ export function ProfilePage() {
       setVehicleErrors(Object.fromEntries(parsed.error.issues.map((issue) => [issue.path[0], issue.message])));
       return;
     }
-
     setVehicleErrors({});
     setVehicleBusy(true);
     try {
@@ -163,53 +167,35 @@ export function ProfilePage() {
 
   const initials = (user.name || 'EF').split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
   const avatar = photoPreview || user.profilePhoto;
-  const backPath = location.key === 'default' ? (user.role === 'SHIPPER' ? '/shipper' : user.role === 'TRANSPORTER' ? '/transporter' : '/admin') : -1;
+  const backPath = location.key === 'default'
+    ? user.role === 'SHIPPER' ? '/shipper' : user.role === 'TRANSPORTER' ? '/transporter' : '/admin'
+    : -1;
 
   return (
-    <main className="profile-screen">
-      <header className="profile-screen__header">
-        <div><Button type="button" variant="secondary" size="sm" onClick={() => navigate(backPath)}>← Back</Button><p className="eyebrow">Account settings</p><h1>Your Profile</h1><p>Manage your contact information and account details.</p></div>
+    <main className="mx-auto w-full max-w-5xl py-8 max-md:py-5">
+      <header className="mb-6">
+        <Button type="button" variant="secondary" size="sm" onClick={() => navigate(backPath)}>← Back</Button>
+        <p className="mb-2 mt-5 text-xs font-bold uppercase tracking-widest text-blue-700">Account settings</p>
+        <h1 className="m-0 text-2xl font-bold text-slate-900">Your Profile</h1>
+        <p className="mb-0 mt-2 text-sm text-slate-500">Manage your contact information and account details.</p>
       </header>
-      {status?.tone === 'danger' && <Alert tone="danger" className="profile-status">{status.text}</Alert>}
-      {status?.tone === 'success' && <Toast tone="success" className="profile-success-toast">{status.text}</Toast>}
-      <div className="profile-grid">
-        <Card className="profile-card profile-card--photo">
-          <h2>Profile Photo</h2>
-          <div className="profile-avatar">{avatar ? <img src={avatar} alt={`${user.name} profile`} /> : <span>{initials}</span>}</div>
-          <p className="profile-card__hint">JPEG, PNG, or WebP, up to 5 MB.</p>
-          <form onSubmit={savePhoto} className="profile-photo-form">
-            <label className="profile-file-label" htmlFor="profile-photo">Choose Photo</label>
-            <input id="profile-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={choosePhoto} />
-            {photoFile && <p className="profile-file-name">{photoFile.name}</p>}
-            <Button type="submit" disabled={!photoFile || photoBusy}>{photoBusy ? 'Uploading…' : 'Upload Photo'}</Button>
-          </form>
-        </Card>
+      {status?.tone === 'danger' && <Alert tone="danger" className="mb-4">{status.text}</Alert>}
+      {status?.tone === 'success' && <Toast tone="success" className="top-4 left-1/2 max-w-full">{status.text}</Toast>}
 
-        <Card className="profile-card">
-          <h2>Personal Information</h2>
-          <form className="profile-settings-form" onSubmit={saveProfile} noValidate>
-            <div className="profile-field"><label htmlFor="profile-name">Full Name</label><Input id="profile-name" name="name" autoComplete="name" value={profile.name} onChange={changeProfile} aria-invalid={Boolean(fieldErrors.name)} aria-describedby={fieldErrors.name ? 'profile-name-error' : undefined} />{fieldErrors.name && <span className="auth-field__error" id="profile-name-error">{fieldErrors.name}</span>}</div>
-            <div className="profile-field"><label htmlFor="profile-email">Email Address</label><Input id="profile-email" type="email" value={user.email} disabled /><span className="profile-card__hint">Email address cannot be changed here.</span></div>
-            <div className="profile-field"><label htmlFor="profile-phone">Phone Number</label><Input id="profile-phone" name="phone" type="tel" autoComplete="tel" value={profile.phone} onChange={changeProfile} aria-invalid={Boolean(fieldErrors.phone)} aria-describedby={fieldErrors.phone ? 'profile-phone-error' : undefined} />{fieldErrors.phone && <span className="auth-field__error" id="profile-phone-error">{fieldErrors.phone}</span>}</div>
-            <div className="profile-field"><label htmlFor="profile-location">Location</label><Input id="profile-location" name="location" autoComplete="address-level2" placeholder="City, region" value={profile.location} onChange={changeProfile} aria-invalid={Boolean(fieldErrors.location)} aria-describedby={fieldErrors.location ? 'profile-location-error' : undefined} />{fieldErrors.location && <span className="auth-field__error" id="profile-location-error">{fieldErrors.location}</span>}</div>
-            <Button type="submit" disabled={profileBusy}>{profileBusy ? 'Saving…' : 'Save Changes'}</Button>
-          </form>
-        </Card>
-
+      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-3">
+        <ProfilePhotoCard avatar={avatar} userName={user.name} initials={initials} photoFile={photoFile} photoBusy={photoBusy} onChoosePhoto={choosePhoto} onSavePhoto={savePhoto} />
+        <PersonalInformationCard profile={profile} email={user.email} errors={fieldErrors} busy={profileBusy} onChange={changeProfile} onSave={saveProfile} />
         {user.role === 'TRANSPORTER' && (
-          <Card className="profile-card profile-card--vehicle">
-            <h2>Vehicle Details</h2>
-            <p className="profile-card__hint">{hasVehicle ? 'Keep your vehicle information up to date.' : 'Add your vehicle to start finding loads.'}</p>
-            {isLoadingVehicle ? <div className="profile-loading"><Spinner label="Loading vehicle details" /></div> : (
-              <form className="profile-settings-form" onSubmit={saveVehicle} noValidate>
-                {vehicleLoadError && <Alert tone="danger">{vehicleLoadError}</Alert>}
-                <div className="profile-field"><label htmlFor="vehicle-type">Truck Type</label><Input id="vehicle-type" name="type" placeholder="Flatbed Truck" value={vehicle.type} onChange={changeVehicle} aria-invalid={Boolean(vehicleErrors.type)} aria-describedby={vehicleErrors.type ? 'vehicle-type-error' : undefined} />{vehicleErrors.type && <span className="auth-field__error" id="vehicle-type-error">{vehicleErrors.type}</span>}</div>
-                <div className="profile-field"><label htmlFor="vehicle-capacity">Capacity (Tons)</label><Input id="vehicle-capacity" name="capacityTons" type="number" min="0.1" step="0.1" placeholder="10" value={vehicle.capacityTons} onChange={changeVehicle} aria-invalid={Boolean(vehicleErrors.capacityTons)} aria-describedby={vehicleErrors.capacityTons ? 'vehicle-capacity-error' : undefined} />{vehicleErrors.capacityTons && <span className="auth-field__error" id="vehicle-capacity-error">{vehicleErrors.capacityTons}</span>}</div>
-                <div className="profile-field"><label htmlFor="vehicle-plate">Plate Number</label><Input id="vehicle-plate" name="plateNumber" placeholder="ET-23456" value={vehicle.plateNumber} onChange={changeVehicle} aria-invalid={Boolean(vehicleErrors.plateNumber)} aria-describedby={vehicleErrors.plateNumber ? 'vehicle-plate-error' : undefined} />{vehicleErrors.plateNumber && <span className="auth-field__error" id="vehicle-plate-error">{vehicleErrors.plateNumber}</span>}</div>
-                <Button type="submit" disabled={vehicleBusy}>{vehicleBusy ? 'Saving…' : 'Save Vehicle'}</Button>
-              </form>
-            )}
-          </Card>
+          <VehicleDetailsCard
+            vehicle={vehicle}
+            errors={vehicleErrors}
+            hasVehicle={hasVehicle}
+            isLoading={isLoadingVehicle}
+            loadError={vehicleLoadError}
+            busy={vehicleBusy}
+            onChange={changeVehicle}
+            onSave={saveVehicle}
+          />
         )}
       </div>
     </main>

@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Input, Skeleton, Spinner, Textarea } from '../../shared/components/index.js';
+import { Alert, Button, Modal } from '../../shared/components/index.js';
+import { getPublicProfile, getVehicle } from '../profile/profile.api.js';
+import { getConversationBids, getConversationLastMessage, getConversationMessages, listConversations, sendConversationMessage } from './messaging.api.js';
+import { decideBid } from '../shipper/shipper.api.js';
 import { useAuth } from '../auth/AuthContext.jsx';
-import { getConversationMessages, listConversations, sendConversationMessage } from './messaging.api.js';
+import { ConversationHeader } from './components/ConversationHeader.jsx';
+import { ConversationContextPanel } from './components/ConversationContextPanel.jsx';
+import { ConversationList } from './components/ConversationList.jsx';
+import { MessageComposer } from './components/MessageComposer.jsx';
+import { MessageList } from './components/MessageList.jsx';
 
 const conversationKey = ['messages', 'conversations'];
 const noConversations = [];
-const dateLabel = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value));
-const timeLabel = (value) => new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
-
-function initials(name = '') {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || '?';
-}
+const noMessages = [];
+const emptyStateClass = 'flex flex-col items-center justify-center gap-2 p-8 text-center text-slate-500';
 
 export function MessagesPage() {
   const { user } = useAuth();
@@ -22,6 +25,10 @@ export function MessagesPage() {
   const [content, setContent] = useState('');
   const [sendError, setSendError] = useState('');
   const [sending, setSending] = useState(false);
+  const [acceptingBid, setAcceptingBid] = useState(false);
+  const [acceptBidOpen, setAcceptBidOpen] = useState(false);
+  const [actionError, setActionError] = useState('');
+  const [bidSelection, setBidSelection] = useState({ conversationId: '', bidId: '' });
   const messagesRef = useRef(null);
 
   const conversationsQuery = useQuery({ queryKey: conversationKey, queryFn: listConversations, refetchInterval: 15_000 });
@@ -29,15 +36,44 @@ export function MessagesPage() {
   const requestedConversation = searchParams.get('conversationId');
   const shipmentId = searchParams.get('shipmentId');
   const transporterId = searchParams.get('transporterId');
-
   const requested = requestedConversation && conversations.find((conversation) => conversation.id === requestedConversation);
-  const fromShipment = shipmentId && conversations.find((conversation) => conversation.shipmentId === shipmentId && (!transporterId || conversation.transporterId === transporterId));
+  const fromShipment = shipmentId && conversations.find((conversation) => conversation.shipmentIds.includes(shipmentId) && (!transporterId || conversation.transporterId === transporterId));
   const selected = requested || fromShipment || conversations[0] || null;
   const selectedId = selected?.id || '';
+  const profileQuery = useQuery({
+    queryKey: ['messages', 'counterpart-profile', selected?.counterpart.id],
+    queryFn: () => getPublicProfile(selected.counterpart.id),
+    enabled: Boolean(selected?.counterpart.id),
+    staleTime: 5 * 60_000,
+  });
+  const vehicleQuery = useQuery({
+    queryKey: ['messages', 'counterpart-vehicle', selected?.counterpart.id],
+    queryFn: () => getVehicle(selected.counterpart.id),
+    enabled: user.role === 'SHIPPER' && Boolean(selected?.counterpart.id),
+    retry: false,
+    staleTime: 5 * 60_000,
+  });
+  const bidQuery = useQuery({
+    queryKey: ['messages', 'conversation-bids', selectedId],
+    queryFn: () => getConversationBids(selectedId),
+    enabled: Boolean(selectedId),
+    refetchInterval: 15_000,
+  });
+  const bids = bidQuery.data || noConversations;
+  const routeBid = shipmentId
+    ? bids.find((bid) => bid.shipmentId === shipmentId && (user.role !== 'SHIPPER' || ['ACCEPTED', 'PENDING'].includes(bid.status)))
+    : null;
+  const storedBid = bidSelection.conversationId === selectedId
+    ? bids.find((bid) => bid.id === bidSelection.bidId)
+    : null;
+  const contextBid = storedBid || routeBid || bids[0] || null;
+  const contextBidIndex = bids.findIndex((bid) => bid.id === contextBid?.id);
 
   useEffect(() => {
-    if (selected && selected.id !== requestedConversation) setSearchParams({ conversationId: selected.id }, { replace: true });
-  }, [requestedConversation, selected, setSearchParams]);
+    if (selected && selected.id !== requestedConversation) {
+      setSearchParams({ conversationId: selected.id, ...(shipmentId ? { shipmentId } : {}) }, { replace: true });
+    }
+  }, [requestedConversation, selected, setSearchParams, shipmentId]);
 
   const messagesQuery = useQuery({
     queryKey: ['messages', 'conversation', selectedId],
@@ -45,11 +81,22 @@ export function MessagesPage() {
     enabled: Boolean(selectedId),
     refetchInterval: 10_000,
   });
-  const messages = useMemo(() => messagesQuery.data || [], [messagesQuery.data]);
+  const contextLastMessageQuery = useQuery({
+    queryKey: ['messages', 'conversation-last-message', selectedId],
+    queryFn: () => getConversationLastMessage(selectedId),
+    enabled: Boolean(selectedId),
+    refetchInterval: 10_000,
+  });
+  const messages = messagesQuery.data || noMessages;
+  const contextLastMessage = contextLastMessageQuery.data;
   const filteredConversations = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase();
     if (!needle) return conversations;
-    return conversations.filter((conversation) => `${conversation.counterpart.name} ${conversation.shipment.goodsDescription} ${conversation.shipment.pickupLocation} ${conversation.shipment.deliveryLocation}`.toLocaleLowerCase().includes(needle));
+    return conversations.filter((conversation) => (
+      `${conversation.counterpart.name} ${conversation.lastMessage?.content || ''}`
+        .toLocaleLowerCase()
+        .includes(needle)
+    ));
   }, [conversations, search]);
 
   useEffect(() => {
@@ -58,8 +105,17 @@ export function MessagesPage() {
 
   function selectConversation(conversation) {
     setSearchParams({ conversationId: conversation.id });
+    setBidSelection({ conversationId: conversation.id, bidId: '' });
     setContent('');
     setSendError('');
+  }
+
+  function selectAdjacentBid(offset) {
+    if (!selected || contextBidIndex < 0 || bids.length < 2) return;
+    const nextIndex = (contextBidIndex + offset + bids.length) % bids.length;
+    const nextBid = bids[nextIndex];
+    setBidSelection({ conversationId: selected.id, bidId: nextBid.id });
+    setSearchParams({ conversationId: selected.id }, { replace: true });
   }
 
   async function sendMessage(event) {
@@ -73,6 +129,7 @@ export function MessagesPage() {
       setContent('');
       await Promise.all([
         cache.invalidateQueries({ queryKey: ['messages', 'conversation', selected.id] }),
+        cache.invalidateQueries({ queryKey: ['messages', 'conversation-last-message', selected.id] }),
         cache.invalidateQueries({ queryKey: conversationKey }),
         cache.invalidateQueries({ queryKey: ['notifications'] }),
       ]);
@@ -83,44 +140,115 @@ export function MessagesPage() {
     }
   }
 
+  async function acceptBid() {
+    if (user.role !== 'SHIPPER' || !selected || !contextBid || acceptingBid) return;
+    setAcceptingBid(true);
+    setActionError('');
+    try {
+      await decideBid({
+        shipmentId: contextBid.shipmentId,
+        bidId: contextBid.id,
+        action: 'accept',
+      });
+      setAcceptBidOpen(false);
+      await Promise.all([
+        cache.invalidateQueries({ queryKey: conversationKey }),
+        cache.invalidateQueries({ queryKey: ['messages', 'conversation-bids', selected.id] }),
+        cache.invalidateQueries({ queryKey: ['messages', 'conversation', selected.id] }),
+        cache.invalidateQueries({ queryKey: ['shipper'] }),
+        cache.invalidateQueries({ queryKey: ['notifications'] }),
+      ]);
+    } catch (error) {
+      setActionError(error.message);
+    } finally {
+      setAcceptingBid(false);
+    }
+  }
+
   const roleLabel = user.role === 'SHIPPER' ? 'Transporter' : 'Shipper';
 
   return (
-    <div className="messages-page">
-      <header className="messages-page__heading"><Link to={user.role === 'SHIPPER' ? '/shipper' : '/transporter'} aria-label="Back to dashboard">←</Link><div><p className="shipper-eyebrow">ETHIOFREIGHT</p><h1>Messages</h1></div></header>
-      <div className="messages-layout">
-        <aside className="messages-sidebar" aria-label="Conversations">
-          <div className="messages-sidebar__search"><Input type="search" aria-label="Search conversations" placeholder="Search conversations…" value={search} onChange={(event) => setSearch(event.target.value)} /></div>
-          {conversationsQuery.isError && <Alert tone="danger">{conversationsQuery.error.message}</Alert>}
-          {conversationsQuery.isPending ? <div className="messages-loading"><Skeleton /><Skeleton /><Skeleton /></div> : filteredConversations.length ? <div className="messages-conversation-list">{filteredConversations.map((conversation) => {
-            const active = conversation.id === selectedId;
-            const latest = conversation.lastMessage;
-            return <button type="button" key={conversation.id} className={`messages-conversation ${active ? 'is-active' : ''}`} onClick={() => selectConversation(conversation)} aria-current={active ? 'true' : undefined}>
-              <span className="messages-avatar">{conversation.counterpart.profilePhoto ? <img src={conversation.counterpart.profilePhoto} alt="" /> : initials(conversation.counterpart.name)}</span>
-              <span className="messages-conversation__body"><span className="messages-conversation__top"><strong>{conversation.counterpart.name}</strong><time>{latest ? timeLabel(latest.createdAt) : dateLabel(conversation.updatedAt)}</time></span><span className="messages-conversation__shipment">{conversation.shipment.goodsDescription}</span><span className="messages-conversation__preview">{latest?.content || 'No messages yet'}</span></span>
-            </button>;
-          })}</div> : <div className="messages-empty-list"><span>✉</span><strong>{search ? 'No conversations found' : 'No conversations yet'}</strong><small>{search ? 'Try another name or shipment.' : 'Chats will appear here when you have a shipment bid.'}</small></div>}
-        </aside>
+    <main className="flex h-screen min-h-0 flex-col bg-white text-slate-800">
+      <header className="flex min-h-16 items-center gap-3 border-b border-blue-800 bg-blue-700 px-4 py-2 text-white sm:px-6">
+        <Link className="text-2xl text-white no-underline transition-colors hover:text-blue-200" to={user.role === 'SHIPPER' ? '/shipper' : '/transporter'} aria-label="Back to dashboard">←</Link>
+        <div>
+          <p className="m-0 text-xs font-bold tracking-widest text-blue-200">ETHIOFREIGHT</p>
+          <h1 className="m-0 text-lg font-bold">Messages</h1>
+        </div>
+      </header>
 
-        <section className="messages-chat" aria-label="Selected conversation">
-          {selected ? <>
-            <header className="messages-chat__header"><span className="messages-avatar">{selected.counterpart.profilePhoto ? <img src={selected.counterpart.profilePhoto} alt="" /> : initials(selected.counterpart.name)}</span><div><strong>{selected.counterpart.name}</strong><small>{roleLabel} · {selected.bidStatus ? selected.bidStatus.toLowerCase() : 'previous bid'} bid</small></div><Link to={user.role === 'SHIPPER' ? `/shipper/shipments/${selected.shipmentId}` : `/transporter/shipments/${selected.shipmentId}`}>Shipment details ↗</Link></header>
-            <div className="messages-context"><strong>{selected.shipment.goodsDescription}</strong><span>{selected.shipment.pickupLocation} → {selected.shipment.deliveryLocation}</span><span>Pickup {dateLabel(selected.shipment.pickupDate)}</span></div>
-            {messagesQuery.isError && <Alert tone="danger">{messagesQuery.error.message}</Alert>}
-            <div className="messages-chat__history" ref={messagesRef}>
-              {messagesQuery.isPending ? <div className="messages-loading"><Skeleton /><Skeleton /></div> : messages.length ? <>
-                {messages.map((message, index) => {
-                  const previousDate = index ? new Date(messages[index - 1].createdAt).toDateString() : null;
-                  const currentDate = new Date(message.createdAt).toDateString();
-                  return <div key={message.id}>{previousDate !== currentDate && <div className="messages-date-divider"><span>{dateLabel(message.createdAt)}</span></div>}<article className={`messages-bubble ${message.senderId === user.id ? 'is-own' : ''}`}><p>{message.content}</p><time>{timeLabel(message.createdAt)}</time></article></div>;
-                })}
-              </> : <div className="messages-chat__empty"><span>✉</span><strong>No messages yet</strong><p>Start the conversation about this shipment.</p></div>}
+      <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[20rem_minmax(0,1fr)] md:grid-rows-[minmax(0,1fr)_auto] xl:grid-cols-[20rem_minmax(0,1fr)_20rem] xl:grid-rows-1">
+      <ConversationList
+          conversations={conversations}
+          filteredConversations={filteredConversations}
+          selectedId={selectedId}
+          lastMessage={selectedId ? contextLastMessage : null}
+          search={search}
+          onSearchChange={setSearch}
+          isPending={conversationsQuery.isPending}
+          error={conversationsQuery.error?.message}
+          onSelect={selectConversation}
+        />
+
+        <section className="flex min-h-[34rem] min-w-0 flex-col px-3 pb-3 sm:px-4 md:min-h-0" aria-label="Selected conversation">
+          {selected ? (
+            <>
+              <ConversationHeader conversation={selected} roleLabel={roleLabel} />
+              <MessageList messages={messages} userId={user.id} isPending={messagesQuery.isPending} error={messagesQuery.error?.message} listRef={messagesRef} />
+              <MessageComposer
+                content={content}
+                sendError={sendError}
+                sending={sending}
+                onChange={setContent}
+                onSend={sendMessage}
+              />
+            </>
+          ) : (
+            <div className={emptyStateClass}>
+              <span className="text-2xl text-blue-700">✉</span>
+              <h2 className="m-0 text-base">Your shipment conversations</h2>
+              <p className="m-0 max-w-sm text-sm">Select a chat to view messages and coordinate with the other party.</p>
             </div>
-            {sendError && <Alert tone="danger">{sendError}</Alert>}
-            {selected.canSend ? <form className="messages-compose" onSubmit={sendMessage}><Textarea aria-label="Write a message" maxLength={5000} placeholder="Type your message…" value={content} onChange={(event) => setContent(event.target.value)} /><Button type="submit" aria-label="Send message" disabled={sending || !content.trim()}>{sending ? <Spinner /> : '➤'}</Button></form> : <p className="messages-closed-note">This bid is closed. You can read the conversation history.</p>}
-          </> : <div className="messages-chat__welcome"><span>✉</span><h2>Your shipment conversations</h2><p>Select a chat to view messages and coordinate with the other party.</p></div>}
+          )}
         </section>
+
+        {selected && (
+          <ConversationContextPanel
+            conversation={selected}
+            role={user.role}
+            bids={bids}
+            bidIndex={contextBidIndex}
+            bidsPending={bidQuery.isPending}
+            bidsError={bidQuery.error?.message}
+            profile={profileQuery.data}
+            profilePending={profileQuery.isPending}
+            vehicle={vehicleQuery.data}
+            bid={contextBid}
+            accepting={acceptingBid}
+            actionError={actionError}
+            onPreviousBid={() => selectAdjacentBid(-1)}
+            onNextBid={() => selectAdjacentBid(1)}
+            onAcceptBid={() => {
+              setActionError('');
+              setAcceptBidOpen(true);
+            }}
+          />
+        )}
       </div>
-    </div>
+      <Modal
+        open={acceptBidOpen}
+        onClose={() => !acceptingBid && setAcceptBidOpen(false)}
+        title="Accept this bid?"
+      >
+        <p className="mb-4 mt-0 text-sm leading-6 text-slate-600">
+          Accepting this offer starts the shipment and closes the other pending bids.
+        </p>
+        {actionError && <Alert tone="danger">{actionError}</Alert>}
+        <div className="flex justify-end gap-2 max-sm:flex-col-reverse">
+          <Button variant="secondary" disabled={acceptingBid} onClick={() => setAcceptBidOpen(false)}>Keep reviewing</Button>
+          <Button disabled={acceptingBid} onClick={acceptBid}>{acceptingBid ? 'Accepting…' : 'Accept bid'}</Button>
+        </div>
+      </Modal>
+    </main>
   );
 }

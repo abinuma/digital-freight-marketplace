@@ -183,24 +183,23 @@ Owned by: `messaging` module
 |--------|------|-------------|-------------|
 | id | UUID | PK | Unique message identifier |
 | conversationId | UUID | FK → Conversation.id, NULL for ambiguous legacy messages | Private shipper/transporter thread |
-| shipmentId | UUID | FK → Shipment.id, NOT NULL | Shipment context |
 | senderId | UUID | FK → User.id, NOT NULL | User who sent the message |
 | content | TEXT | NOT NULL | Message body |
 | createdAt | TIMESTAMP | NOT NULL | Sent timestamp |
 
 ### 3.7 Conversation
 
-Owned by: `messaging` module. One conversation exists for each shipment/transporter pair; its shipper is the shipment owner.
+Owned by: `messaging` module. One conversation exists for each shipper/transporter pair. It is an independent private chat; messages do not belong to bids or shipments.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | id | UUID | PK | Unique conversation identifier |
-| shipmentId | UUID | FK → Shipment.id, NOT NULL | Shipment being discussed |
+| shipperId | UUID | FK → User.id, NOT NULL | Shipper participant |
 | transporterId | UUID | FK → User.id, NOT NULL | Private transporter participant |
 | createdAt | TIMESTAMP | NOT NULL | Conversation creation time |
 | updatedAt | TIMESTAMP | NOT NULL | Last conversation activity, used for ordering |
 
-**Unique constraint:** `(shipmentId, transporterId)` prevents two private conversations for the same pair.
+**Unique constraint:** `(shipperId, transporterId)` prevents duplicate private conversations for the same participant pair.
 
 ### 3.8 Review
 
@@ -251,11 +250,10 @@ Indexes are created to support the primary query patterns identified in the func
 | Bid | `idx_bid_shipment` | shipmentId | Bids for a shipment |
 | Bid | `idx_bid_transporter` | transporterId | Transporter's bid history |
 | Bid | `idx_bid_shipment_transporter` | shipmentId, transporterId | Unique active bid check |
-| Message | `idx_message_shipment` | shipmentId, createdAt | Message thread loading |
 | Message | `idx_message_conversation_created` | conversationId, createdAt | Private thread loading |
-| Conversation | `idx_conversation_shipment_transporter` | shipmentId, transporterId | One conversation per shipper/transporter pair |
+| Conversation | `idx_conversation_shipper_transporter` | shipperId, transporterId | One conversation per shipper/transporter pair |
 | Conversation | `idx_conversation_transporter_updated` | transporterId, updatedAt DESC | Transporter conversation list |
-| Conversation | `idx_conversation_shipment_updated` | shipmentId, updatedAt DESC | Shipper conversation list |
+| Conversation | `idx_conversation_shipper_updated` | shipperId, updatedAt DESC | Shipper conversation list |
 | Notification | `idx_notification_user` | userId, read, createdAt DESC | User's notification list |
 | Review | `idx_review_reviewee` | revieweeId | Profile rating calculation |
 
@@ -297,7 +295,6 @@ Each module owns specific tables. No module writes directly to another module's 
 | Referential integrity | Foreign keys with appropriate ON DELETE behavior |
 | Shipment images cascade | `ON DELETE CASCADE` — deleting a shipment removes its images |
 | Bids reference protection | `ON DELETE RESTRICT` — cannot delete a shipment that has bids (cancel instead) |
-| Messages reference protection | `ON DELETE RESTRICT` — cannot delete shipment with messages |
 | Review immutability | No UPDATE operations on Review table (enforced in service layer) |
 | Single vehicle per transporter | UNIQUE constraint on `Vehicle.userId` |
 | One active bid per transporter per shipment | Partial unique index on `(shipmentId, transporterId)` where status is `PENDING` |

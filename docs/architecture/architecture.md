@@ -83,7 +83,7 @@ Each module encapsulates a distinct business domain. Modules own their routes, b
 ```
 
 - `bid` depends on `shipment` (to validate shipment status) and `auth` (to identify the Transporter).
-- `messaging` depends on `shipment` (messages are scoped to a shipment) and `auth` (to identify participants).
+- `messaging` depends on `auth` for participant identity. It reads bid/shipment data only for the separate context panel; chat messages belong to the participant conversation, not to bids or shipments.
 - `notification` is consumed by `bid` and `shipment` (to send alerts on events).
 - `admin` depends on `auth` and `shipment` for moderation operations.
 

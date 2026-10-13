@@ -6,6 +6,10 @@ export const conversationMessagesSchema = {
   params: z.object({ conversationId }),
 };
 
+export const conversationBidsSchema = {
+  params: z.object({ conversationId }),
+};
+
 export const createMessageSchema = {
   params: z.object({ conversationId }),
   body: z.object({

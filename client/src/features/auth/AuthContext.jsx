@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createContext, useCallback, useContext, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   completeCurrentUserProfile,
   getCurrentUser,
@@ -7,10 +7,10 @@ import {
   logoutCurrentUser,
   registerWithEmail,
   startGoogleSignIn as requestGoogleSignIn,
-} from './auth.api.js';
+} from "./auth.api.js";
 
 const AuthContext = createContext(null);
-const currentUserQueryKey = ['auth', 'currentUser'];
+const currentUserQueryKey = ["auth", "currentUser"];
 
 async function loadCurrentUser() {
   try {
@@ -42,15 +42,21 @@ export function AuthProvider({ children }) {
     return result.data;
   }, [refetch]);
 
-  const login = useCallback(async (credentials) => {
-    await loginWithEmail(credentials);
-    return refreshUser();
-  }, [refreshUser]);
+  const login = useCallback(
+    async (credentials) => {
+      await loginWithEmail(credentials);
+      return refreshUser();
+    },
+    [refreshUser],
+  );
 
-  const register = useCallback(async (details) => {
-    await registerWithEmail(details);
-    return refreshUser();
-  }, [refreshUser]);
+  const register = useCallback(
+    async (details) => {
+      await registerWithEmail(details);
+      return refreshUser();
+    },
+    [refreshUser],
+  );
 
   const logout = useCallback(async () => {
     await logoutCurrentUser();
@@ -58,11 +64,14 @@ export function AuthProvider({ children }) {
     queryClient.setQueryData(currentUserQueryKey, null);
   }, [queryClient]);
 
-  const completeProfile = useCallback(async (profile) => {
-    const user = await completeCurrentUserProfile(profile);
-    queryClient.setQueryData(currentUserQueryKey, user);
-    return user;
-  }, [queryClient]);
+  const completeProfile = useCallback(
+    async (profile) => {
+      const user = await completeCurrentUserProfile(profile);
+      queryClient.setQueryData(currentUserQueryKey, user);
+      return user;
+    },
+    [queryClient],
+  );
 
   const startGoogleSignIn = useCallback(
     (callbackURL = window.location.origin) => requestGoogleSignIn(callbackURL),
@@ -70,30 +79,33 @@ export function AuthProvider({ children }) {
   );
 
   const user = currentUser || null;
-  const value = useMemo(() => ({
-    user,
-    isAuthenticated: Boolean(user),
-    isLoading: isPending,
-    isError,
-    error: error || null,
-    login,
-    register,
-    logout,
-    refreshUser,
-    completeProfile,
-    startGoogleSignIn,
-  }), [
-    user,
-    isPending,
-    isError,
-    error,
-    login,
-    register,
-    logout,
-    refreshUser,
-    completeProfile,
-    startGoogleSignIn,
-  ]);
+  const value = useMemo(
+    () => ({
+      user,
+      isAuthenticated: Boolean(user),
+      isLoading: isPending,
+      isError,
+      error: error || null,
+      login,
+      register,
+      logout,
+      refreshUser,
+      completeProfile,
+      startGoogleSignIn,
+    }),
+    [
+      user,
+      isPending,
+      isError,
+      error,
+      login,
+      register,
+      logout,
+      refreshUser,
+      completeProfile,
+      startGoogleSignIn,
+    ],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
@@ -102,6 +114,6 @@ export function AuthProvider({ children }) {
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 }

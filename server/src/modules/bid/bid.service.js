@@ -43,7 +43,7 @@ export async function createBid(user, shipmentId, input) {
   }
 
   try {
-    const bid = await bidRepository.createBid(user.id, shipmentId, {
+    const bid = await bidRepository.createBid(user.id, shipmentId, shipment.shipperId, {
       ...input,
       pickupDate: new Date(input.pickupDate),
     });

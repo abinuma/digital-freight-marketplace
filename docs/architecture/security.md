@@ -64,7 +64,7 @@ Beyond role checks, the **service layer** verifies ownership:
 | Update/withdraw bid | `bid.transporterId === req.user.id` |
 | Accept/decline bid | `shipment.shipperId === req.user.id` |
 
-Messaging uses a private `Conversation` per `(shipmentId, transporterId)`. The shipper who owns the shipment and that transporter are the only readers. Participants can read history after a bid closes, while sending requires a `PENDING` or `ACCEPTED` bid.
+Messaging uses a private `Conversation` per `(shipperId, transporterId)`. Only those two participants can read or send messages in the thread. Messages are independent of bids and shipments, so chat remains available regardless of bid status. Bid navigation changes only the shipment/bid context panel on the messaging page.
 
 ---
 

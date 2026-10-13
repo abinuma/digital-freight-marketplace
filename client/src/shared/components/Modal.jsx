@@ -14,13 +14,13 @@ export function Modal({ open, onClose, title, children, className = '' }) {
 
   if (!open) return null;
   return (
-    <div className="ui-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.(); }}>
-      <section className={`ui-modal ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId}>
-        <header className="ui-modal__header">
-          <h2 id={titleId}>{title}</h2>
-          <button className="ui-modal__close" type="button" onClick={onClose} aria-label="Close dialog">×</button>
+    <div className="fixed inset-0 z-40 grid place-items-center overflow-y-auto bg-slate-900/40 p-4 backdrop-blur-sm max-sm:p-3" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.(); }}>
+      <section className={`w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4">
+          <h2 className="m-0 text-lg font-semibold text-slate-900" id={titleId}>{title}</h2>
+          <button className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border-0 bg-transparent text-xl text-slate-500 hover:bg-slate-200 hover:text-slate-800" type="button" onClick={onClose} aria-label="Close dialog">×</button>
         </header>
-        <div className="ui-modal__body">{children}</div>
+        <div className="p-5">{children}</div>
       </section>
     </div>
   );

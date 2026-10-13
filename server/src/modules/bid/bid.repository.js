@@ -20,15 +20,15 @@ export function findShipmentForBid(shipmentId) {
   });
 }
 
-export function createBid(transporterId, shipmentId, data) {
+export function createBid(transporterId, shipmentId, shipperId, data) {
   return prisma.$transaction(async (transaction) => {
     const bid = await transaction.bid.create({
       data: { ...data, transporterId, shipmentId },
       select: bidSelect,
     });
     await transaction.conversation.upsert({
-      where: { shipmentId_transporterId: { shipmentId, transporterId } },
-      create: { shipmentId, transporterId },
+      where: { shipperId_transporterId: { shipperId, transporterId } },
+      create: { shipperId, transporterId },
       update: {},
       select: { id: true },
     });
