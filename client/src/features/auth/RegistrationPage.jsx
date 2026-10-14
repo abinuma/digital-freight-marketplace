@@ -7,6 +7,7 @@ import { AuthPageLayout } from "./AuthPageLayout.jsx";
 import { GoogleSignInButton } from "./GoogleSignInButton.jsx";
 import { errorsFromIssues, registrationSchema } from "./auth.schemas.js";
 import { PasswordInput } from "./PasswordInput.jsx";
+import { PasswordRulesList } from "./PasswordRulesList.jsx";
 
 const initialForm = {
   firstName: "",
@@ -241,9 +242,7 @@ export function RegistrationPage() {
             />
           </AuthField>
         </div>
-        <p className={`mt-0.5 mx-0 mb-0 text-slate-500 text-sm password-hint`}>
-          Use 8 or more characters with uppercase, lowercase, and a number.
-        </p>
+        <PasswordRulesList password={form.password} />
         {formError && (
           <p
             className={`m-0 text-slate-500 text-sm auth-form__error`}
@@ -260,10 +259,10 @@ export function RegistrationPage() {
           {isSubmitting ? "Creating account…" : "Create Account"}
         </Button>
       </form>
-      <div
-        className={`flex items-center gap-3 my-4 mx-0 text-slate-500 text-sm         auth-divider`}
-      >
+      <div className="my-5 flex items-center justify-center gap-3 text-xs font-medium uppercase tracking-wide text-slate-400 auth-divider">
+        <span className="h-px flex-1 bg-slate-200" />
         <span>or</span>
+        <span className="h-px flex-1 bg-slate-200" />
       </div>
       <GoogleSignInButton label="Sign up with Google" />
     </AuthPageLayout>

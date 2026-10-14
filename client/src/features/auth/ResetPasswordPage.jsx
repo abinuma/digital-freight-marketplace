@@ -6,6 +6,7 @@ import { AuthField } from './AuthField.jsx';
 import { AuthPageLayout } from './AuthPageLayout.jsx';
 import { errorsFromIssues, passwordResetSchema } from './auth.schemas.js';
 import { PasswordInput } from './PasswordInput.jsx';
+import { PasswordRulesList } from './PasswordRulesList.jsx';
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -63,7 +64,7 @@ export function ResetPasswordPage() {
           <AuthField id="confirmPassword" label="Confirm Password" error={fieldErrors.confirmPassword}>
             <PasswordInput id="confirmPassword" name="confirmPassword" value={form.confirmPassword} onChange={updateField} autoComplete="new-password" error={fieldErrors.confirmPassword} />
           </AuthField>
-          <p className={`mt-0.5 mx-0 mb-0 text-slate-500 text-sm password-hint`}>Use 8 or more characters with uppercase, lowercase, and a number.</p>
+          <PasswordRulesList password={form.password} />
           {formError && <p className={`m-0 text-slate-500 text-sm auth-form__error`} role="alert">{formError}</p>}
           <Button type="submit" className={`w-full min-h-10 rounded-lg text-sm auth-submit`} disabled={isSubmitting}>{isSubmitting ? 'Updating…' : 'Update Password'}</Button>
         </form>

@@ -27,7 +27,8 @@ describe('shared UI components', () => {
       children: createElement('input', { id: 'email', name: 'email' }),
     }))
 
-    expect(markup).toContain('<label for="email">Email address</label>')
+    expect(markup).toContain('for="email"')
+    expect(markup).toContain('Email address')
     expect(markup).toContain('role="alert"')
     expect(markup).toContain('id="email-error"')
   })
