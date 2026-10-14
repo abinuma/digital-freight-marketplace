@@ -1,6 +1,5 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext.jsx';
-import { Button } from '../../shared/components/index.js';
+import { NavLink, Outlet } from 'react-router-dom';
+import { UserMenu } from '../../shared/components/index.js';
 import { NotificationBell } from '../notifications/NotificationBell.jsx';
 
 const navigation = [
@@ -8,19 +7,9 @@ const navigation = [
   { to: '/transporter/shipments', icon: '⌕', label: 'Find shipments' },
   { to: '/transporter/bids', icon: '▤', label: 'My bids' },
   { to: '/transporter/messages', icon: '✉', label: 'Messages' },
-  { to: '/profile', icon: '◉', label: 'My profile' },
 ];
 
 export function TransporterLayout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const initials = (user?.name || user?.email || 'T').slice(0, 1).toUpperCase();
-
-  async function handleLogout() {
-    await logout();
-    navigate('/login', { replace: true });
-  }
-
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
@@ -28,11 +17,9 @@ export function TransporterLayout() {
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-blue-700 font-sans text-base text-white">E</span>
           EthioFreight
         </NavLink>
-        <div className="flex items-center gap-3 text-sm font-semibold text-slate-700">
+        <div className="flex items-center gap-3">
           <NotificationBell />
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-200 font-bold text-blue-700">{initials}</span>
-          <span className="hidden sm:inline">{user?.name || 'Transporter'}</span>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>Sign out</Button>
+          <UserMenu />
         </div>
       </header>
       <div className="flex flex-1 max-md:flex-col">

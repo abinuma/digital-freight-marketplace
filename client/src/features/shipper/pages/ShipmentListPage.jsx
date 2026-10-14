@@ -66,7 +66,7 @@ export function ShipmentListPage() {
           className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-slate-800"
           to="/shipper/shipments/new"
         >
-          <span aria-hidden="true">＋</span> Post a shipment
+          Post a shipment
         </Link>
       </div>
 

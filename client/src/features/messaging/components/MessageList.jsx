@@ -17,7 +17,7 @@ export function MessageList({ messages, userId, isPending, error, listRef }) {
           return (
             <div key={message.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
               {previousDate !== currentDate && <div className="my-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase text-slate-400">{dateLabel(message.createdAt)}</div>}
-              <article className={`grid w-fit max-w-full gap-1 rounded-xl p-3 shadow-sm ${isOwn ? 'rounded-br-sm bg-blue-700 text-white' : 'rounded-bl-sm border border-slate-100 bg-white text-slate-800'}`}>
+              <article className={`grid w-fit max-w-sm gap-1 rounded-xl p-3 shadow-sm ${isOwn ? 'rounded-br-sm bg-blue-700 text-white' : 'rounded-bl-sm border border-slate-100 bg-white text-slate-800'}`}>
                 <p className="m-0 whitespace-pre-wrap break-words text-sm leading-6">{message.content}</p>
                 <time className={`justify-self-end text-xs ${isOwn ? 'text-blue-200' : 'text-slate-400'}`}>{timeLabel(message.createdAt)}</time>
               </article>

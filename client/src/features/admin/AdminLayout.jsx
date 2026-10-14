@@ -1,6 +1,5 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext.jsx';
-import { Button } from '../../shared/components/index.js';
+import { NavLink, Outlet } from 'react-router-dom';
+import { UserMenu } from '../../shared/components/index.js';
 
 const navigation = [
   { to: '/admin', icon: '▦', label: 'Overview', end: true },
@@ -8,14 +7,6 @@ const navigation = [
 ];
 
 export function AdminLayout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  async function handleLogout() {
-    await logout();
-    navigate('/login', { replace: true });
-  }
-
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
@@ -24,10 +15,8 @@ export function AdminLayout() {
           EthioFreight
           <span className="rounded bg-slate-100 px-2 py-1 text-xs font-extrabold tracking-wide text-blue-700">ADMIN</span>
         </NavLink>
-        <div className="flex items-center gap-3 text-sm font-semibold text-slate-700">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-200 font-bold text-blue-700">{(user?.name || 'A').slice(0, 1).toUpperCase()}</span>
-          <span className="hidden sm:inline">{user?.name || 'Administrator'}</span>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>Sign out</Button>
+        <div className="flex items-center gap-3">
+          <UserMenu />
         </div>
       </header>
       <div className="flex flex-1 max-md:flex-col">
