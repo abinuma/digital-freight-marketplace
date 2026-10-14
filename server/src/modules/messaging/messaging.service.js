@@ -45,6 +45,7 @@ export async function listConversationBids(user, conversationId) {
 
 export async function listMessages(user, conversationId) {
   await getParticipantConversation(user, conversationId);
+  await notificationService.markNotificationsReadByReference(user.id, conversationId);
   return messagingRepository.findConversationMessages(conversationId);
 }
 

@@ -40,6 +40,10 @@ export function markAllNotificationsRead(userId) {
   return prisma.notification.updateMany({ where: { userId, read: false }, data: { read: true } });
 }
 
+export function markNotificationsReadByReference(userId, referenceId) {
+  return prisma.notification.updateMany({ where: { userId, referenceId, read: false }, data: { read: true } });
+}
+
 export function findBidNotificationDetails(bidId) {
   return prisma.bid.findUnique({
     where: { id: bidId },

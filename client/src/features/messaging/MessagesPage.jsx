@@ -11,6 +11,7 @@ import {
   sendConversationMessage,
 } from './messaging.api.js';
 import { decideBid } from '../shipper/shipper.api.js';
+import { markNotificationsReadByReference } from '../notifications/notifications.api.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { ConversationHeader } from './components/ConversationHeader.jsx';
 import { ConversationContextPanel } from './components/ConversationContextPanel.jsx';
@@ -130,6 +131,16 @@ export function MessagesPage() {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
   }, [messages, selectedId]);
+
+  useEffect(() => {
+    if (selectedId) {
+      markNotificationsReadByReference(selectedId)
+        .catch(() => {})
+        .finally(() => {
+          cache.invalidateQueries({ queryKey: ['notifications'] });
+        });
+    }
+  }, [selectedId, messagesQuery.data, cache]);
 
   function selectConversation(conversation) {
     setSearchParams({ conversationId: conversation.id });

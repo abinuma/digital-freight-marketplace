@@ -9,5 +9,9 @@ export const notificationListSchema = {
 };
 
 export const notificationParamsSchema = {
-  params: z.object({ id: z.uuid() }),
+  params: z.object({ id: z.string().uuid() }),
+};
+
+export const notificationReferenceParamsSchema = {
+  params: z.object({ referenceId: z.string().uuid() }),
 };

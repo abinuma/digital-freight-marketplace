@@ -14,3 +14,8 @@ export async function markAllNotificationsRead() {
   const { data } = await apiClient.patch('/notifications/read-all');
   return data.data;
 }
+
+export async function markNotificationsReadByReference(referenceId) {
+  const { data } = await apiClient.patch(`/notifications/reference/${referenceId}/read`);
+  return data.data;
+}

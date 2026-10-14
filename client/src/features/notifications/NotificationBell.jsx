@@ -38,15 +38,18 @@ export function NotificationBell() {
   const [actionError, setActionError] = useState("");
   const recent = useQuery({
     queryKey: recentKey,
-    queryFn: () => listNotifications({ limit: 12 }),
-    refetchInterval: 60_000,
+    queryFn: () => listNotifications({ limit: 50, unreadOnly: true }),
+    refetchInterval: 15_000,
   });
   const unread = useQuery({
     queryKey: unreadKey,
     queryFn: () => listNotifications({ limit: 1, unreadOnly: true }),
-    refetchInterval: 60_000,
+    refetchInterval: 15_000,
   });
-  const unreadCount = unread.data?.pagination?.total || 0;
+  const unreadNotifications = (recent.data?.notifications || []).filter((item) => !item.read);
+  const unreadCount = typeof unread.data?.pagination?.total === 'number'
+    ? unread.data.pagination.total
+    : unreadNotifications.length;
 
   useEffect(() => {
     function closeOutside(event) {
@@ -67,18 +70,26 @@ export function NotificationBell() {
     setActionError("");
     try {
       if (!notification.read) {
-        await markNotificationRead(notification.id);
+        // Optimistically remove from list and decrement badge count
         cache.setQueryData(recentKey, (current) =>
           current
             ? {
                 ...current,
-                notifications: current.notifications.map((item) =>
-                  item.id === notification.id ? { ...item, read: true } : item,
-                ),
+                notifications: current.notifications.filter((item) => item.id !== notification.id),
               }
             : current,
         );
-        await cache.invalidateQueries({ queryKey: unreadKey });
+        cache.setQueryData(unreadKey, (current) => {
+          if (!current?.pagination) return current;
+          const newTotal = Math.max(0, (current.pagination.total || 0) - 1);
+          return {
+            ...current,
+            pagination: { ...current.pagination, total: newTotal },
+          };
+        });
+
+        await markNotificationRead(notification.id);
+        await cache.invalidateQueries({ queryKey: ["notifications"] });
       }
       setOpen(false);
       navigate(destinationFor(user.role, notification));
@@ -91,19 +102,18 @@ export function NotificationBell() {
     setWorking(true);
     setActionError("");
     try {
+      // Optimistically clear unread list and set badge number to 0
+      cache.setQueryData(unreadKey, {
+        notifications: [],
+        pagination: { total: 0, page: 1, limit: 1, totalPages: 0 },
+      });
+      cache.setQueryData(recentKey, {
+        notifications: [],
+        pagination: { total: 0, page: 1, limit: 50, totalPages: 0 },
+      });
+
       await markAllNotificationsRead();
-      cache.setQueryData(recentKey, (current) =>
-        current
-          ? {
-              ...current,
-              notifications: current.notifications.map((item) => ({
-                ...item,
-                read: true,
-              })),
-            }
-          : current,
-      );
-      await cache.invalidateQueries({ queryKey: unreadKey });
+      await cache.invalidateQueries({ queryKey: ["notifications"] });
     } catch (error) {
       setActionError(error.message);
     } finally {
@@ -175,40 +185,42 @@ export function NotificationBell() {
             </div>
           )}
           {recent.isPending ? (
-            <div className="flex min-h-24 items-center justify-center gap-2 p-4 text-sm text-slate-500">
-              <Spinner /> Loading notifications…
+            <div className="flex h-[124px] items-center justify-center gap-2 p-4 text-sm text-slate-500">
+              <Spinner /> Loading unread messages…
             </div>
-          ) : recent.data?.notifications?.length ? (
-            <div className="max-h-96 overflow-y-auto">
-              {recent.data.notifications.map((notification) => (
+          ) : unreadNotifications.length > 0 ? (
+            <div className="max-h-[124px] overflow-y-auto divide-y divide-slate-100">
+              {unreadNotifications.map((notification) => (
                 <button
                   type="button"
-                  className={`flex w-full items-start gap-3 border-0 border-b border-slate-100 px-4 py-3 text-left text-inherit ${notification.read ? "bg-white" : "bg-blue-50"} hover:bg-slate-50`}
+                  className="flex h-[62px] w-full items-center gap-3 px-4 py-2 text-left text-inherit bg-blue-50/70 hover:bg-blue-100/70 transition-colors"
                   onClick={() => updateNotification(notification)}
                   key={notification.id}
                 >
                   <span
-                    className={`mt-1 text-xs ${notification.read ? "text-slate-300" : "text-blue-700"}`}
+                    className="text-xs text-blue-700 shrink-0"
                     aria-hidden="true"
                   >
                     ●
                   </span>
-                  <span className="grid min-w-0 flex-1 gap-1">
-                    <strong className="text-sm text-slate-800">
-                      {notification.title}
-                    </strong>
-                    <small className="text-sm text-slate-600">
+                  <span className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="truncate text-sm font-semibold text-slate-900">
+                        {notification.title}
+                      </strong>
+                      <time className="shrink-0 text-[11px] text-slate-400">
+                        {new Intl.DateTimeFormat(undefined, {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        }).format(new Date(notification.createdAt))}
+                      </time>
+                    </div>
+                    <p className="m-0 truncate text-xs text-slate-600">
                       {notification.message}
-                    </small>
-                    <time className="text-xs text-slate-400">
-                      {new Intl.DateTimeFormat(undefined, {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }).format(new Date(notification.createdAt))}
-                    </time>
+                    </p>
                   </span>
                   <span
-                    className="self-center text-sm text-slate-400"
+                    className="shrink-0 text-xs text-slate-400"
                     aria-hidden="true"
                   >
                     →
@@ -217,8 +229,8 @@ export function NotificationBell() {
               ))}
             </div>
           ) : (
-            <div className="flex min-h-24 items-center justify-center p-4 text-sm text-slate-500">
-              You don’t have any notifications yet.
+            <div className="flex h-[124px] items-center justify-center p-4 text-sm text-slate-500">
+              No unread messages.
             </div>
           )}
         </section>

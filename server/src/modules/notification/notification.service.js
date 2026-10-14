@@ -51,6 +51,11 @@ export async function markAllNotificationsRead(userId) {
   return { updated: result.count };
 }
 
+export async function markNotificationsReadByReference(userId, referenceId) {
+  const result = await notificationRepository.markNotificationsReadByReference(userId, referenceId);
+  return { updated: result.count };
+}
+
 export function bidReceived(bidId) {
   return safely('BID_RECEIVED', async () => {
     const bid = await notificationRepository.findBidNotificationDetails(bidId);

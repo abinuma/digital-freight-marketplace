@@ -26,3 +26,12 @@ export async function markAllNotificationsRead(req, res, next) {
     return next(error);
   }
 }
+
+export async function markNotificationsReadByReference(req, res, next) {
+  try {
+    const result = await notificationService.markNotificationsReadByReference(req.user.id, req.params.referenceId);
+    return res.json({ data: result });
+  } catch (error) {
+    return next(error);
+  }
+}
