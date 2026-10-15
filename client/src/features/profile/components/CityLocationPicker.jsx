@@ -1,0 +1,165 @@
+import { useEffect, useRef, useState } from 'react';
+import { SORTED_CITIES } from '../../../shared/constants/locations.js';
+
+export function CityLocationPicker({ city, zone, region, error, onChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState(city || '');
+  const containerRef = useRef(null);
+
+  // Sync local query when city prop updates from outside
+  useEffect(() => {
+    setQuery(city || '');
+  }, [city]);
+
+  // Filter cities matching typed query
+  const filteredCities = query.trim()
+    ? SORTED_CITIES.filter((item) =>
+        item.displayName.toLowerCase().includes(query.trim().toLowerCase())
+      )
+    : SORTED_CITIES;
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+        if (city) {
+          setQuery(city);
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [city]);
+
+  function handleSelect(item) {
+    setQuery(item.city);
+    setIsOpen(false);
+    onChange({
+      city: item.city,
+      zone: item.zone,
+      region: item.region,
+      location: `${item.city}, ${item.zone}, ${item.region}`,
+    });
+  }
+
+  function handleInputChange(event) {
+    const value = event.target.value;
+    setQuery(value);
+    setIsOpen(true);
+
+    if (!value.trim()) {
+      onChange({ city: '', zone: '', region: '', location: '' });
+      return;
+    }
+
+    // Auto-match if user types an exact city name
+    const exact = SORTED_CITIES.find(
+      (c) => c.city.toLowerCase() === value.trim().toLowerCase()
+    );
+    if (exact) {
+      onChange({
+        city: exact.city,
+        zone: exact.zone,
+        region: exact.region,
+        location: `${exact.city}, ${exact.zone}, ${exact.region}`,
+      });
+    }
+  }
+
+  function handleKeyDown(event) {
+    if (event.key === 'Escape') {
+      setIsOpen(false);
+    } else if (event.key === 'ArrowDown' && !isOpen) {
+      setIsOpen(true);
+    }
+  }
+
+  function handleClear() {
+    setQuery('');
+    onChange({ city: '', zone: '', region: '', location: '' });
+    setIsOpen(false);
+  }
+
+  return (
+    <div className="relative grid content-start gap-1.5 sm:col-span-2" ref={containerRef}>
+      <span className="cursor-default text-sm font-semibold text-slate-700">
+        City
+      </span>
+      <div className="relative">
+        <input
+          id="profile-city"
+          name="city"
+          type="text"
+          autoComplete="off"
+          placeholder="Type or select a city..."
+          className="flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 pr-14 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          value={query}
+          onChange={handleInputChange}
+          onFocus={() => setIsOpen(true)}
+          onKeyDown={handleKeyDown}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? 'profile-city-error' : undefined}
+          aria-expanded={isOpen}
+          role="combobox"
+        />
+        <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 gap-1.5">
+          {query && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="text-slate-400 hover:text-slate-600 p-0.5 border-0 bg-transparent cursor-pointer text-xs"
+              aria-label="Clear city"
+            >
+              ✕
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsOpen((prev) => !prev)}
+            className="text-slate-400 hover:text-slate-600 p-0.5 border-0 bg-transparent cursor-pointer text-xs"
+            aria-label="Toggle city list"
+          >
+            ▼
+          </button>
+        </div>
+      </div>
+
+      {isOpen && (
+        <ul
+          className="absolute z-50 left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg list-none p-0 m-0 text-sm text-slate-800"
+          role="listbox"
+        >
+          {filteredCities.length > 0 ? (
+            filteredCities.map((item) => {
+              const isSelected = item.city === city && item.zone === zone;
+              return (
+                <li
+                  key={item.id}
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => handleSelect(item)}
+                  className={`cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-900 transition-colors ${
+                    isSelected ? 'bg-blue-50 font-semibold text-blue-900' : ''
+                  }`}
+                >
+                  {item.displayName}
+                </li>
+              );
+            })
+          ) : (
+            <li className="px-3 py-2 text-slate-400 italic cursor-default">
+              No matching cities found
+            </li>
+          )}
+        </ul>
+      )}
+
+      {error && (
+        <span className="text-sm text-red-700" id="profile-city-error">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}

@@ -59,7 +59,9 @@ export function ConversationBidCard({
             {role === 'SHIPPER' && vehicle && (
               <>
                 <span className="text-slate-300">·</span>
-                <span className="truncate">{vehicle.type} ({vehicle.capacityTons}t)</span>
+                <span className="truncate">
+                  {vehicle.type} ({vehicle.capacityTons}t{vehicle.volumeM3 ? ` · ${vehicle.volumeM3}m³` : ''})
+                </span>
               </>
             )}
           </div>

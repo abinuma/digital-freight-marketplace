@@ -1,9 +1,9 @@
 export function ProfileField({ id, label, error, helperText, children }) {
   return (
     <div className="grid content-start gap-1.5">
-      <label className="text-sm font-semibold text-slate-700" htmlFor={id}>
+      <span className="cursor-default text-sm font-semibold text-slate-700">
         {label}
-      </label>
+      </span>
       {children}
       {helperText && (
         <span className="text-sm text-slate-500">{helperText}</span>

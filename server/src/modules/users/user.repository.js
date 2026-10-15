@@ -6,7 +6,12 @@ const publicUserSelect = {
   phone: true,
   role: true,
   location: true,
+  region: true,
+  zone: true,
+  city: true,
   image: true,
+  availableDays: true,
+  preferredLoadTypes: true,
   createdAt: true,
 };
 
@@ -15,6 +20,7 @@ const vehicleSelect = {
   userId: true,
   type: true,
   capacityTons: true,
+  volumeM3: true,
   plateNumber: true,
   createdAt: true,
   updatedAt: true,
@@ -46,7 +52,13 @@ export function findProfilePhotoByUserId(id) {
 
 export async function findVehicleByUserId(userId) {
   const vehicle = await prisma.vehicle.findUnique({ where: { userId }, select: vehicleSelect });
-  return vehicle ? { ...vehicle, capacityTons: Number(vehicle.capacityTons) } : null;
+  return vehicle
+    ? {
+        ...vehicle,
+        capacityTons: Number(vehicle.capacityTons),
+        volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
+      }
+    : null;
 }
 
 export async function upsertVehicle(userId, input) {
@@ -57,5 +69,9 @@ export async function upsertVehicle(userId, input) {
     select: vehicleSelect,
   });
 
-  return { ...vehicle, capacityTons: Number(vehicle.capacityTons) };
+  return {
+    ...vehicle,
+    capacityTons: Number(vehicle.capacityTons),
+    volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
+  };
 }

@@ -7,16 +7,21 @@ import { getVehicle, updateProfile, updateVehicle, uploadProfilePhoto } from './
 import { PersonalInformationCard } from './components/PersonalInformationCard.jsx';
 import { ProfilePhotoCard } from './components/ProfilePhotoCard.jsx';
 import { VehicleDetailsCard } from './components/VehicleDetailsCard.jsx';
+import { TransporterPreferencesCard } from './components/TransporterPreferencesCard.jsx';
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, 'Enter your name').max(100),
   phone: z.string().trim().min(7, 'Enter a valid phone number').max(20),
   location: z.string().trim().max(255).optional(),
+  region: z.string().trim().max(100).optional(),
+  zone: z.string().trim().max(100).optional(),
+  city: z.string().trim().max(100).optional(),
 });
 
 const vehicleSchema = z.object({
-  type: z.string().trim().min(1, 'Enter your truck type').max(50),
-  capacityTons: z.coerce.number().positive('Enter a capacity greater than zero').max(99_999_999.99),
+  type: z.string().trim().min(1, 'Select your vehicle type').max(50),
+  capacityTons: z.coerce.number().positive('Enter a maximum load greater than zero').max(99_999_999.99),
+  volumeM3: z.coerce.number().positive('Enter a volume greater than zero').max(99_999_999.99).nullable().optional(),
   plateNumber: z.string().trim().min(1, 'Enter your plate number').max(20),
 });
 
@@ -26,9 +31,18 @@ const maxPhotoSize = 5 * 1024 * 1024;
 export function ProfilePage() {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [profile, setProfile] = useState({ name: user.name || '', phone: user.phone || '', location: user.location || '' });
-  const [vehicle, setVehicle] = useState({ type: '', capacityTons: '', plateNumber: '' });
+  const routeLocation = useLocation();
+  const [profile, setProfile] = useState({
+    name: user.name || '',
+    phone: user.phone || '',
+    location: user.location || '',
+    region: user.region || '',
+    zone: user.zone || '',
+    city: user.city || '',
+  });
+  const [vehicle, setVehicle] = useState({ type: '', capacityTons: '', volumeM3: '', plateNumber: '' });
+  const [availableDays, setAvailableDays] = useState(user.availableDays || []);
+  const [preferredLoadTypes, setPreferredLoadTypes] = useState(user.preferredLoadTypes || []);
   const [hasVehicle, setHasVehicle] = useState(false);
   const [isLoadingVehicle, setIsLoadingVehicle] = useState(user.role === 'TRANSPORTER');
   const [vehicleLoadError, setVehicleLoadError] = useState('');
@@ -38,6 +52,7 @@ export function ProfilePage() {
   const [profileBusy, setProfileBusy] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [vehicleBusy, setVehicleBusy] = useState(false);
+  const [prefBusy, setPrefBusy] = useState(false);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
 
@@ -47,7 +62,12 @@ export function ProfilePage() {
     getVehicle(user.id)
       .then((result) => {
         if (!isCurrent) return;
-        setVehicle({ type: result.type, capacityTons: String(result.capacityTons), plateNumber: result.plateNumber });
+        setVehicle({
+          type: result.type,
+          capacityTons: String(result.capacityTons),
+          volumeM3: result.volumeM3 != null ? String(result.volumeM3) : '',
+          plateNumber: result.plateNumber,
+        });
         setHasVehicle(true);
       })
       .catch((error) => {
@@ -59,6 +79,11 @@ export function ProfilePage() {
       });
     return () => { isCurrent = false; };
   }, [user.id, user.role]);
+
+  useEffect(() => {
+    setAvailableDays(user.availableDays || []);
+    setPreferredLoadTypes(user.preferredLoadTypes || []);
+  }, [user.availableDays, user.preferredLoadTypes]);
 
   useEffect(() => () => {
     if (photoPreview) URL.revokeObjectURL(photoPreview);
@@ -76,6 +101,21 @@ export function ProfilePage() {
     setFieldErrors((current) => ({ ...current, [name]: undefined }));
   }
 
+  function changeLocation({ city, zone, region, location }) {
+    setProfile((current) => ({
+      ...current,
+      city,
+      zone,
+      region,
+      location,
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      city: undefined,
+      location: undefined,
+    }));
+  }
+
   function changeVehicle(event) {
     const { name, value } = event.target;
     setVehicle((current) => ({ ...current, [name]: value }));
@@ -85,7 +125,14 @@ export function ProfilePage() {
   async function saveProfile(event) {
     event.preventDefault();
     setStatus(null);
-    const parsed = profileSchema.safeParse({ ...profile, location: profile.location || undefined });
+    const parsed = profileSchema.safeParse({
+      name: profile.name,
+      phone: profile.phone,
+      location: profile.location || undefined,
+      region: profile.region || undefined,
+      zone: profile.zone || undefined,
+      city: profile.city || undefined,
+    });
     if (!parsed.success) {
       setFieldErrors(Object.fromEntries(parsed.error.issues.map((issue) => [issue.path[0], issue.message])));
       return;
@@ -93,7 +140,14 @@ export function ProfilePage() {
     setFieldErrors({});
     setProfileBusy(true);
     try {
-      const updates = { ...parsed.data, location: parsed.data.location || null };
+      const updates = {
+        name: parsed.data.name,
+        phone: parsed.data.phone,
+        location: parsed.data.location || null,
+        region: parsed.data.region || null,
+        zone: parsed.data.zone || null,
+        city: parsed.data.city || null,
+      };
       await updateProfile(user.id, updates);
       await refreshUser();
       setStatus({ tone: 'success', text: 'Your profile has been updated.' });
@@ -147,7 +201,10 @@ export function ProfilePage() {
   async function saveVehicle(event) {
     event.preventDefault();
     setStatus(null);
-    const parsed = vehicleSchema.safeParse(vehicle);
+    const parsed = vehicleSchema.safeParse({
+      ...vehicle,
+      volumeM3: vehicle.volumeM3 ? vehicle.volumeM3 : null,
+    });
     if (!parsed.success) {
       setVehicleErrors(Object.fromEntries(parsed.error.issues.map((issue) => [issue.path[0], issue.message])));
       return;
@@ -165,9 +222,24 @@ export function ProfilePage() {
     }
   }
 
+  async function savePreferences(event) {
+    event.preventDefault();
+    setStatus(null);
+    setPrefBusy(true);
+    try {
+      await updateProfile(user.id, { availableDays, preferredLoadTypes });
+      await refreshUser();
+      setStatus({ tone: 'success', text: 'Your availability and load preferences have been updated.' });
+    } catch (error) {
+      setStatus({ tone: 'danger', text: error.message });
+    } finally {
+      setPrefBusy(false);
+    }
+  }
+
   const initials = (user.name || 'EF').split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
   const avatar = photoPreview || user.profilePhoto;
-  const backPath = location.key === 'default'
+  const backPath = routeLocation.key === 'default'
     ? user.role === 'SHIPPER' ? '/shipper' : user.role === 'TRANSPORTER' ? '/transporter' : '/admin'
     : -1;
 
@@ -184,18 +256,36 @@ export function ProfilePage() {
 
       <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-3">
         <ProfilePhotoCard avatar={avatar} userName={user.name} initials={initials} photoFile={photoFile} photoBusy={photoBusy} onChoosePhoto={choosePhoto} onSavePhoto={savePhoto} />
-        <PersonalInformationCard profile={profile} email={user.email} errors={fieldErrors} busy={profileBusy} onChange={changeProfile} onSave={saveProfile} />
+        <PersonalInformationCard
+          profile={profile}
+          email={user.email}
+          errors={fieldErrors}
+          busy={profileBusy}
+          onChange={changeProfile}
+          onLocationChange={changeLocation}
+          onSave={saveProfile}
+        />
         {user.role === 'TRANSPORTER' && (
-          <VehicleDetailsCard
-            vehicle={vehicle}
-            errors={vehicleErrors}
-            hasVehicle={hasVehicle}
-            isLoading={isLoadingVehicle}
-            loadError={vehicleLoadError}
-            busy={vehicleBusy}
-            onChange={changeVehicle}
-            onSave={saveVehicle}
-          />
+          <>
+            <VehicleDetailsCard
+              vehicle={vehicle}
+              errors={vehicleErrors}
+              hasVehicle={hasVehicle}
+              isLoading={isLoadingVehicle}
+              loadError={vehicleLoadError}
+              busy={vehicleBusy}
+              onChange={changeVehicle}
+              onSave={saveVehicle}
+            />
+            <TransporterPreferencesCard
+              availableDays={availableDays}
+              preferredLoadTypes={preferredLoadTypes}
+              busy={prefBusy}
+              onDaysChange={setAvailableDays}
+              onLoadTypesChange={setPreferredLoadTypes}
+              onSave={savePreferences}
+            />
+          </>
         )}
       </div>
     </main>

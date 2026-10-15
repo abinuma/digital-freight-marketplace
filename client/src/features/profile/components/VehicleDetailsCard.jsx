@@ -46,22 +46,28 @@ export function VehicleDetailsCard({
           )}
           <ProfileField
             id="vehicle-type"
-            label="Truck Type"
+            label="Vehicle Type"
             error={errors.type}
           >
-            <Input
+            <select
               id="vehicle-type"
               name="type"
-              placeholder="Flatbed Truck"
+              className="flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               value={vehicle.type}
               onChange={onChange}
               aria-invalid={Boolean(errors.type)}
               aria-describedby={errors.type ? "vehicle-type-error" : undefined}
-            />
+            >
+              <option value="" disabled>Select vehicle type</option>
+              <option value="Isuzu">Isuzu</option>
+              <option value="FSR">FSR</option>
+              <option value="Sinotruk">Sinotruk</option>
+              <option value="Other">Other</option>
+            </select>
           </ProfileField>
           <ProfileField
             id="vehicle-capacity"
-            label="Capacity (Tons)"
+            label="Maximum Load (Tons)"
             error={errors.capacityTons}
           >
             <Input
@@ -70,12 +76,33 @@ export function VehicleDetailsCard({
               type="number"
               min="0.1"
               step="0.1"
-              placeholder="10"
+              placeholder="e.g. 10"
               value={vehicle.capacityTons}
               onChange={onChange}
               aria-invalid={Boolean(errors.capacityTons)}
               aria-describedby={
                 errors.capacityTons ? "vehicle-capacity-error" : undefined
+              }
+            />
+          </ProfileField>
+          <ProfileField
+            id="vehicle-volume"
+            label="Volume (m³)"
+            error={errors.volumeM3}
+            helperText="Cargo capacity in cubic meters"
+          >
+            <Input
+              id="vehicle-volume"
+              name="volumeM3"
+              type="number"
+              min="0.1"
+              step="0.1"
+              placeholder="e.g. 35"
+              value={vehicle.volumeM3}
+              onChange={onChange}
+              aria-invalid={Boolean(errors.volumeM3)}
+              aria-describedby={
+                errors.volumeM3 ? "vehicle-volume-error" : undefined
               }
             />
           </ProfileField>

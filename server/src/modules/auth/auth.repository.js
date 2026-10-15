@@ -9,6 +9,11 @@ const authUserSelect = {
   status: true,
   image: true,
   location: true,
+  region: true,
+  zone: true,
+  city: true,
+  availableDays: true,
+  preferredLoadTypes: true,
   createdAt: true,
 };
 

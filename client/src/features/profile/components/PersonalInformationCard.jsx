@@ -1,5 +1,6 @@
 import { Button, Card, Input } from "../../../shared/components/index.js";
 import { ProfileField } from "./ProfileField.jsx";
+import { CityLocationPicker } from "./CityLocationPicker.jsx";
 
 export function PersonalInformationCard({
   profile,
@@ -7,6 +8,7 @@ export function PersonalInformationCard({
   errors,
   busy,
   onChange,
+  onLocationChange,
   onSave,
 }) {
   return (
@@ -49,24 +51,13 @@ export function PersonalInformationCard({
             aria-describedby={errors.phone ? "profile-phone-error" : undefined}
           />
         </ProfileField>
-        <ProfileField
-          id="profile-location"
-          label="Location"
-          error={errors.location}
-        >
-          <Input
-            id="profile-location"
-            name="location"
-            autoComplete="address-level2"
-            placeholder="City, region"
-            value={profile.location}
-            onChange={onChange}
-            aria-invalid={Boolean(errors.location)}
-            aria-describedby={
-              errors.location ? "profile-location-error" : undefined
-            }
-          />
-        </ProfileField>
+        <CityLocationPicker
+          city={profile.city}
+          zone={profile.zone}
+          region={profile.region}
+          error={errors.city || errors.location}
+          onChange={onLocationChange}
+        />
         <div className="flex justify-end sm:col-span-2">
           <Button type="submit" disabled={busy}>
             {busy ? "Saving…" : "Save Changes"}

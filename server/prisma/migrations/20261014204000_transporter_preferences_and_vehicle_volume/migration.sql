@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "availableDays" TEXT[] DEFAULT ARRAY[]::TEXT[];
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "preferredLoadTypes" TEXT[] DEFAULT ARRAY[]::TEXT[];
+
+-- AlterTable
+ALTER TABLE "Vehicle" ADD COLUMN IF NOT EXISTS "volumeM3" DECIMAL(10,2);

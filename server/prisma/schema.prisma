@@ -43,7 +43,12 @@ model User {
   suspensionReason String?    @db.VarChar(500)
   image            String?    @map("profilePhoto") @db.VarChar(500)
   location         String?    @db.VarChar(255)
+  region           String?    @db.VarChar(100)
+  zone             String?    @db.VarChar(100)
+  city             String?    @db.VarChar(100)
   emailVerified    Boolean    @default(false)
+  availableDays      String[]   @default([])
+  preferredLoadTypes String[]   @default([])
   createdAt        DateTime   @default(now()) @db.Timestamp(3)
   updatedAt        DateTime   @updatedAt @db.Timestamp(3)
 
@@ -68,6 +73,7 @@ model Vehicle {
   userId       String   @unique @db.Uuid
   type         String   @db.VarChar(50)
   capacityTons Decimal  @db.Decimal(10, 2)
+  volumeM3     Decimal? @db.Decimal(10, 2)
   plateNumber  String   @db.VarChar(20)
   createdAt    DateTime @default(now()) @db.Timestamp(3)
   updatedAt    DateTime @updatedAt @db.Timestamp(3)

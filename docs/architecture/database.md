@@ -84,7 +84,12 @@ Owned by: `auth` module
 | status | ENUM | NOT NULL, default `ACTIVE` | `ACTIVE`, `SUSPENDED` |
 | suspensionReason | VARCHAR(500) | NULL | Admin-provided reason for the current suspension; cleared when reactivated |
 | profilePhoto | VARCHAR(500) | NULL | URL to profile image |
-| location | VARCHAR(255) | NULL | User's city or region |
+| location | VARCHAR(255) | NULL | Composite location string (City, Zone, Region) |
+| region | VARCHAR(100) | NULL | User's region |
+| zone | VARCHAR(100) | NULL | User's zone |
+| city | VARCHAR(100) | NULL | User's selected city |
+| availableDays | TEXT[] | NOT NULL, default `ARRAY[]::TEXT[]` | Working days of the week (Monday through Sunday) |
+| preferredLoadTypes | TEXT[] | NOT NULL, default `ARRAY[]::TEXT[]` | Preferred cargo/load types (Construction, Timber, Beverage, Bottled water, Agriculture) |
 | createdAt | TIMESTAMP | NOT NULL, default now | Registration timestamp |
 | updatedAt | TIMESTAMP | NOT NULL, auto-update | Last profile update |
 
@@ -102,8 +107,9 @@ Owned by: `auth` module (Transporter profile extension)
 |--------|------|-------------|-------------|
 | id | UUID | PK | Unique vehicle identifier |
 | userId | UUID | FK → User.id, UNIQUE | One vehicle per Transporter |
-| type | VARCHAR(50) | NOT NULL | Vehicle type (truck, Isuzu, FSR, etc.) |
-| capacityTons | DECIMAL(10,2) | NOT NULL | Load capacity in metric tons |
+| type | VARCHAR(50) | NOT NULL | Vehicle type (`Isuzu`, `FSR`, `Sinotruk`, `Other`) |
+| capacityTons | DECIMAL(10,2) | NOT NULL | Maximum load capacity in metric tons |
+| volumeM3 | DECIMAL(10,2) | NULL | Cargo volume capacity in cubic meters (m³) |
 | plateNumber | VARCHAR(20) | NOT NULL | License plate number |
 | createdAt | TIMESTAMP | NOT NULL | Record creation |
 | updatedAt | TIMESTAMP | NOT NULL | Last update |

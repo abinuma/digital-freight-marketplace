@@ -92,4 +92,25 @@ describe('ConversationBidCard', () => {
     expect(markup).toContain('Bid Accepted');
     expect(markup).toContain('Report Issue');
   });
+
+  it('displays vehicle volume when volumeM3 is provided', () => {
+    const vehicleWithVolume = { ...sampleVehicle, type: 'Sinotruk', capacityTons: 40, volumeM3: 65 };
+    const markup = renderToStaticMarkup(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(ConversationBidCard, {
+          bid: sampleBid,
+          role: 'SHIPPER',
+          profile: sampleProfile,
+          vehicle: vehicleWithVolume,
+          counterpartName: 'Abebe Logistics',
+          accepting: false,
+          onAcceptBid: () => {},
+        })
+      )
+    );
+
+    expect(markup).toContain('Sinotruk (40t · 65m³)');
+  });
 });
