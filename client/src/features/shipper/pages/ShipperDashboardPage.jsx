@@ -21,38 +21,31 @@ const metricCards = [
     key: "activePostings",
     title: "Active postings",
     caption: "Currently open to bids",
-    icon: "↗",
-    tone: "blue",
+    stage: "Posted",
+    marker: "bg-teal-400",
   },
   {
     key: "bidsReceived",
     title: "Bids received",
     caption: "Offers from transporters",
-    icon: "◇",
-    tone: "amber",
+    stage: "Bids",
+    marker: "bg-cyan-400",
   },
   {
     key: "inTransit",
     title: "In transit",
     caption: "Shipments underway",
-    icon: "⇢",
-    tone: "purple",
+    stage: "On the road",
+    marker: "bg-blue-400 ring-4 ring-blue-300/20",
   },
   {
     key: "completed",
     title: "Completed deliveries",
     caption: "Successfully delivered",
-    icon: "✓",
-    tone: "green",
+    stage: "Delivered",
+    marker: "border-2 border-slate-500 bg-slate-900",
   },
 ];
-
-const metricTones = {
-  blue: "bg-blue-50 text-blue-700",
-  amber: "bg-amber-50 text-amber-700",
-  purple: "bg-purple-50 text-purple-700",
-  green: "bg-green-50 text-green-700",
-};
 const usualLoadTypes = ["Construction", "Timber", "Beverage", "Bottled water", "Agriculture"];
 
 const statusTones = {
@@ -92,6 +85,7 @@ export function ShipperDashboardPage() {
     refetchInterval: 15_000,
   });
   const summary = query.data;
+  const shipmentWithBids = summary?.recentShipments?.find((shipment) => shipment.bidCount > 0);
   const selectedShipment = summary?.recentShipments?.find(({ id }) => id === shipmentId);
   const driversQuery = useQuery({
     queryKey: ["shipper", "availableTransporters", city],
@@ -167,34 +161,36 @@ export function ShipperDashboardPage() {
       )}
 
       <section
-        className="grid grid-cols-4 gap-3 max-md:grid-cols-2 max-sm:grid-cols-1"
+        className="relative overflow-hidden rounded-xl bg-slate-900 px-6 py-5 pb-16 text-white shadow-sm max-sm:px-4"
         aria-label="Shipment summary"
       >
-        {metricCards.map(({ key, title, caption, icon, tone }) => (
-          <Card className="min-w-0 p-4" key={key}>
-            <div className="flex items-start justify-between gap-3">
-              <p className="m-0 text-xs font-medium uppercase tracking-wide text-slate-500">
-                {title}
-              </p>
-              <span
-                className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${metricTones[tone]}`}
-                aria-hidden="true"
-              >
-                {icon}
-              </span>
-            </div>
-            <div className="mt-3">
-              {query.isPending ? (
-                <Skeleton className="h-7 w-12" />
-              ) : (
-                <strong className="text-xl font-bold text-slate-900">
+        <div className="mb-6">
+          <p className="m-0 text-xs font-bold tracking-[0.16em] text-sky-200">YOUR FREIGHT PIPELINE</p>
+        </div>
+        <div className="relative grid grid-cols-4 gap-4 max-sm:grid-cols-2 max-sm:gap-y-6">
+          <div className="absolute left-[12.5%] right-[12.5%] top-[7px] border-t border-dashed border-slate-600 max-sm:hidden" aria-hidden="true" />
+          {metricCards.map(({ key, title, caption, stage, marker }) => (
+            <div className="relative min-w-0" key={key}>
+              <div className="mb-4 flex h-4 items-center max-sm:mb-2">
+                <span className={`z-10 h-3.5 w-3.5 rounded-full ${marker}`} aria-hidden="true" />
+              </div>
+              {query.isPending ? <Skeleton className="h-9 w-12 bg-slate-700" /> : (
+                <strong className="block text-4xl font-semibold leading-none tracking-tight text-white">
                   {summary?.counts?.[key] ?? 0}
                 </strong>
               )}
-              <p className="mb-0 mt-1 text-xs text-slate-500">{caption}</p>
+              <p className="mb-0 mt-2 text-sm font-semibold text-white">{title}</p>
+              <p className="mb-0 mt-0.5 text-xs text-slate-300">{caption}</p>
+              <span className="sr-only">Pipeline stage: {stage}</span>
             </div>
-          </Card>
-        ))}
+          ))}
+        </div>
+        <Link
+          className="absolute bottom-4 right-6 inline-flex min-h-9 items-center justify-center rounded-md bg-blue-700 px-4 text-sm font-semibold text-white no-underline transition-colors hover:bg-blue-600 max-sm:right-4"
+          to={shipmentWithBids ? `/shipper/shipments/${shipmentWithBids.id}` : "/shipper/shipments"}
+        >
+          Review bids
+        </Link>
       </section>
 
       <Card className="overflow-hidden">
