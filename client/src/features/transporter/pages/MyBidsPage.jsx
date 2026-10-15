@@ -13,6 +13,7 @@ import {
   Spinner,
 } from "../../../shared/components/index.js";
 import { getShipment, listMyBids, withdrawBid } from "../transporter.api.js";
+import { assignBidToJourneyPlan, listMyJourneyPlans } from "../journeyPlan.api.js";
 
 const statuses = ["PENDING", "ACCEPTED", "DECLINED", "WITHDRAWN"];
 const tones = {
@@ -40,6 +41,11 @@ export function MyBidsPage() {
   const [selectedBid, setSelectedBid] = useState(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
+  const [assigningBid, setAssigningBid] = useState(null);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [assignWorking, setAssignWorking] = useState(false);
+  const [assignError, setAssignError] = useState("");
+
   const cache = useQueryClient();
   const query = useQuery({
     queryKey: ["transporter", "myBids", status, page],
@@ -54,6 +60,32 @@ export function MyBidsPage() {
       staleTime: 60_000,
     })),
   });
+
+  const activePlansQuery = useQuery({
+    queryKey: ["transporter", "activeJourneyPlans"],
+    queryFn: () => listMyJourneyPlans({ status: "ACTIVE", limit: 50 }),
+    enabled: Boolean(assigningBid),
+  });
+  const activePlans = activePlansQuery.data?.journeyPlans || [];
+
+  async function confirmAssignment() {
+    if (!assigningBid || !selectedPlanId) return;
+    setAssignWorking(true);
+    setAssignError("");
+    try {
+      await assignBidToJourneyPlan({
+        journeyPlanId: selectedPlanId,
+        bidId: assigningBid.id,
+      });
+      setAssigningBid(null);
+      setSelectedPlanId("");
+      await cache.invalidateQueries({ queryKey: ["transporter"] });
+    } catch (err) {
+      setAssignError(err.message || "Could not assign bid to journey plan");
+    } finally {
+      setAssignWorking(false);
+    }
+  }
 
   async function confirmWithdraw() {
     if (!selectedBid) return;
@@ -166,6 +198,44 @@ export function MyBidsPage() {
                   </span>
                 </div>
 
+                {bid.status === "ACCEPTED" && (
+                  bid.journeyPlanAssignment ? (
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-blue-200 bg-blue-50/70 px-3 py-2 text-xs">
+                      <div className="flex items-center gap-2 text-blue-950 font-medium">
+                        <span className="font-bold">Assigned Trip:</span>
+                        <span>
+                          {bid.journeyPlanAssignment.journeyPlan?.originCity} → {bid.journeyPlanAssignment.journeyPlan?.destinationCity}
+                        </span>
+                        <span className="text-blue-700">
+                          (Departure: {dateLabel(bid.journeyPlanAssignment.journeyPlan?.departureDate)})
+                        </span>
+                      </div>
+                      <Link
+                        className="font-semibold text-blue-700 underline hover:text-blue-900"
+                        to="/transporter/journey-plans"
+                      >
+                        View Journey Plans →
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs">
+                      <div className="text-amber-800">
+                        <strong>Bid Accepted:</strong> Assign this load to a Journey Plan to reserve truckload capacity.
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setAssigningBid(bid);
+                          setSelectedPlanId("");
+                          setAssignError("");
+                        }}
+                      >
+                        Assign to Journey Plan
+                      </Button>
+                    </div>
+                  )
+                )}
+
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
                   <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500">
                     <span>Offer sent {dateLabel(bid.createdAt)}</span>
@@ -273,6 +343,146 @@ export function MyBidsPage() {
             {working ? <Spinner /> : "Withdraw bid"}
           </Button>
         </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(assigningBid)}
+        onClose={() => !assignWorking && setAssigningBid(null)}
+        title="Assign load to Journey Plan"
+      >
+        {(() => {
+          const assigningShipment = shipmentQueries.find(
+            (sq, idx) => bids[idx]?.id === assigningBid?.id
+          )?.data;
+
+          return (
+            <div className="grid gap-4">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                <span className="font-semibold text-slate-800">
+                  {assigningShipment?.goodsDescription || "Shipment load"}
+                </span>
+                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
+                  <span>Weight: <strong>{assigningShipment?.weightKg?.toLocaleString()} kg</strong></span>
+                  {assigningShipment?.volumeM3 != null && (
+                    <span>Volume: <strong>{assigningShipment.volumeM3} m³</strong></span>
+                  )}
+                  <span>Route: <strong>{assigningShipment?.pickupLocation} → {assigningShipment?.deliveryLocation}</strong></span>
+                </div>
+              </div>
+
+              {assignError && (
+                <Alert tone="danger" title="Assignment rejected">
+                  {assignError}
+                </Alert>
+              )}
+
+              {activePlansQuery.isPending ? (
+                <div className="grid gap-2">
+                  <Skeleton className="h-16" />
+                  <Skeleton className="h-16" />
+                </div>
+              ) : activePlans.length === 0 ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-center">
+                  <p className="m-0 text-sm font-semibold text-amber-900">No active journey plans available</p>
+                  <p className="mb-0 mt-1 text-xs text-amber-700">
+                    Create a new journey plan with available capacity first.
+                  </p>
+                  <Link
+                    className="mt-3 inline-flex min-h-8 items-center justify-center rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white no-underline hover:bg-blue-800"
+                    to="/transporter/journey-plans"
+                  >
+                    Go to Journey Plans
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid gap-2 max-h-60 overflow-y-auto pr-1">
+                  <p className="m-0 text-xs font-medium text-slate-500">
+                    Select a suitable journey plan for this delivery:
+                  </p>
+                  {activePlans.map((plan) => {
+                    const fitsWeight = plan.remainingWeightKg >= (assigningShipment?.weightKg || 0);
+                    const fitsVolume =
+                      !assigningShipment?.volumeM3 ||
+                      !plan.maxVolumeM3 ||
+                      plan.remainingVolumeM3 >= assigningShipment.volumeM3;
+                    const isEligible = fitsWeight && fitsVolume;
+
+                    return (
+                      <label
+                        key={plan.id}
+                        className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition-colors ${
+                          !isEligible
+                            ? "border-slate-200 bg-slate-100 opacity-60 cursor-not-allowed"
+                            : selectedPlanId === plan.id
+                            ? "border-blue-600 bg-blue-50/50"
+                            : "border-slate-200 bg-white hover:bg-slate-50"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="journeyPlanSelection"
+                          value={plan.id}
+                          disabled={!isEligible}
+                          checked={selectedPlanId === plan.id}
+                          onChange={() => setSelectedPlanId(plan.id)}
+                          className="mt-1"
+                        />
+                        <div className="grid flex-1 gap-1">
+                          <div className="flex items-center justify-between">
+                            <strong className="text-slate-900">
+                              {plan.originCity} → {plan.destinationCity}
+                            </strong>
+                            <span className="text-xs text-slate-500">
+                              {dateLabel(plan.departureDate)}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+                            <span>
+                              Remaining weight: <strong>{plan.remainingWeightKg?.toLocaleString()} kg</strong>
+                            </span>
+                            {plan.maxVolumeM3 ? (
+                              <span>
+                                Remaining volume: <strong>{plan.remainingVolumeM3?.toLocaleString()} m³</strong>
+                              </span>
+                            ) : null}
+                          </div>
+                          {!isEligible && (
+                            <div className="text-xs text-red-700 font-medium">
+                              {!fitsWeight && `Exceeds remaining weight (has ${plan.remainingWeightKg} kg, needs ${assigningShipment?.weightKg} kg). `}
+                              {!fitsVolume && `Exceeds remaining volume (has ${plan.remainingVolumeM3} m³, needs ${assigningShipment?.volumeM3} m³).`}
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-4 flex justify-end gap-2 max-sm:flex-col-reverse">
+                <Button
+                  variant="secondary"
+                  onClick={() => setAssigningBid(null)}
+                  disabled={assignWorking}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmAssignment}
+                  disabled={!selectedPlanId || assignWorking}
+                >
+                  {assignWorking ? (
+                    <>
+                      <Spinner /> Assigning...
+                    </>
+                  ) : (
+                    "Confirm Assignment"
+                  )}
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
     </div>
   );

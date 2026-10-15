@@ -20,6 +20,7 @@ import { TransporterLayout } from './features/transporter/TransporterLayout.jsx'
 import { TransporterDashboardPage } from './features/transporter/pages/TransporterDashboardPage.jsx';
 import { ShipmentDiscoveryPage } from './features/transporter/pages/ShipmentDiscoveryPage.jsx';
 import { MyBidsPage } from './features/transporter/pages/MyBidsPage.jsx';
+import { JourneyPlansPage } from './features/transporter/pages/JourneyPlansPage.jsx';
 import { ShipmentDetailPage as TransporterShipmentDetailPage } from './features/transporter/pages/ShipmentDetailPage.jsx';
 import { MessagesPage } from './features/messaging/MessagesPage.jsx';
 import { NetworkErrorToaster } from './shared/components/NetworkErrorToaster.jsx';
@@ -69,6 +70,7 @@ function App() {
                   <Route path="shipments" element={<ShipmentDiscoveryPage />} />
                   <Route path="shipments/:id" element={<TransporterShipmentDetailPage />} />
                   <Route path="bids" element={<MyBidsPage />} />
+                  <Route path="journey-plans" element={<JourneyPlansPage />} />
                 </Route>
               </Route>
               <Route element={<RequireRole roles="ADMIN" />}>

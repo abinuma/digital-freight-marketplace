@@ -56,7 +56,7 @@ describe('shipment API integration', () => {
       weightKg: 125.5,
       pickupLocation: 'Addis Ababa',
       deliveryLocation: 'Hawassa',
-      pickupDate: '2026-10-10',
+      pickupDate: '2099-10-10',
     });
 
     expect(response.status).toBe(201);

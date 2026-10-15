@@ -14,6 +14,8 @@ const authUserSelect = {
   city: true,
   availableDays: true,
   preferredLoadTypes: true,
+  lookingForLoads: true,
+  availabilityUpdatedAt: true,
   createdAt: true,
 };
 

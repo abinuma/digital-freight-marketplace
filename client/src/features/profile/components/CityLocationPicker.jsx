@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { SORTED_CITIES } from '../../../shared/constants/locations.js';
 
-export function CityLocationPicker({ city, zone, region, error, onChange }) {
+export function CityLocationPicker({
+  label = 'City',
+  id = 'profile-city',
+  placeholder = 'Type or select a city...',
+  city,
+  zone,
+  region,
+  error,
+  onChange,
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState(city || '');
   const containerRef = useRef(null);
@@ -83,23 +92,23 @@ export function CityLocationPicker({ city, zone, region, error, onChange }) {
 
   return (
     <div className="relative grid content-start gap-1.5 sm:col-span-2" ref={containerRef}>
-      <span className="cursor-default text-sm font-semibold text-slate-700">
-        City
-      </span>
+      <label className="cursor-default text-sm font-semibold text-slate-700" htmlFor={id}>
+        {label}
+      </label>
       <div className="relative">
         <input
-          id="profile-city"
+          id={id}
           name="city"
           type="text"
           autoComplete="off"
-          placeholder="Type or select a city..."
+          placeholder={placeholder}
           className="flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 pr-14 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           value={query}
           onChange={handleInputChange}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? 'profile-city-error' : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
           aria-expanded={isOpen}
           role="combobox"
         />
@@ -132,7 +141,7 @@ export function CityLocationPicker({ city, zone, region, error, onChange }) {
         >
           {filteredCities.length > 0 ? (
             filteredCities.map((item) => {
-              const isSelected = item.city === city && item.zone === zone;
+              const isSelected = item.city === city && item.zone === zone && (!region || item.region === region);
               return (
                 <li
                   key={item.id}
@@ -156,7 +165,7 @@ export function CityLocationPicker({ city, zone, region, error, onChange }) {
       )}
 
       {error && (
-        <span className="text-sm text-red-700" id="profile-city-error">
+        <span className="text-sm text-red-700" id={`${id}-error`}>
           {error}
         </span>
       )}

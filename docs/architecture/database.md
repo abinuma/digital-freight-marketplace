@@ -238,6 +238,36 @@ Owned by: `notification` module
 | referenceId | UUID | NULL | Related entity ID (shipment, bid, etc.) |
 | createdAt | TIMESTAMP | NOT NULL | Created timestamp |
 
+### 3.10 JourneyPlan
+
+Owned by: `journey-plan` module
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PK | Unique journey plan identifier |
+| transporterId | UUID | FK → User.id, NOT NULL | Transporter owner |
+| originCity | VARCHAR(100) | NOT NULL | Scheduled origin city |
+| destinationCity | VARCHAR(100) | NOT NULL | Scheduled destination city |
+| departureDate | TIMESTAMP | NOT NULL | Scheduled departure time |
+| fullLoadPrice | DECIMAL(12,2) | NOT NULL | Price for a full load trip |
+| status | ENUM | NOT NULL, default ACTIVE | `ACTIVE`, `FULL`, `COMPLETED`, `CANCELLED` |
+| createdAt | TIMESTAMP | NOT NULL | Created timestamp |
+| updatedAt | TIMESTAMP | NOT NULL | Updated timestamp |
+
+### 3.11 JourneyPlanAssignment
+
+Owned by: `journey-plan` module
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PK | Unique assignment identifier |
+| journeyPlanId | UUID | FK → JourneyPlan.id, NOT NULL, onDelete Cascade | Assigned journey plan |
+| shipmentId | UUID | FK → Shipment.id, NOT NULL, onDelete Cascade | Shipment cargo |
+| bidId | UUID | FK → Bid.id, UNIQUE, NOT NULL, onDelete Cascade | Accepted bid |
+| assignedAt | TIMESTAMP | NOT NULL | Assignment timestamp |
+
+**Unique constraint:** `bidId` ensures an accepted bid is assigned to at most one journey plan.
+
 ---
 
 ## 4. Indexing Strategy
@@ -286,7 +316,7 @@ Each module owns specific tables. No module writes directly to another module's 
 | Aspect | Approach |
 |--------|----------|
 | Tool | Prisma Migrate |
-| Workflow | Modify `schema.prisma` → run `npx prisma migrate dev --name <description>` → commit migration |
+| Workflow | Modify `schema.prisma` → run `npx prisma migrate dev --name <description>` → run `npx prisma generate` → restart the API → commit migration |
 | Naming | Descriptive: `add_shipment_status_index`, `create_review_table` |
 | Environments | Dev: `migrate dev` (interactive). Production: `migrate deploy` (non-interactive, applies pending migrations) |
 | Rollback | Prisma does not support auto-rollback; create a new forward migration to undo changes |

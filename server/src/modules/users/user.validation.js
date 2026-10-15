@@ -40,3 +40,12 @@ export const upsertVehicleSchema = {
     plateNumber: z.string().trim().min(1).max(20),
   }),
 };
+
+export const availableTransportersQuerySchema = {
+  query: z.object({ city: z.string().trim().min(1).max(100) }),
+};
+
+export const updateAvailabilitySchema = {
+  params: z.object({ id: userId }),
+  body: z.object({ lookingForLoads: z.boolean() }),
+};

@@ -37,6 +37,14 @@ export async function listConversations(user) {
   return conversations.map((conversation) => serializeConversation(conversation, user));
 }
 
+export async function startConversation(user, transporterId) {
+  if (user.role !== 'SHIPPER') throw new AppError('Only Shippers can contact a Transporter', 403);
+  if (user.id === transporterId) throw new AppError('You cannot contact yourself', 400);
+  const transporter = await messagingRepository.findActiveTransporter(transporterId);
+  if (!transporter) throw new AppError('Transporter was not found', 404);
+  return messagingRepository.findOrCreateConversation(user.id, transporterId);
+}
+
 export async function listConversationBids(user, conversationId) {
   const conversation = await getParticipantConversation(user, conversationId);
   const bids = await messagingRepository.findConversationBids(conversation);

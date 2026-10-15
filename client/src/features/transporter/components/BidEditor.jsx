@@ -1,15 +1,17 @@
 import { useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   Alert,
   Button,
   Card,
   Input,
+  Select,
   Spinner,
   Textarea,
 } from "../../../shared/components/index.js";
-import { submitBid } from "../transporter.api.js";
+import { getShipment, submitBid } from "../transporter.api.js";
+import { listMyJourneyPlans } from "../journeyPlan.api.js";
 
 const toLocalDateTime = (date) => {
   if (!date) return "";
@@ -34,17 +36,62 @@ const bidSchema = z.object({
 const fieldClass =
   "grid content-start gap-1.5 text-sm font-medium text-slate-700";
 
-export function BidEditor({ shipmentId, initialBid }) {
+export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
   const cache = useQueryClient();
   const [values, setValues] = useState({
     price: initialBid ? String(initialBid.price) : "",
     pickupDate: toLocalDateTime(initialBid?.pickupDate),
     message: initialBid?.message || "",
   });
+  const [selectedPlanId, setSelectedPlanId] = useState("");
   const [errors, setErrors] = useState({});
   const [requestError, setRequestError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const pickupTimeSelection = useRef(null);
+
+  const shipmentQuery = useQuery({
+    queryKey: ["transporter", "bidEditorShipment", shipmentId],
+    queryFn: () => getShipment(shipmentId),
+    enabled: !propShipment && Boolean(shipmentId),
+    initialData: propShipment,
+  });
+  const shipment = propShipment || shipmentQuery.data;
+
+  const plansQuery = useQuery({
+    queryKey: ["transporter", "myJourneyPlansForBid"],
+    queryFn: () => listMyJourneyPlans({ limit: 50 }),
+  });
+  const allPlans = plansQuery.data?.journeyPlans || [];
+  const activePlans = allPlans.filter((p) => p.status === "ACTIVE");
+
+  const selectedPlan = activePlans.find((p) => p.id === selectedPlanId);
+  const shipmentWeight = Number(shipment?.weightKg || 0);
+  const shipmentVolume = shipment?.volumeM3 != null ? Number(shipment.volumeM3) : null;
+
+  const selectedPlanWeightExceeded = selectedPlan
+    ? selectedPlan.remainingWeightKg < shipmentWeight
+    : false;
+  const selectedPlanVolumeExceeded =
+    selectedPlan && shipmentVolume != null && selectedPlan.maxVolumeM3 != null
+      ? selectedPlan.remainingVolumeM3 < shipmentVolume
+      : false;
+
+  const isSelectedPlanFull = selectedPlanWeightExceeded || selectedPlanVolumeExceeded;
+
+  const matchingRoutePlans = allPlans.filter(
+    (p) =>
+      shipment?.pickupLocation &&
+      shipment?.deliveryLocation &&
+      shipment.pickupLocation.toLowerCase().includes(p.originCity.toLowerCase()) &&
+      shipment.deliveryLocation.toLowerCase().includes(p.destinationCity.toLowerCase())
+  );
+  const allMatchingRoutePlansFull =
+    matchingRoutePlans.length > 0 &&
+    matchingRoutePlans.every(
+      (p) => p.status === "FULL" || p.remainingWeightKg < shipmentWeight
+    );
+
+  const isCapacityBlocked = isSelectedPlanFull || (!selectedPlanId && allMatchingRoutePlansFull);
 
   function update(name, value) {
     setValues((current) => ({ ...current, [name]: value }));
@@ -158,6 +205,30 @@ export function BidEditor({ shipmentId, initialBid }) {
             <small className="text-sm text-red-700">{errors.pickupDate}</small>
           )}
         </label>
+        {activePlans.length > 0 && (
+          <label className={fieldClass}>
+            <span>Intended Journey Plan (optional)</span>
+            <Select
+              value={selectedPlanId}
+              onChange={(event) => setSelectedPlanId(event.target.value)}
+            >
+              <option value="">No specific journey plan selected</option>
+              {activePlans.map((plan) => (
+                <option key={plan.id} value={plan.id}>
+                  {plan.originCity} → {plan.destinationCity} (Remaining: {plan.remainingWeightKg} kg
+                  {plan.maxVolumeM3 ? `, ${plan.remainingVolumeM3} m³` : ""})
+                </option>
+              ))}
+            </Select>
+            {selectedPlan && (
+              <small className="text-xs text-slate-500">
+                Plan capacity available: {selectedPlan.remainingWeightKg?.toLocaleString()} kg
+                {selectedPlan.maxVolumeM3 ? `, ${selectedPlan.remainingVolumeM3} m³` : ""}
+              </small>
+            )}
+          </label>
+        )}
+
         <label className={fieldClass}>
           <span>Message to shipper</span>
           <Textarea
@@ -170,7 +241,14 @@ export function BidEditor({ shipmentId, initialBid }) {
             <small className="text-sm text-red-700">{errors.message}</small>
           )}
         </label>
-        <Button type="submit" disabled={isSaving}>
+
+        {isCapacityBlocked && (
+          <Alert tone="danger" title="Limit reached">
+            Your maximum volume and/or weight limit is reached
+          </Alert>
+        )}
+
+        <Button type="submit" disabled={isSaving || isCapacityBlocked}>
           {isSaving ? (
             <>
               <Spinner /> Sending…

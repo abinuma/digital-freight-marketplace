@@ -224,6 +224,17 @@ Removing a shipment requires a JSON body with a non-empty `reason` of at most 50
 
 Removing a shipment sets its `removedAt` timestamp and preserves the shipment and its related records. Removed shipments remain visible in the admin list; non-admin shipment detail, browse, bid, messaging, and review endpoints treat them as not found.
 
+### 5.9 Journey Plans — `/api/v1/journey-plans`
+
+All journey plan endpoints require authenticated `TRANSPORTER` role.
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/journey-plans` | Yes (Transporter) | Create a journey plan listing trip availability (originCity, destinationCity, departureDate, fullLoadPrice) |
+| GET | `/journey-plans/my` | Yes (Transporter) | List journey plans owned by the authenticated transporter (supports status filter and pagination) |
+| GET | `/journey-plans/:id` | Yes (Transporter) | Get journey plan details including vehicle limits, allocated/remaining capacity, and assigned loads |
+| POST | `/journey-plans/:id/assignments` | Yes (Transporter) | Assign an accepted bid to the journey plan; verifies remaining weight & volume capacity atomically |
+
 ---
 
 ## 6. Request Validation

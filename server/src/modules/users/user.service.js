@@ -31,6 +31,17 @@ export async function updateProfile(actorId, targetId, input) {
   }
 }
 
+export async function setLoadAvailability(actor, targetId, lookingForLoads) {
+  ensureOwner(actor.id, targetId);
+  if (actor.role !== 'TRANSPORTER') throw new AppError('Only Transporters can set load availability', 403);
+  return userRepository.setLoadAvailability(targetId, lookingForLoads);
+}
+
+export async function listAvailableTransporters(actor, city) {
+  if (actor.role !== 'SHIPPER') throw new AppError('Only Shippers can search available Transporters', 403);
+  return userRepository.findAvailableTransporters(city);
+}
+
 export async function uploadProfilePhoto(actorId, targetId, file) {
   ensureOwner(actorId, targetId);
   const existingProfile = await userRepository.findProfilePhotoByUserId(targetId);

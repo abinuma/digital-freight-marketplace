@@ -162,3 +162,16 @@ export function welcome(user) {
 export function passwordReset(user, url) {
   return safely('PASSWORD_RESET', () => notify(user, { type: 'PASSWORD_RESET', content: url }));
 }
+
+export function journeyPlanCapacityReached(userId, plan) {
+  return safely('JOURNEY_PLAN_FULL', async () => {
+    await saveInAppNotification({
+      userId,
+      type: 'JOURNEY_PLAN_FULL',
+      title: 'Journey Plan Capacity Reached',
+      message: `Your journey plan from ${plan.originCity} to ${plan.destinationCity} has reached maximum capacity. You are ready to collect the loads and go!`,
+      referenceId: plan.id,
+    });
+  });
+}
+

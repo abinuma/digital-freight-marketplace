@@ -8,6 +8,8 @@ import { parseProfilePhoto } from './profile-photo.upload.js';
 import {
   paginationQuerySchema,
   updateProfileSchema,
+  availableTransportersQuerySchema,
+  updateAvailabilitySchema,
   upsertVehicleSchema,
   userIdParamsSchema,
 } from './user.validation.js';
@@ -20,6 +22,8 @@ function requireProfileOwner(req, res, next) {
 }
 
 router.get('/:id/reviews', validate(paginationQuerySchema), userController.getReviews);
+router.get('/available-transporters', authorize('SHIPPER'), validate(availableTransportersQuerySchema), userController.listAvailableTransporters);
+router.patch('/:id/availability', authorize('TRANSPORTER'), validate(updateAvailabilitySchema), requireProfileOwner, userController.setLoadAvailability);
 router.get('/:id/vehicle', validate(userIdParamsSchema), userController.getVehicle);
 router.put('/:id/vehicle', authorize('TRANSPORTER'), validate(upsertVehicleSchema), userController.updateVehicle);
 router.post(

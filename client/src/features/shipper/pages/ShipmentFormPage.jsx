@@ -31,6 +31,12 @@ const formSchema = z.object({
     .number()
     .positive("Weight must be greater than zero")
     .max(99_999_999.99),
+  volumeM3: z.coerce
+    .number()
+    .positive("Volume must be greater than zero")
+    .max(99_999_999.99)
+    .nullable()
+    .optional(),
   pickupLocation: z.string().trim().min(1, "Enter a pickup location").max(255),
   deliveryLocation: z
     .string()
@@ -50,6 +56,7 @@ const empty = {
   goodsDescription: "",
   goodsType: "",
   weightKg: "",
+  volumeM3: "",
   pickupLocation: "",
   pickupLat: null,
   pickupLng: null,
@@ -103,6 +110,7 @@ function ShipmentForm({ routeId, initialShipment }) {
           ...empty,
           ...initialShipment,
           weightKg: String(initialShipment.weightKg),
+          volumeM3: initialShipment.volumeM3 != null ? String(initialShipment.volumeM3) : "",
           pickupDate: initialShipment.pickupDate?.slice(0, 10),
           specialRequirements: initialShipment.specialRequirements || "",
         }

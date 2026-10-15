@@ -26,3 +26,13 @@ export async function updateVehicle(userId, vehicle) {
   const { data } = await apiClient.put(`/users/${userId}/vehicle`, vehicle);
   return data.data;
 }
+
+export async function setLoadAvailability(userId, lookingForLoads) {
+  const { data } = await apiClient.patch(`/users/${userId}/availability`, { lookingForLoads });
+  return data.data;
+}
+
+export async function listAvailableTransporters(city) {
+  const { data } = await apiClient.get('/users/available-transporters', { params: { city } });
+  return data.data;
+}

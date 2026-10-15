@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useQueries } from "@tanstack/react-query";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
   Badge,
@@ -7,6 +7,8 @@ import {
   Skeleton,
 } from "../../../shared/components/index.js";
 import { listAvailableShipments, listMyBids } from "../transporter.api.js";
+import { useAuth } from "../../auth/AuthContext.jsx";
+import { setLoadAvailability } from "../../profile/profile.api.js";
 
 const metrics = [
   {
@@ -47,6 +49,12 @@ const metricTones = {
 };
 
 export function TransporterDashboardPage() {
+  const { user, refreshUser } = useAuth();
+  const cache = useQueryClient();
+  const availabilityMutation = useMutation({
+    mutationFn: (lookingForLoads) => setLoadAvailability(user.id, lookingForLoads),
+    onSuccess: async () => { await Promise.all([refreshUser(), cache.invalidateQueries({ queryKey: ["transporter"] })]); },
+  });
   const results = useQueries({
     queries: [
       ...metrics.slice(0, 3).map(({ key }) => ({
@@ -122,25 +130,70 @@ export function TransporterDashboardPage() {
         ))}
       </section>
 
-      <Card className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 bg-slate-900 p-6 text-white rounded-xl">
+      <Card className="flex flex-wrap items-center justify-between gap-4 border border-emerald-200 bg-emerald-50/70 p-5">
         <div>
-          <p className="mb-2 text-xs font-bold tracking-widest text-blue-200">
-            ETHIOFREIGHT
-          </p>
-          <h2 className="m-0 text-lg font-semibold text-white">
-            Find a load that fits your route.
+          <p className="m-0 text-xs font-bold tracking-widest text-emerald-800">LOAD AVAILABILITY</p>
+          <h2 className="mb-0 mt-1 text-lg font-semibold text-slate-900">
+            {user.lookingForLoads ? "You’re visible to shippers" : "Looking for a load right now?"}
           </h2>
-          <p className="mb-0 mt-2 text-sm text-slate-300">
-            Browse current postings and send a clear offer to the shipper.
+          <p className="mb-0 mt-1 text-sm text-slate-600">
+            {user.lookingForLoads ? "Shippers can find you in your city." : "Turn this on when you’re ready to take a load."}
           </p>
+          {availabilityMutation.isError && <p className="mb-0 mt-2 text-sm text-red-700">{availabilityMutation.error.message}</p>}
         </div>
-        <Link
-          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 no-underline hover:bg-slate-100 transition-colors"
-          to="/transporter/shipments"
+        <button
+          type="button"
+          role="switch"
+          aria-checked={Boolean(user.lookingForLoads)}
+          disabled={availabilityMutation.isPending}
+          onClick={() => availabilityMutation.mutate(!user.lookingForLoads)}
+          className={`inline-flex min-h-10 items-center rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 ${user.lookingForLoads ? "bg-emerald-700 hover:bg-emerald-800" : "bg-slate-900 hover:bg-slate-800"}`}
         >
-          Explore shipments&nbsp;↗
-        </Link>
+          {availabilityMutation.isPending ? "Updating…" : user.lookingForLoads ? "Available now · Turn off" : "I’m available now"}
+        </button>
       </Card>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Card className="flex flex-col items-start justify-between gap-4 bg-slate-900 p-6 text-white rounded-xl">
+          <div>
+            <p className="mb-2 text-xs font-bold tracking-widest text-blue-200">
+              ETHIOFREIGHT MARKETPLACE
+            </p>
+            <h2 className="m-0 text-lg font-semibold text-white">
+              Find a load that fits your route.
+            </h2>
+            <p className="mb-0 mt-2 text-sm text-slate-300">
+              Browse current postings and send a clear offer to the shipper.
+            </p>
+          </div>
+          <Link
+            className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 no-underline hover:bg-slate-100 transition-colors"
+            to="/transporter/shipments"
+          >
+            Explore shipments&nbsp;↗
+          </Link>
+        </Card>
+
+        <Card className="flex flex-col items-start justify-between gap-4 border border-blue-100 bg-blue-50/60 p-6 rounded-xl">
+          <div>
+            <p className="mb-2 text-xs font-bold tracking-widest text-blue-700">
+              TRIP AVAILABILITY
+            </p>
+            <h2 className="m-0 text-lg font-semibold text-slate-900">
+              Schedule your journey plans.
+            </h2>
+            <p className="mb-0 mt-2 text-sm text-slate-600">
+              List origin & destination cities, full load price, and manage capacity per trip.
+            </p>
+          </div>
+          <Link
+            className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white no-underline hover:bg-blue-800 transition-colors"
+            to="/transporter/journey-plans"
+          >
+            Manage journey plans&nbsp;→
+          </Link>
+        </Card>
+      </div>
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
         <span>

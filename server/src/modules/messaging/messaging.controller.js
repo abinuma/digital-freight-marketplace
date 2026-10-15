@@ -9,6 +9,13 @@ export async function listConversations(req, res, next) {
   }
 }
 
+export async function startConversation(req, res, next) {
+  try {
+    const conversation = await messagingService.startConversation(req.user, req.body.transporterId);
+    return res.status(201).json({ data: conversation });
+  } catch (error) { return next(error); }
+}
+
 export async function listMessages(req, res, next) {
   try {
     const messages = await messagingService.listMessages(req.user, req.params.conversationId);

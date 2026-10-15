@@ -40,7 +40,7 @@ beforeEach(() => vi.clearAllMocks());
 
 describe('bid service business rules', () => {
   it('creates a bid for a transporter on a published shipment', async () => {
-    bidRepository.findShipmentForBid.mockResolvedValue({ id: shipmentId, status: 'PUBLISHED' });
+    bidRepository.findShipmentForBid.mockResolvedValue({ id: shipmentId, status: 'PUBLISHED', shipperId: 'shipper-id' });
     bidRepository.createBid.mockResolvedValue(pendingBid);
 
     const result = await bidService.createBid(transporter, shipmentId, {
@@ -49,7 +49,7 @@ describe('bid service business rules', () => {
       message: 'Available for pickup',
     });
 
-    expect(bidRepository.createBid).toHaveBeenCalledWith(transporter.id, shipmentId, {
+    expect(bidRepository.createBid).toHaveBeenCalledWith(transporter.id, shipmentId, 'shipper-id', {
       price: 1200.5,
       pickupDate: new Date('2027-01-10T10:00:00.000Z'),
       message: 'Available for pickup',

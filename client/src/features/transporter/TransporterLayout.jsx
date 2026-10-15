@@ -6,6 +6,7 @@ const navigation = [
   { to: '/transporter', icon: '▦', label: 'Dashboard', end: true },
   { to: '/transporter/shipments', icon: '⌕', label: 'Find shipments' },
   { to: '/transporter/bids', icon: '▤', label: 'My bids' },
+  { to: '/transporter/journey-plans', icon: '⛟', label: 'Journey plans' },
   { to: '/transporter/messages', icon: '✉', label: 'Messages' },
 ];
 

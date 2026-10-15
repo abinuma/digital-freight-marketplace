@@ -11,6 +11,22 @@ const bidSelect = {
   declineReason: true,
   createdAt: true,
   updatedAt: true,
+  journeyPlanAssignment: {
+    select: {
+      id: true,
+      journeyPlanId: true,
+      assignedAt: true,
+      journeyPlan: {
+        select: {
+          id: true,
+          originCity: true,
+          destinationCity: true,
+          departureDate: true,
+          status: true,
+        },
+      },
+    },
+  },
 };
 
 export function findShipmentForBid(shipmentId) {

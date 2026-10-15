@@ -16,3 +16,7 @@ export const createMessageSchema = {
     content: z.string().trim().min(1).max(5000),
   }),
 };
+
+export const startConversationSchema = {
+  body: z.object({ transporterId: z.uuid() }),
+};

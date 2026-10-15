@@ -197,6 +197,7 @@ export function ShipmentDetailPage() {
                   key={activeBid.id}
                   shipmentId={id}
                   initialBid={activeBid}
+                  shipment={shipment}
                 />
               )}
             </>
@@ -205,6 +206,7 @@ export function ShipmentDetailPage() {
               key={latestBid?.id || "new"}
               shipmentId={id}
               initialBid={null}
+              shipment={shipment}
             />
           ) : ownBidQuery.isError ? (
             <Card className="grid gap-3 p-5">
@@ -229,6 +231,7 @@ export function ShipmentDetailPage() {
                 key={`new-${latestBid.id}`}
                 shipmentId={id}
                 initialBid={null}
+                shipment={shipment}
               />
             </>
           ) : (

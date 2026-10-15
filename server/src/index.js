@@ -6,6 +6,7 @@ import bidRouter from './modules/bid/bid.routes.js';
 import messagingRouter from './modules/messaging/messaging.routes.js';
 import notificationRouter from './modules/notification/notification.routes.js';
 import adminRouter from './modules/admin/admin.routes.js';
+import journeyPlanRouter from './modules/journey-plan/journey-plan.routes.js';
 import { authenticate } from './shared/middleware/authenticate.js';
 import { requireProfileComplete } from './shared/middleware/requireProfileComplete.js';
 
@@ -18,5 +19,6 @@ router.use(bidRouter);
 router.use(messagingRouter);
 router.use('/notifications', notificationRouter);
 router.use(adminRouter);
+router.use(journeyPlanRouter);
 
 export default router;

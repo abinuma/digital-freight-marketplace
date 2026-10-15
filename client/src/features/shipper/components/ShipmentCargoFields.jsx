@@ -46,6 +46,20 @@ export function ShipmentCargoFields({ values, errors, setField }) {
         />
         {fieldError(errors, "weightKg")}
       </label>
+      <label className={fieldClass}>
+        <span>
+          Volume (m³) <small className="font-normal text-slate-500">(optional)</small>
+        </span>
+        <Input
+          type="number"
+          min="0.01"
+          step="0.01"
+          value={values.volumeM3 || ""}
+          onChange={(event) => setField("volumeM3", event.target.value)}
+          placeholder="e.g. 15.5"
+        />
+        {fieldError(errors, "volumeM3")}
+      </label>
     </div>
   );
 }

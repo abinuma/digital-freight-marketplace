@@ -75,6 +75,19 @@ export function findConversation(id) {
   return prisma.conversation.findUnique({ where: { id }, select: conversationSelect });
 }
 
+export function findActiveTransporter(id) {
+  return prisma.user.findFirst({ where: { id, role: 'TRANSPORTER', status: 'ACTIVE' }, select: { id: true } });
+}
+
+export function findOrCreateConversation(shipperId, transporterId) {
+  return prisma.conversation.upsert({
+    where: { shipperId_transporterId: { shipperId, transporterId } },
+    create: { shipperId, transporterId },
+    update: {},
+    select: { id: true },
+  });
+}
+
 export function findConversationBids(conversation) {
   return prisma.bid.findMany({
     where: {

@@ -16,6 +16,7 @@ vi.mock('../../../src/modules/shipment/shipment.repository.js', () => ({
   createShipmentImages: vi.fn(),
   findShipmentImage: vi.fn(),
   deleteShipmentImage: vi.fn(),
+  hasTransporterBid: vi.fn(),
 }));
 
 vi.mock('../../../src/modules/notification/notification.service.js', () => ({

@@ -6,6 +6,7 @@ const shipmentListSelect = {
   goodsDescription: true,
   goodsType: true,
   weightKg: true,
+  volumeM3: true,
   pickupLocation: true,
   pickupLat: true,
   pickupLng: true,

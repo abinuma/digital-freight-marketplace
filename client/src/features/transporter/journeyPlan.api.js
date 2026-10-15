@@ -1,0 +1,31 @@
+import { apiClient } from '../../shared/api/client.js';
+
+const unwrap = (response) => response.data.data;
+
+export async function createJourneyPlan(values) {
+  const body = {
+    ...values,
+    departureDate: new Date(values.departureDate).toISOString(),
+    fullLoadPrice: Number(values.fullLoadPrice),
+  };
+  return unwrap(await apiClient.post('/journey-plans', body));
+}
+
+export async function listMyJourneyPlans(params = {}) {
+  const query = Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== '' && value != null),
+  );
+  const response = await apiClient.get('/journey-plans/my', { params: query });
+  return {
+    journeyPlans: response.data.data,
+    pagination: response.data.meta?.pagination || { page: 1, limit: 10, total: 0, totalPages: 1 },
+  };
+}
+
+export async function getJourneyPlan(id) {
+  return unwrap(await apiClient.get(`/journey-plans/${id}`));
+}
+
+export async function assignBidToJourneyPlan({ journeyPlanId, bidId }) {
+  return unwrap(await apiClient.post(`/journey-plans/${journeyPlanId}/assignments`, { bidId }));
+}

@@ -5,6 +5,11 @@ export async function listConversations() {
   return data.data;
 }
 
+export async function startConversation(transporterId) {
+  const { data } = await apiClient.post('/messages/conversations', { transporterId });
+  return data.data;
+}
+
 export async function getConversationMessages(conversationId) {
   const { data } = await apiClient.get(`/messages/conversations/${conversationId}`);
   return data.data;

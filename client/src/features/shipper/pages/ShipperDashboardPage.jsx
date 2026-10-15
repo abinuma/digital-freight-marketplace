@@ -1,12 +1,20 @@
-import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
   Badge,
   Card,
   Skeleton,
+  Select,
+  Modal,
 } from "../../../shared/components/index.js";
 import { getDashboardSummary } from "../shipper.api.js";
+import { listAvailableTransporters, getPublicProfile, updateProfile } from "../../profile/profile.api.js";
+import { startConversation } from "../../messaging/messaging.api.js";
+import { useAuth } from "../../auth/AuthContext.jsx";
+import { CityLocationPicker } from "../../profile/components/CityLocationPicker.jsx";
+import { readLastDriverSearchCity, saveLastDriverSearchCity } from "../driverSearchStorage.js";
 
 const metricCards = [
   {
@@ -45,6 +53,7 @@ const metricTones = {
   purple: "bg-purple-50 text-purple-700",
   green: "bg-green-50 text-green-700",
 };
+const usualLoadTypes = ["Construction", "Timber", "Beverage", "Bottled water", "Agriculture"];
 
 const statusTones = {
   DRAFT: "neutral",
@@ -63,13 +72,71 @@ const shortDate = (date) =>
       }).format(new Date(date))
     : "—";
 
+const availabilityDate = (date) => date
+  ? new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(date))
+  : "—";
+const cityFromLocation = (location) => location?.split(",")[0]?.trim().toLocaleLowerCase();
+const dateWeekday = (date) => new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date(`${date.slice(0, 10)}T12:00:00`));
+
 export function ShipperDashboardPage() {
+  const navigate = useNavigate();
+  const cache = useQueryClient();
+  const { user, refreshUser } = useAuth();
+  const [city, setCity] = useState(() => user?.city || readLastDriverSearchCity(user?.id));
+  const [shipmentId, setShipmentId] = useState("");
+  const [selectedDriver, setSelectedDriver] = useState(null);
+  const [usualLoads, setUsualLoads] = useState(user?.preferredLoadTypes || []);
   const query = useQuery({
     queryKey: ["shipper", "dashboard"],
     queryFn: getDashboardSummary,
     refetchInterval: 15_000,
   });
   const summary = query.data;
+  const selectedShipment = summary?.recentShipments?.find(({ id }) => id === shipmentId);
+  const driversQuery = useQuery({
+    queryKey: ["shipper", "availableTransporters", city],
+    queryFn: () => listAvailableTransporters(city),
+    enabled: Boolean(city),
+    refetchInterval: 15_000,
+  });
+  const driverProfileQuery = useQuery({
+    queryKey: ["shipper", "transporterProfile", selectedDriver?.id],
+    queryFn: () => getPublicProfile(selectedDriver.id),
+    enabled: Boolean(selectedDriver?.id),
+  });
+  const contactMutation = useMutation({
+    mutationFn: startConversation,
+    onSuccess: async ({ id }) => {
+      await cache.invalidateQueries({ queryKey: ["messages", "conversations"] });
+      navigate(`/shipper/messages?conversationId=${id}`);
+    },
+  });
+  const preferencesMutation = useMutation({
+    mutationFn: () => updateProfile(user.id, { preferredLoadTypes: usualLoads }),
+    onSuccess: refreshUser,
+  });
+  const matchingDrivers = (driversQuery.data || []).filter((driver) => {
+    if (!selectedShipment) return true;
+    const pickupCity = cityFromLocation(selectedShipment.pickupLocation);
+    const destinationCity = cityFromLocation(selectedShipment.deliveryLocation);
+    const routeMatches = Boolean(pickupCity) && pickupCity === driver.city?.toLocaleLowerCase() && driver.city?.toLocaleLowerCase() === city.toLocaleLowerCase();
+    const destinationMatches = !driver.intendedDestination || !destinationCity || driver.intendedDestination.toLocaleLowerCase() === destinationCity;
+    const plannedDate = driver.plannedDepartureDate ? new Date(driver.plannedDepartureDate).toISOString().slice(0, 10) : null;
+    const pickupDate = new Date(selectedShipment.pickupDate).toISOString().slice(0, 10);
+    const dayMatches = Boolean(driver.availableDays?.some((day) => day.toLocaleLowerCase() === dateWeekday(pickupDate).toLocaleLowerCase()));
+    const scheduleMatches = plannedDate === pickupDate || dayMatches;
+    const weightMatches = driver.capacityTons * 1000 >= Number(selectedShipment.weightKg);
+    const volumeMatches = selectedShipment.volumeM3 == null || (driver.volumeM3 != null && driver.volumeM3 >= Number(selectedShipment.volumeM3));
+    const vehicle = driver.vehicleType.toLocaleLowerCase();
+    const goods = `${selectedShipment.goodsType} ${selectedShipment.goodsDescription}`.toLocaleLowerCase();
+    const needsRefrigeration = goods.includes("refriger") || goods.includes("perishable") || goods.includes("frozen") || goods.includes("cold chain");
+    const needsTanker = goods.includes("liquid") || goods.includes("fuel") || goods.includes("chemical");
+    const needsLowbed = goods.includes("heavy machinery") || goods.includes("oversized equipment");
+    const vehicleMatches = (!needsRefrigeration || vehicle.includes("refriger") || vehicle.includes("reefer"))
+      && (!needsTanker || vehicle.includes("tanker"))
+      && (!needsLowbed || vehicle.includes("lowbed") || vehicle.includes("low bed"));
+    return routeMatches && destinationMatches && scheduleMatches && weightMatches && volumeMatches && vehicleMatches;
+  });
 
   return (
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
@@ -129,6 +196,88 @@ export function ShipperDashboardPage() {
           </Card>
         ))}
       </section>
+
+      <Card className="overflow-hidden">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div>
+            <p className="m-0 text-xs font-bold tracking-widest text-emerald-700">AVAILABLE DRIVERS</p>
+            <h2 className="mb-0 mt-1 text-lg font-semibold text-slate-900">Find drivers looking for a load</h2>
+            <p className="mb-0 mt-1 text-sm text-slate-500">Choose a city to see transporters who are available now.</p>
+          </div>
+          <div className="w-full max-w-xs">
+            <CityLocationPicker
+              id="driver-city"
+              label={user?.city ? "See drivers in" : "Where is your load?"}
+              placeholder="Type or select a city..."
+              city={city}
+              onChange={({ city: selectedCity }) => {
+                setCity(selectedCity);
+                saveLastDriverSearchCity(user?.id, selectedCity);
+                setShipmentId("");
+              }}
+            />
+          </div>
+          <label className="w-full max-w-xs text-sm font-medium text-slate-700" htmlFor="driver-shipment">
+            Match a shipment (optional)
+            <Select id="driver-shipment" className="mt-1" value={shipmentId} onChange={(event) => setShipmentId(event.target.value)} disabled={!city || !summary?.recentShipments?.length}>
+              <option value="">Show all available drivers</option>
+              {(summary?.recentShipments || []).map((shipment) => <option key={shipment.id} value={shipment.id}>{shipment.goodsDescription} · {shipment.pickupLocation} → {shipment.deliveryLocation}</option>)}
+            </Select>
+          </label>
+        </div>
+        {!city ? (
+          <p className="m-0 px-5 py-6 text-sm text-slate-500">Select a city to see available drivers there.</p>
+        ) : driversQuery.isPending ? (
+          <div className="grid gap-3 p-5"><Skeleton className="h-16" /><Skeleton className="h-16" /></div>
+        ) : driversQuery.isError ? (
+          <Alert tone="danger" className="m-4" title="Couldn’t load available drivers">{driversQuery.error.message}</Alert>
+        ) : matchingDrivers.length ? (
+          <div className="divide-y divide-slate-100">
+            {matchingDrivers.map((driver) => (
+              <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4" key={driver.id}>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2"><strong className="text-sm text-slate-900">{driver.name}</strong><Badge tone="success">Available now</Badge></div>
+                  <p className="mb-0 mt-1 text-sm text-slate-600">{driver.vehicleType} · {driver.capacityTons} t capacity{driver.volumeM3 ? ` · ${driver.volumeM3} m³` : ""}</p>
+                  <p className="mb-0 mt-1 text-xs text-slate-500">{driver.intendedDestination ? `Heading to ${driver.intendedDestination} · ` : "Destination not specified · "}Updated {availabilityDate(driver.availabilityUpdatedAt)}</p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <button type="button" className="min-h-9 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setSelectedDriver(driver)}>View profile</button>
+                  <button type="button" disabled={contactMutation.isPending} className="min-h-9 rounded-lg bg-blue-700 px-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60" onClick={() => contactMutation.mutate(driver.id)}>Contact / invite</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : <p className="m-0 px-5 py-6 text-sm text-slate-500">{selectedShipment ? "No available drivers match this shipment’s route, timing, capacity, volume, and vehicle needs." : `No drivers are looking for loads in ${city} right now.`}</p>}
+        {contactMutation.isError && <Alert tone="danger" className="m-4">{contactMutation.error.message}</Alert>}
+        {city && selectedShipment && <p className="m-0 border-t border-slate-100 px-5 py-3 text-xs text-slate-500">Matching checks include pickup and destination cities, planned date and availability days, weight, volume, and refrigerated vehicle needs.</p>}
+      </Card>
+
+      <Card className="flex flex-wrap items-center justify-between gap-3 border border-blue-100 bg-blue-50/50 p-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="m-0 text-sm font-semibold text-slate-900">Tell us your usual loads for quicker transport recommendations.</h2>
+          <p className="mb-0 mt-1 text-xs text-slate-500">Choose the cargo types you ship most often.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {usualLoadTypes.map((type) => {
+              const checked = usualLoads.includes(type);
+              return <label key={type} className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium ${checked ? "border-blue-600 bg-blue-100 text-blue-800" : "border-slate-300 bg-white text-slate-600"}`}>
+                <input className="sr-only" type="checkbox" checked={checked} onChange={() => setUsualLoads((current) => checked ? current.filter((item) => item !== type) : [...current, type])} />{type}
+              </label>;
+            })}
+          </div>
+          {preferencesMutation.isError && <p className="mb-0 mt-2 text-xs text-red-700">{preferencesMutation.error.message}</p>}
+        </div>
+        <button type="button" disabled={preferencesMutation.isPending} onClick={() => preferencesMutation.mutate()} className="min-h-9 shrink-0 rounded-lg bg-blue-700 px-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">{preferencesMutation.isPending ? "Saving…" : preferencesMutation.isSuccess ? "Preferences saved" : "Save loads"}</button>
+      </Card>
+
+      <Modal open={Boolean(selectedDriver)} onClose={() => setSelectedDriver(null)} title="Transporter profile">
+        {selectedDriver && <div className="grid gap-3">
+          {driverProfileQuery.isPending ? <Skeleton className="h-20" /> : driverProfileQuery.isError ? <Alert tone="danger">{driverProfileQuery.error.message}</Alert> : <>
+            <div><h3 className="m-0 text-base font-semibold text-slate-900">{driverProfileQuery.data?.name}</h3><p className="mb-0 mt-1 text-sm text-slate-600">{driverProfileQuery.data?.city || selectedDriver.city}</p>{driverProfileQuery.data?.phone && <p className="mb-0 mt-1 text-sm text-slate-600">{driverProfileQuery.data.phone}</p>}</div>
+            <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700"><p className="m-0">Vehicle: {selectedDriver.vehicleType}</p><p className="mb-0 mt-1">Capacity: {selectedDriver.capacityTons} tonnes{selectedDriver.volumeM3 ? ` · ${selectedDriver.volumeM3} m³` : ""}</p></div>
+          </>}
+          <button type="button" className="min-h-10 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800" onClick={() => contactMutation.mutate(selectedDriver.id)}>Contact / invite</button>
+        </div>}
+      </Modal>
 
       <Card className="overflow-hidden">
         <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 max-sm:items-start">

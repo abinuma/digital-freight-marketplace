@@ -8,6 +8,20 @@ export async function getProfile(req, res, next) {
   }
 }
 
+export async function listAvailableTransporters(req, res, next) {
+  try {
+    const transporters = await userService.listAvailableTransporters(req.user, req.query.city);
+    return res.json({ data: transporters });
+  } catch (error) { return next(error); }
+}
+
+export async function setLoadAvailability(req, res, next) {
+  try {
+    const availability = await userService.setLoadAvailability(req.user, req.params.id, req.body.lookingForLoads);
+    return res.json({ data: availability });
+  } catch (error) { return next(error); }
+}
+
 export async function updateProfile(req, res, next) {
   try {
     const user = await userService.updateProfile(req.user.id, req.params.id, req.body);

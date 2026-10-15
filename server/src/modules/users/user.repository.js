@@ -13,6 +13,8 @@ const publicUserSelect = {
   availableDays: true,
   preferredLoadTypes: true,
   createdAt: true,
+  lookingForLoads: true,
+  availabilityUpdatedAt: true,
 };
 
 const vehicleSelect = {
@@ -44,6 +46,43 @@ export function updateUserProfile(id, input) {
   if (profilePhoto !== undefined) data.image = profilePhoto;
 
   return prisma.user.update({ where: { id }, data, select: publicUserSelect });
+}
+
+export function setLoadAvailability(id, lookingForLoads) {
+  return prisma.user.update({
+    where: { id },
+    data: { lookingForLoads, availabilityUpdatedAt: new Date() },
+    select: { id: true, lookingForLoads: true, availabilityUpdatedAt: true },
+  });
+}
+
+export async function findAvailableTransporters(city) {
+  const users = await prisma.user.findMany({
+    where: { role: 'TRANSPORTER', status: 'ACTIVE', lookingForLoads: true, city: { equals: city, mode: 'insensitive' } },
+    select: {
+      id: true, name: true, city: true, availabilityUpdatedAt: true, image: true, availableDays: true,
+      vehicle: { select: { type: true, capacityTons: true, volumeM3: true } },
+      journeyPlans: {
+        where: { status: 'ACTIVE', departureDate: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+        select: { destinationCity: true, departureDate: true },
+        orderBy: { departureDate: 'asc' }, take: 1,
+      },
+    },
+    orderBy: [{ availabilityUpdatedAt: 'desc' }, { name: 'asc' }],
+  });
+  return users.filter((user) => user.vehicle).map((user) => ({
+    id: user.id,
+    name: user.name,
+    city: user.city,
+    availabilityUpdatedAt: user.availabilityUpdatedAt,
+    profilePhoto: user.image,
+    vehicleType: user.vehicle.type,
+    capacityTons: Number(user.vehicle.capacityTons),
+    volumeM3: user.vehicle.volumeM3 == null ? null : Number(user.vehicle.volumeM3),
+    intendedDestination: user.journeyPlans[0]?.destinationCity || null,
+    plannedDepartureDate: user.journeyPlans[0]?.departureDate || null,
+    availableDays: user.availableDays,
+  }));
 }
 
 export function findProfilePhotoByUserId(id) {

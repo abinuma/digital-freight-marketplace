@@ -63,24 +63,13 @@ describe('notification service', () => {
 
   it('stores shipper message notifications for active bidders but emails only the accepted transporter', async () => {
     notificationRepository.findMessageNotificationDetails.mockResolvedValue({
-      shipment: {
-        shipperId: 'shipper-id',
-        goodsDescription: 'Furniture',
-        pickupLocation: 'Addis Ababa',
-        deliveryLocation: 'Hawassa',
-        shipper: { id: 'shipper-id', name: 'Shipper', email: 'shipper@example.test' },
-        bids: [
-          { status: 'PENDING', transporter: { id: 'pending-id', name: 'Pending', email: 'pending@example.test' } },
-          { status: 'ACCEPTED', transporter: { id: 'accepted-id', name: 'Accepted', email: 'accepted@example.test' } },
-        ],
-      },
-      sender: { id: 'shipper-id', name: 'Shipper' },
+      shipper: { id: 'shipper-id', name: 'Shipper', email: 'shipper@example.test' },
+      transporter: { id: 'accepted-id', name: 'Accepted', email: 'accepted@example.test' },
     });
 
-    await notificationService.newMessage('shipment-id', 'shipper-id', 'Update');
+    await notificationService.newMessage('conversation-id', 'shipper-id', 'Update');
 
-    expect(notificationRepository.createNotification).toHaveBeenCalledTimes(2);
-    expect(notificationRepository.createNotification).toHaveBeenCalledWith(expect.objectContaining({ userId: 'pending-id', type: 'NEW_MESSAGE' }));
+    expect(notificationRepository.createNotification).toHaveBeenCalledTimes(1);
     expect(notificationRepository.createNotification).toHaveBeenCalledWith(expect.objectContaining({ userId: 'accepted-id', type: 'NEW_MESSAGE' }));
     expect(sendEmail).toHaveBeenCalledOnce();
     expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'accepted@example.test' }));
