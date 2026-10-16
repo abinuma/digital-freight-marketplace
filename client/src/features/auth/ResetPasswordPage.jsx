@@ -55,7 +55,7 @@ export function ResetPasswordPage() {
       footer={<Link to="/login">← Back to Login</Link>}
     >
       {isComplete ? (
-        <div className={`     grid gap-4 text-slate-500 text-base text-center   auth-success`} role="status"><p>Your password was updated successfully.</p><Link className={`inline-flex min-h-10 items-center justify-center gap-2 py-3 px-4 border rounded-lg cursor-pointer font-bold leading-tight no-underline transition  disabled:cursor-not-allowed disabled:opacity-50 ui-button bg-blue-700 text-white   ui-button--primary w-full min-h-10 rounded-lg text-sm auth-submit`} to="/login">Go to Sign In</Link></div>
+        <div className={`     grid gap-4 text-slate-500 text-base text-center   auth-success`} role="status"><p>Password updated</p><Link className={`inline-flex min-h-10 items-center justify-center gap-2 py-3 px-4 border rounded-lg cursor-pointer font-bold leading-tight no-underline transition  disabled:cursor-not-allowed disabled:opacity-50 ui-button bg-blue-700 text-white   ui-button--primary w-full min-h-10 rounded-lg text-sm auth-submit`} to="/login">Go to Sign In</Link></div>
       ) : (
         <form className={`grid gap-4      auth-form`} onSubmit={handleSubmit} noValidate>
           <AuthField id="password" label="New Password" error={fieldErrors.password}>

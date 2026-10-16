@@ -11,6 +11,7 @@ import {
   Select,
   Skeleton,
   Spinner,
+  useSuccessToast,
 } from "../../../shared/components/index.js";
 import { getShipment, listMyBids, withdrawBid } from "../transporter.api.js";
 import { assignBidToJourneyPlan, listMyJourneyPlans } from "../journeyPlan.api.js";
@@ -36,6 +37,7 @@ const dateLabel = (date) =>
   }).format(new Date(date));
 
 export function MyBidsPage() {
+  const showSuccess = useSuccessToast();
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [selectedBid, setSelectedBid] = useState(null);
@@ -80,6 +82,7 @@ export function MyBidsPage() {
       setAssigningBid(null);
       setSelectedPlanId("");
       await cache.invalidateQueries({ queryKey: ["transporter"] });
+      showSuccess('Added to plan');
     } catch (err) {
       setAssignError(err.message || "Could not assign bid to journey plan");
     } finally {
@@ -98,6 +101,7 @@ export function MyBidsPage() {
       });
       setSelectedBid(null);
       await cache.invalidateQueries({ queryKey: ["transporter"] });
+      showSuccess('Offer withdrawn');
     } catch (requestError) {
       setError(requestError.message);
     } finally {

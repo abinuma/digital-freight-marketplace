@@ -10,4 +10,6 @@ export { Skeleton } from './Skeleton.jsx';
 export { Spinner } from './Spinner.jsx';
 export { Textarea } from './Textarea.jsx';
 export { Toast } from './Toast.jsx';
+export { ToastProvider } from './ToastProvider.jsx';
+export { useSuccessToast } from './useSuccessToast.js';
 export { UserMenu } from './UserMenu.jsx';

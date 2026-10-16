@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Success">
+  <circle cx="512" cy="512" r="448" fill="#61d345" />
+  <path
+    d="m330 512 126 126 260-260"
+    fill="none"
+    stroke="#fff"
+    stroke-width="76"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-dasharray="600"
+    stroke-dashoffset="600"
+  >
+    <animate attributeName="stroke-dashoffset" from="600" to="0" dur="400ms" fill="freeze" />
+  </path>
+</svg>

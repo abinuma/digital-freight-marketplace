@@ -9,6 +9,7 @@ import {
   Select,
   Spinner,
   Textarea,
+  useSuccessToast,
 } from "../../../shared/components/index.js";
 import { getShipment, submitBid } from "../transporter.api.js";
 import { listMyJourneyPlans } from "../journeyPlan.api.js";
@@ -38,6 +39,7 @@ const fieldClass =
 
 export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
   const cache = useQueryClient();
+  const showSuccess = useSuccessToast();
   const [values, setValues] = useState({
     price: initialBid ? String(initialBid.price) : "",
     pickupDate: toLocalDateTime(initialBid?.pickupDate),
@@ -141,6 +143,7 @@ export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
         values: { ...parsed.data, price: Number(parsed.data.price) },
       });
       await cache.invalidateQueries({ queryKey: ["transporter"] });
+      showSuccess(initialBid ? 'Offer updated' : 'Offer sent');
     } catch (error) {
       setRequestError(error.message);
     } finally {

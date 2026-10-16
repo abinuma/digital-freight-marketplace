@@ -8,6 +8,7 @@ import {
   Skeleton,
   Spinner,
   Textarea,
+  useSuccessToast,
 } from "../../../shared/components/index.js";
 import {
   decideBid,
@@ -25,6 +26,7 @@ import { ShipmentHeading, ShipmentInformation } from "../../shipments/components
 
 export function ShipmentDetailPage() {
   const { user } = useAuth();
+  const showSuccess = useSuccessToast();
   const { id } = useParams();
   const navigate = useNavigate();
   const cache = useQueryClient();
@@ -84,9 +86,16 @@ export function ShipmentDetailPage() {
       } else {
         await transitionShipment({ id, action: confirmation.action });
       }
+      const successMessage = confirmation.type === "bid"
+        ? confirmation.action === "accept" ? "Bid accepted" : "Bid declined"
+        : confirmation.type === "image" ? "Image removed"
+          : confirmation.action === "publish" ? "Shipment published"
+            : confirmation.action === "complete" ? "Shipment completed"
+              : "Shipment cancelled";
       setConfirmation(null);
       setDeclineReason("");
       await refresh();
+      showSuccess(successMessage);
     } catch (error) {
       setActionError(error.message);
     } finally {

@@ -1,27 +1,42 @@
-import { Alert } from './Alert.jsx';
-import { useEffect, useRef } from 'react';
+const toneClasses = {
+  success: 'bg-white text-emerald-950',
+  danger: 'bg-white text-red-950',
+  info: 'bg-white text-sky-950',
+};
 
-export function Toast({ className = '', onDismiss, children, ...props }) {
-  const toastRef = useRef(null);
-
-  useEffect(() => {
-    const toast = toastRef.current;
-    if (!toast || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    toast.animate(
-      [
-        { opacity: 0, transform: 'translate(-50%, -1.25rem) scale(0.97)' },
-        { opacity: 1, transform: 'translate(-50%, 0.25rem) scale(1.01)', offset: 0.7 },
-        { opacity: 1, transform: 'translate(-50%, 0) scale(1)' },
-      ],
-      { duration: 420, easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)' },
-    );
-  }, []);
-
+export function Toast({ tone = 'success', title, children, onDismiss, closing = false }) {
   return (
-    <div ref={toastRef} className={`ui-toast fixed z-[1000] top-4 right-4 flex w-full items-start gap-2 drop-shadow-sm  ${className}`.trim()} role="status">
-      <Alert {...props} className="flex-1">{children}</Alert>
-      {onDismiss && <button className={`w-8 h-8 border-0 rounded-lg bg-transparent text-inherit cursor-pointer text-2xl leading-tight ui-toast__dismiss`} type="button" onClick={onDismiss} aria-label="Dismiss notification">×</button>}
+    <div
+      className="pointer-events-none fixed inset-x-0 top-4 z-[1000] flex justify-center px-4"
+      role="status"
+      aria-live="polite"
+    >
+      <div
+        className={`pointer-events-auto inline-flex w-fit max-w-[calc(100vw-2rem)] ${toneClasses[tone] || toneClasses.info} ${
+          closing ? 'animate-toast-out' : 'animate-toast-in'
+        } items-center gap-2 rounded-lg border-0 px-3 py-2 shadow-[0_2px_10px_rgba(15,23,42,0.12)]`}
+      >
+        <img
+          className="h-5 w-5 shrink-0"
+          src="/correct-success-tick-svgrepo-com.svg"
+          alt=""
+          aria-hidden="true"
+        />
+        <div className="min-w-0 text-sm">
+          {title && <strong className="mr-1 font-semibold">{title}</strong>}
+          <span>{children}</span>
+        </div>
+        {onDismiss && (
+          <button
+            className="grid h-5 w-5 shrink-0 place-items-center rounded border-0 bg-transparent p-0 text-base leading-none text-slate-500 hover:bg-slate-100 cursor-pointer"
+            type="button"
+            onClick={onDismiss}
+            aria-label="Dismiss notification"
+          >
+            ×
+          </button>
+        )}
+      </div>
     </div>
   );
 }

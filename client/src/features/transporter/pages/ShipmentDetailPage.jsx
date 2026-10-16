@@ -9,6 +9,7 @@ import {
   Modal,
   Skeleton,
   Spinner,
+  useSuccessToast,
 } from "../../../shared/components/index.js";
 import {
   getShipment,
@@ -24,6 +25,7 @@ const tones = { ...shipmentTones, PENDING: "warning", ACCEPTED: "success", DECLI
 export function ShipmentDetailPage() {
   const { id } = useParams();
   const cache = useQueryClient();
+  const showSuccess = useSuccessToast();
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [actionError, setActionError] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -59,6 +61,7 @@ export function ShipmentDetailPage() {
       await withdrawBid({ shipmentId: id, bidId: activeBid.id });
       setWithdrawOpen(false);
       await cache.invalidateQueries({ queryKey: ["transporter"] });
+      showSuccess('Offer withdrawn');
     } catch (error) {
       setActionError(error.message);
     } finally {

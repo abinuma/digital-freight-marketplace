@@ -7,6 +7,7 @@ import {
   Button,
   Spinner,
   Textarea,
+  useSuccessToast,
 } from "../../../shared/components/index.js";
 import {
   getShipment,
@@ -103,6 +104,7 @@ export function ShipmentFormPage() {
 function ShipmentForm({ routeId, initialShipment }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const showSuccess = useSuccessToast();
   const [shipmentId, setShipmentId] = useState(routeId || null);
   const [values, setValues] = useState(() =>
     initialShipment
@@ -166,6 +168,7 @@ function ShipmentForm({ routeId, initialShipment }) {
       if (intent === "publish" && saved.status === "DRAFT")
         await transitionShipment({ id: saved.id, action: "publish" });
       await queryClient.invalidateQueries({ queryKey: ["shipper"] });
+      showSuccess(routeId ? 'Shipment updated' : intent === 'publish' ? 'Shipment posted' : 'Draft saved');
       navigate(`/shipper/shipments/${saved.id}`);
     } catch (error) {
       setSaveError(error.message);

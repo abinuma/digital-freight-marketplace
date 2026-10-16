@@ -12,6 +12,7 @@ import {
   Select,
   Skeleton,
   Spinner,
+  useSuccessToast,
 } from '../../../shared/components/index.js';
 import { CityLocationPicker } from '../../profile/components/CityLocationPicker.jsx';
 import { createJourneyPlan, listMyJourneyPlans } from '../journeyPlan.api.js';
@@ -61,6 +62,7 @@ const planSchema = z.object({
 });
 
 export function JourneyPlansPage() {
+  const showSuccess = useSuccessToast();
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -121,6 +123,7 @@ export function JourneyPlansPage() {
       await cache.invalidateQueries({ queryKey: ['transporter', 'journeyPlans'] });
       resetForm();
       setIsModalOpen(false);
+      showSuccess('Plan created');
     } catch (err) {
       setRequestError(err.message || 'Could not create journey plan');
     } finally {

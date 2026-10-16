@@ -5,6 +5,7 @@ import {
   Badge,
   Card,
   Skeleton,
+  useSuccessToast,
 } from "../../../shared/components/index.js";
 import { listAvailableShipments, listMyBids } from "../transporter.api.js";
 import { useAuth } from "../../auth/AuthContext.jsx";
@@ -43,10 +44,14 @@ const metrics = [
 
 export function TransporterDashboardPage() {
   const { user, refreshUser } = useAuth();
+  const showSuccess = useSuccessToast();
   const cache = useQueryClient();
   const availabilityMutation = useMutation({
     mutationFn: (lookingForLoads) => setLoadAvailability(user.id, lookingForLoads),
-    onSuccess: async () => { await Promise.all([refreshUser(), cache.invalidateQueries({ queryKey: ["transporter"] })]); },
+    onSuccess: async (availability) => {
+      await Promise.all([refreshUser(), cache.invalidateQueries({ queryKey: ["transporter"] })]);
+      showSuccess(availability.lookingForLoads ? 'Availability turned on' : 'Availability turned off');
+    },
   });
   const results = useQueries({
     queries: [

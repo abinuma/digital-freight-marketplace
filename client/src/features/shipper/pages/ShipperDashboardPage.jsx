@@ -8,6 +8,7 @@ import {
   Skeleton,
   Select,
   Modal,
+  useSuccessToast,
 } from "../../../shared/components/index.js";
 import { getDashboardSummary } from "../shipper.api.js";
 import { listAvailableTransporters, getPublicProfile, updateProfile } from "../../profile/profile.api.js";
@@ -75,6 +76,7 @@ export function ShipperDashboardPage() {
   const navigate = useNavigate();
   const cache = useQueryClient();
   const { user, refreshUser } = useAuth();
+  const showSuccess = useSuccessToast();
   const [city, setCity] = useState(() => user?.city || readLastDriverSearchCity(user?.id));
   const [shipmentId, setShipmentId] = useState("");
   const [selectedDriver, setSelectedDriver] = useState(null);
@@ -107,7 +109,10 @@ export function ShipperDashboardPage() {
   });
   const preferencesMutation = useMutation({
     mutationFn: () => updateProfile(user.id, { preferredLoadTypes: usualLoads }),
-    onSuccess: refreshUser,
+    onSuccess: async () => {
+      await refreshUser();
+      showSuccess('Preferences saved');
+    },
   });
   const matchingDrivers = (driversQuery.data || []).filter((driver) => {
     if (!selectedShipment) return true;
@@ -262,7 +267,7 @@ export function ShipperDashboardPage() {
           </div>
           {preferencesMutation.isError && <p className="mb-0 mt-2 text-xs text-red-700">{preferencesMutation.error.message}</p>}
         </div>
-        <button type="button" disabled={preferencesMutation.isPending} onClick={() => preferencesMutation.mutate()} className="min-h-9 shrink-0 rounded-lg bg-blue-700 px-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">{preferencesMutation.isPending ? "Saving…" : preferencesMutation.isSuccess ? "Preferences saved" : "Save loads"}</button>
+        <button type="button" disabled={preferencesMutation.isPending} onClick={() => preferencesMutation.mutate()} className="min-h-9 shrink-0 rounded-lg bg-blue-700 px-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">{preferencesMutation.isPending ? "Saving…" : "Save loads"}</button>
       </Card>
 
       <Modal open={Boolean(selectedDriver)} onClose={() => setSelectedDriver(null)} title="Transporter profile">

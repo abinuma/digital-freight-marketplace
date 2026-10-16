@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Alert, Button, Toast } from '../../shared/components/index.js';
+import { Alert, useSuccessToast } from '../../shared/components/index.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { getVehicle, updateProfile, updateVehicle, uploadProfilePhoto } from './profile.api.js';
 import { PersonalInformationCard } from './components/PersonalInformationCard.jsx';
@@ -30,6 +30,7 @@ const maxPhotoSize = 5 * 1024 * 1024;
 
 export function ProfilePage() {
   const { user, refreshUser } = useAuth();
+  const showSuccess = useSuccessToast();
   const navigate = useNavigate();
   const routeLocation = useLocation();
   const [profile, setProfile] = useState({
@@ -89,12 +90,6 @@ export function ProfilePage() {
     if (photoPreview) URL.revokeObjectURL(photoPreview);
   }, [photoPreview]);
 
-  useEffect(() => {
-    if (status?.tone !== 'success') return undefined;
-    const timeout = window.setTimeout(() => setStatus(null), 3500);
-    return () => window.clearTimeout(timeout);
-  }, [status]);
-
   function changeProfile(event) {
     const { name, value } = event.target;
     setProfile((current) => ({ ...current, [name]: value }));
@@ -150,7 +145,7 @@ export function ProfilePage() {
       };
       await updateProfile(user.id, updates);
       await refreshUser();
-      setStatus({ tone: 'success', text: 'Your profile has been updated.' });
+      showSuccess('Profile updated');
     } catch (error) {
       setStatus({ tone: 'danger', text: error.message });
     } finally {
@@ -190,7 +185,7 @@ export function ProfilePage() {
       await refreshUser();
       setPhotoPreview('');
       setPhotoFile(null);
-      setStatus({ tone: 'success', text: 'Your profile photo has been updated.' });
+      showSuccess('Profile photo updated');
     } catch (error) {
       setStatus({ tone: 'danger', text: error.message });
     } finally {
@@ -214,7 +209,7 @@ export function ProfilePage() {
     try {
       await updateVehicle(user.id, parsed.data);
       setHasVehicle(true);
-      setStatus({ tone: 'success', text: 'Your vehicle details have been updated.' });
+      showSuccess('Details updated');
     } catch (error) {
       setStatus({ tone: 'danger', text: error.message });
     } finally {
@@ -229,7 +224,7 @@ export function ProfilePage() {
     try {
       await updateProfile(user.id, { availableDays, preferredLoadTypes });
       await refreshUser();
-      setStatus({ tone: 'success', text: 'Your availability and load preferences have been updated.' });
+      showSuccess('Availability and load preferences updated');
     } catch (error) {
       setStatus({ tone: 'danger', text: error.message });
     } finally {
@@ -244,50 +239,129 @@ export function ProfilePage() {
     : -1;
 
   return (
-    <main className="mx-auto w-full max-w-5xl py-8 max-md:py-5">
-      <header className="mb-6">
-        <Button type="button" variant="secondary" size="sm" onClick={() => navigate(backPath)}>← Back</Button>
-        <p className="mb-2 mt-5 text-xs font-bold uppercase tracking-widest text-blue-700">Account settings</p>
-        <h1 className="m-0 text-2xl font-bold text-slate-900">Your Profile</h1>
-        <p className="mb-0 mt-2 text-sm text-slate-500">Manage your contact information and account details.</p>
-      </header>
-      {status?.tone === 'danger' && <Alert tone="danger" className="mb-4">{status.text}</Alert>}
-      {status?.tone === 'success' && <Toast tone="success" className="top-4 left-1/2 max-w-full">{status.text}</Toast>}
+    <main className="mx-auto w-full max-w-5xl py-8 px-4 sm:px-6 lg:px-8 space-y-6">
+      <header className="flex flex-col gap-3">
+        <div>
+          <button
+            type="button"
+            onClick={() => navigate(backPath)}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+          >
+            ← Back
+          </button>
+        </div>
 
-      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-3">
-        <ProfilePhotoCard avatar={avatar} userName={user.name} initials={initials} photoFile={photoFile} photoBusy={photoBusy} onChoosePhoto={choosePhoto} onSavePhoto={savePhoto} />
-        <PersonalInformationCard
-          profile={profile}
-          email={user.email}
-          errors={fieldErrors}
-          busy={profileBusy}
-          onChange={changeProfile}
-          onLocationChange={changeLocation}
-          onSave={saveProfile}
-        />
-        {user.role === 'TRANSPORTER' && (
-          <>
-            <VehicleDetailsCard
-              vehicle={vehicle}
-              errors={vehicleErrors}
-              hasVehicle={hasVehicle}
-              isLoading={isLoadingVehicle}
-              loadError={vehicleLoadError}
-              busy={vehicleBusy}
-              onChange={changeVehicle}
-              onSave={saveVehicle}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+              Account settings
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Manage your contact information and account details.
+            </p>
+          </div>
+
+          {/* Right-aligned Highway Truck Banner */}
+          <div className="hidden sm:flex items-center justify-center h-20 w-52 rounded-2xl bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-600 p-1.5 overflow-hidden shadow-xs shrink-0 relative">
+            <div className="absolute top-2 right-4 w-7 h-7 rounded-full bg-amber-300/80 blur-[1px]" />
+            <div className="absolute top-4 right-8 w-12 h-3 rounded-full bg-white/40 blur-[0.5px]" />
+            <svg
+              viewBox="0 0 160 60"
+              className="w-full h-full object-cover"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M0 38 Q30 24 65 34 T130 28 T160 36 V60 H0 Z" fill="#3B82F6" opacity="0.6" />
+              <path d="M10 40 Q50 30 90 38 T160 34 V60 H0 Z" fill="#2563EB" opacity="0.8" />
+              <path d="M20 60 L70 36 H90 L140 60 Z" fill="#334155" />
+              <line x1="80" y1="38" x2="80" y2="44" stroke="#FDE047" strokeWidth="1.5" strokeDasharray="3 3" />
+              <line x1="80" y1="46" x2="80" y2="56" stroke="#FDE047" strokeWidth="2.5" strokeDasharray="4 4" />
+              <g transform="translate(68, 30) scale(0.32)">
+                <rect x="0" y="5" width="55" height="30" rx="2" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="2" />
+                <line x1="18" y1="5" x2="18" y2="35" stroke="#E2E8F0" strokeWidth="1.5" />
+                <line x1="36" y1="5" x2="36" y2="35" stroke="#E2E8F0" strokeWidth="1.5" />
+                <path d="M55 12 H70 C73 12 76 14 78 18 L82 25 C83 27 84 29 84 31 V37 H55 V12 Z" fill="#2563EB" />
+                <path d="M58 15 H68 C70 15 71 16 72 19 L75 25 H58 V15 Z" fill="#93C5FD" />
+                <rect x="4" y="37" width="78" height="3" fill="#1E293B" />
+                <circle cx="16" cy="40" r="6" fill="#1E293B" />
+                <circle cx="16" cy="40" r="2.5" fill="#94A3B8" />
+                <circle cx="44" cy="40" r="6" fill="#1E293B" />
+                <circle cx="44" cy="40" r="2.5" fill="#94A3B8" />
+                <circle cx="72" cy="40" r="6" fill="#1E293B" />
+                <circle cx="72" cy="40" r="2.5" fill="#94A3B8" />
+              </g>
+            </svg>
+          </div>
+        </div>
+      </header>
+
+      {status?.tone === 'danger' && <Alert tone="danger">{status.text}</Alert>}
+
+      {/* Card 1: Your Profile */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="flex items-center gap-3.5 mb-6">
+          <div className="h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="m-0 text-xl font-bold text-slate-900">Your Profile</h2>
+            <p className="m-0 mt-0.5 text-xs text-slate-500">
+              Manage your contact information and account details.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-4 flex justify-center">
+            <ProfilePhotoCard
+              avatar={avatar}
+              userName={user.name}
+              initials={initials}
+              photoFile={photoFile}
+              photoBusy={photoBusy}
+              onChoosePhoto={choosePhoto}
+              onSavePhoto={savePhoto}
             />
-            <TransporterPreferencesCard
-              availableDays={availableDays}
-              preferredLoadTypes={preferredLoadTypes}
-              busy={prefBusy}
-              onDaysChange={setAvailableDays}
-              onLoadTypesChange={setPreferredLoadTypes}
-              onSave={savePreferences}
+          </div>
+          <div className="lg:col-span-8">
+            <PersonalInformationCard
+              profile={profile}
+              email={user.email}
+              errors={fieldErrors}
+              busy={profileBusy}
+              onChange={changeProfile}
+              onLocationChange={changeLocation}
+              onSave={saveProfile}
             />
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Card 2 & 3: Transporter specific cards */}
+      {user.role === 'TRANSPORTER' && (
+        <>
+          <VehicleDetailsCard
+            vehicle={vehicle}
+            errors={vehicleErrors}
+            hasVehicle={hasVehicle}
+            isLoading={isLoadingVehicle}
+            loadError={vehicleLoadError}
+            busy={vehicleBusy}
+            onChange={changeVehicle}
+            onSave={saveVehicle}
+          />
+          <TransporterPreferencesCard
+            availableDays={availableDays}
+            preferredLoadTypes={preferredLoadTypes}
+            busy={prefBusy}
+            onDaysChange={setAvailableDays}
+            onLoadTypesChange={setPreferredLoadTypes}
+            onSave={savePreferences}
+          />
+        </>
+      )}
     </main>
   );
 }

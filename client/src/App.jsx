@@ -24,6 +24,7 @@ import { JourneyPlansPage } from './features/transporter/pages/JourneyPlansPage.
 import { ShipmentDetailPage as TransporterShipmentDetailPage } from './features/transporter/pages/ShipmentDetailPage.jsx';
 import { MessagesPage } from './features/messaging/MessagesPage.jsx';
 import { NetworkErrorToaster } from './shared/components/NetworkErrorToaster.jsx';
+import { ToastProvider } from './shared/components/ToastProvider.jsx';
 import { AdminLayout } from './features/admin/AdminLayout.jsx';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage.jsx';
 import { AdminUsersPage } from './features/admin/pages/AdminUsersPage.jsx';
@@ -41,8 +42,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
             <Route path="/" element={<AuthGate />} />
             <Route element={<PublicOnlyRoute />}>
               <Route path="/login" element={<LoginPage />} />
@@ -81,9 +83,10 @@ function App() {
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          <NetworkErrorToaster />
-        </BrowserRouter>
+            </Routes>
+            <NetworkErrorToaster />
+          </BrowserRouter>
+        </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

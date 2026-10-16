@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Alert, Button, Card, Spinner, Textarea } from '../../../shared/components/index.js'
+import { Alert, Button, Card, Spinner, Textarea, useSuccessToast } from '../../../shared/components/index.js'
 import { useAuth } from '../../auth/AuthContext.jsx'
 import { createShipmentReview, listShipmentReviews } from '../review.api.js'
 
 export function ShipmentReviews({ shipmentId, canReview }) {
   const { user } = useAuth()
+  const showSuccess = useSuccessToast()
   const cache = useQueryClient()
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
@@ -28,6 +29,7 @@ export function ShipmentReviews({ shipmentId, canReview }) {
       setRating(0)
       setComment('')
       await cache.invalidateQueries({ queryKey: ['shipment', shipmentId, 'reviews'] })
+      showSuccess('Review submitted')
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -47,7 +49,6 @@ export function ShipmentReviews({ shipmentId, canReview }) {
         {error && <Alert tone="danger">{error}</Alert>}
         <Button type="submit" disabled={saving}>{saving ? <><Spinner /> Submitting…</> : 'Submit review'}</Button>
       </form>}
-      {ownReview && <Alert tone="success" title="Review submitted">Thank you for sharing your feedback.</Alert>}
       {!query.isPending && !canReview && reviews.length === 0 && <p className={`m-0 text-slate-500 text-sm leading-normal whitespace-pre-wrap shipment-review-empty`}>Reviews will appear here after the shipment participants leave feedback.</p>}
     </Card>
   )

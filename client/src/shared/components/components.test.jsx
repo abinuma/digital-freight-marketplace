@@ -2,6 +2,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { Button } from './Button.jsx'
+import { Toast } from './Toast.jsx'
 import { AuthField } from '../../features/auth/AuthField.jsx'
 
 describe('shared UI components', () => {
@@ -31,5 +32,21 @@ describe('shared UI components', () => {
     expect(markup).toContain('Email address')
     expect(markup).toContain('role="alert"')
     expect(markup).toContain('id="email-error"')
+  })
+
+  it('renders a toast with static top centering wrapper and bounce animation', () => {
+    const markup = renderToStaticMarkup(createElement(Toast, {
+      tone: 'success',
+      title: 'Success',
+      children: 'Profile updated successfully',
+      onDismiss: () => {},
+    }))
+
+    expect(markup).toContain('fixed inset-x-0 top-4')
+    expect(markup).toContain('flex justify-center')
+    expect(markup).toContain('animate-toast-in')
+    expect(markup).toContain('Success')
+    expect(markup).toContain('Profile updated successfully')
+    expect(markup).toContain('Dismiss notification')
   })
 })

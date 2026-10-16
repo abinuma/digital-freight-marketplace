@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Alert, Badge, Button, Card, Input, Modal, Pagination, Select, Spinner, Textarea } from '../../../shared/components/index.js'
+import { Alert, Badge, Button, Card, Input, Modal, Pagination, Select, Spinner, Textarea, useSuccessToast } from '../../../shared/components/index.js'
 import { listAdminUsers, updateAdminUserStatus } from '../admin.api.js'
 
 const formatDate = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value))
 
 export function AdminUsersPage() {
   const cache = useQueryClient()
+  const showSuccess = useSuccessToast()
   const [filters, setFilters] = useState({ q: '', role: '', status: '' })
   const [applied, setApplied] = useState(filters)
   const [page, setPage] = useState(1)
@@ -34,6 +35,7 @@ export function AdminUsersPage() {
       setAction(null)
       setReason('')
       await cache.invalidateQueries({ queryKey: ['admin', 'users'] })
+      showSuccess(action.type === 'suspend' ? 'Account suspended' : 'Access restored')
     } catch (requestError) {
       setError(requestError.message)
     } finally {
