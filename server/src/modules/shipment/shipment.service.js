@@ -5,8 +5,17 @@ import * as shipmentStorage from './shipment.storage.js';
 import * as notificationService from '../notification/notification.service.js';
 
 function toApiShipment(shipment) {
+  const inviteMatch = shipment.specialRequirements?.match(/\[INVITED_DRIVER:([^\]]+)\]/);
+  const invitedDriverId = inviteMatch ? inviteMatch[1] : null;
+  const cleanSpecialRequirements = shipment.specialRequirements
+    ? shipment.specialRequirements.replace(/\[INVITED_DRIVER:[^\]]+\]\s*/g, '').trim() || null
+    : null;
+
   return {
     ...shipment,
+    specialRequirements: cleanSpecialRequirements,
+    invitedDriverId,
+    isDirectInvite: Boolean(invitedDriverId),
     weightKg: Number(shipment.weightKg),
     volumeM3: shipment.volumeM3 === null || shipment.volumeM3 === undefined ? null : Number(shipment.volumeM3),
     pickupLat: shipment.pickupLat === null ? null : Number(shipment.pickupLat),
@@ -52,9 +61,30 @@ export async function listShipments(user, query) {
     });
   }
 
-  const visibility = user.role === 'SHIPPER'
-    ? { shipperId: user.id, removedAt: null }
-    : { status: 'PUBLISHED', removedAt: null };
+  let visibility;
+  if (user.role === 'SHIPPER') {
+    visibility = { shipperId: user.id, removedAt: null };
+  } else if (user.role === 'TRANSPORTER') {
+    if (query.invitedOnly === 'true') {
+      visibility = {
+        status: 'PUBLISHED',
+        removedAt: null,
+        specialRequirements: { contains: `[INVITED_DRIVER:${user.id}]` },
+      };
+    } else {
+      visibility = {
+        status: 'PUBLISHED',
+        removedAt: null,
+        OR: [
+          { specialRequirements: null },
+          { NOT: { specialRequirements: { contains: '[INVITED_DRIVER:' } } },
+          { specialRequirements: { contains: `[INVITED_DRIVER:${user.id}]` } },
+        ],
+      };
+    }
+  } else {
+    visibility = { status: 'PUBLISHED', removedAt: null };
+  }
   const where = filters.length > 0 ? { AND: [visibility, ...filters] } : visibility;
   const sortField = query.sortBy === 'pickupDate' ? 'pickupDate' : 'createdAt';
   const sortDirection = sortField === 'pickupDate' ? 'asc' : 'desc';
@@ -141,6 +171,16 @@ export async function softRemoveShipment(user, id, reason) {
 export async function getShipment(user, id) {
   const shipment = await shipmentRepository.findShipmentById(id);
   if (!shipment || (shipment.removedAt && user.role !== 'ADMIN')) throw new AppError('Shipment was not found', 404);
+
+  const inviteMatch = shipment.specialRequirements?.match(/\[INVITED_DRIVER:([^\]]+)\]/);
+  const invitedDriverId = inviteMatch ? inviteMatch[1] : null;
+
+  if (invitedDriverId && user.role === 'TRANSPORTER' && user.id !== invitedDriverId) {
+    const hasTransporterBid = await shipmentRepository.hasTransporterBid(id, user.id);
+    if (!hasTransporterBid) {
+      throw new AppError('This shipment is an exclusive load invitation for another transporter', 403);
+    }
+  }
 
   const normallyVisible = shipment.shipperId === user.id || shipment.status === 'PUBLISHED' || user.role === 'ADMIN';
   const hasTransporterBid = !normallyVisible && user.role === 'TRANSPORTER'

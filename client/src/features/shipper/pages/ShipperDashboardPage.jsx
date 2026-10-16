@@ -12,7 +12,6 @@ import {
 } from "../../../shared/components/index.js";
 import { getDashboardSummary } from "../shipper.api.js";
 import { listAvailableTransporters, getPublicProfile, updateProfile } from "../../profile/profile.api.js";
-import { startConversation } from "../../messaging/messaging.api.js";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import { CityLocationPicker } from "../../profile/components/CityLocationPicker.jsx";
 import { readLastDriverSearchCity, saveLastDriverSearchCity } from "../driverSearchStorage.js";
@@ -100,13 +99,30 @@ export function ShipperDashboardPage() {
     queryFn: () => getPublicProfile(selectedDriver.id),
     enabled: Boolean(selectedDriver?.id),
   });
-  const contactMutation = useMutation({
-    mutationFn: startConversation,
-    onSuccess: async ({ id }) => {
-      await cache.invalidateQueries({ queryKey: ["messages", "conversations"] });
-      navigate(`/shipper/messages?conversationId=${id}`);
-    },
-  });
+  function handleContactInvite(driver) {
+    if (!driver) return;
+    setSelectedDriver(null);
+    const params = new URLSearchParams({
+      driverId: driver.id,
+      driverName: driver.name || "Driver",
+    });
+    if (driver.city || city) {
+      params.set("city", driver.city || city);
+    }
+    if (driver.intendedDestination) {
+      params.set("destination", driver.intendedDestination);
+    }
+    if (driver.vehicleType) {
+      params.set("vehicleType", driver.vehicleType);
+    }
+
+    navigate(`/shipper/shipments/new?${params.toString()}`, {
+      state: {
+        invitedDriver: driver,
+        prefillShipment: selectedShipment || null,
+      },
+    });
+  }
   const preferencesMutation = useMutation({
     mutationFn: () => updateProfile(user.id, { preferredLoadTypes: usualLoads }),
     onSuccess: async () => {
@@ -243,13 +259,12 @@ export function ShipperDashboardPage() {
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <button type="button" className="min-h-9 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setSelectedDriver(driver)}>View profile</button>
-                  <button type="button" disabled={contactMutation.isPending} className="min-h-9 rounded-lg bg-blue-700 px-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60" onClick={() => contactMutation.mutate(driver.id)}>Contact / invite</button>
+                  <button type="button" className="min-h-9 rounded-lg bg-blue-700 px-3 text-sm font-semibold text-white hover:bg-blue-800" onClick={() => handleContactInvite(driver)}>Contact / invite</button>
                 </div>
               </div>
             ))}
           </div>
         ) : <p className="m-0 px-5 py-6 text-sm text-slate-500">{selectedShipment ? "No available drivers match this shipment’s route, timing, capacity, volume, and vehicle needs." : `No drivers are looking for loads in ${city} right now.`}</p>}
-        {contactMutation.isError && <Alert tone="danger" className="m-4">{contactMutation.error.message}</Alert>}
         {city && selectedShipment && <p className="m-0 border-t border-slate-100 px-5 py-3 text-xs text-slate-500">Matching checks include pickup and destination cities, planned date and availability days, weight, volume, and refrigerated vehicle needs.</p>}
       </Card>
 
@@ -276,7 +291,7 @@ export function ShipperDashboardPage() {
             <div><h3 className="m-0 text-base font-semibold text-slate-900">{driverProfileQuery.data?.name}</h3><p className="mb-0 mt-1 text-sm text-slate-600">{driverProfileQuery.data?.city || selectedDriver.city}</p>{driverProfileQuery.data?.phone && <p className="mb-0 mt-1 text-sm text-slate-600">{driverProfileQuery.data.phone}</p>}</div>
             <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700"><p className="m-0">Vehicle: {selectedDriver.vehicleType}</p><p className="mb-0 mt-1">Capacity: {selectedDriver.capacityTons} tonnes{selectedDriver.volumeM3 ? ` · ${selectedDriver.volumeM3} m³` : ""}</p></div>
           </>}
-          <button type="button" className="min-h-10 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800" onClick={() => contactMutation.mutate(selectedDriver.id)}>Contact / invite</button>
+          <button type="button" className="min-h-10 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800" onClick={() => handleContactInvite(selectedDriver)}>Contact / invite</button>
         </div>}
       </Modal>
 

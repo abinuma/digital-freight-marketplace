@@ -64,6 +64,39 @@ describe('bid service business rules', () => {
     expect(bidRepository.createBid).not.toHaveBeenCalled();
   });
 
+  it('rejects bids from a transporter who was not the invited driver', async () => {
+    bidRepository.findShipmentForBid.mockResolvedValue({
+      id: shipmentId,
+      status: 'PUBLISHED',
+      shipperId: 'shipper-id',
+      specialRequirements: '[INVITED_DRIVER:some-other-driver] fragile goods',
+    });
+
+    await expect(bidService.createBid(transporter, shipmentId, { price: 10 })).rejects.toMatchObject({
+      statusCode: 403,
+      message: 'This shipment is an exclusive load invitation for another transporter',
+    });
+    expect(bidRepository.createBid).not.toHaveBeenCalled();
+  });
+
+  it('allows bids from the invited driver on an invite-only shipment', async () => {
+    bidRepository.findShipmentForBid.mockResolvedValue({
+      id: shipmentId,
+      status: 'PUBLISHED',
+      shipperId: 'shipper-id',
+      specialRequirements: `[INVITED_DRIVER:${transporter.id}] fragile goods`,
+    });
+    bidRepository.createBid.mockResolvedValue(pendingBid);
+
+    const result = await bidService.createBid(transporter, shipmentId, {
+      price: 1200.5,
+      pickupDate: '2027-01-10T10:00:00.000Z',
+    });
+
+    expect(bidRepository.createBid).toHaveBeenCalled();
+    expect(result.id).toBe(bidId);
+  });
+
   it('maps the active-bid unique constraint to a conflict response', async () => {
     bidRepository.findShipmentForBid.mockResolvedValue({ id: shipmentId, status: 'PUBLISHED' });
     bidRepository.createBid.mockRejectedValue({ code: 'P2002', meta: { target: ['shipmentId', 'transporterId'] } });

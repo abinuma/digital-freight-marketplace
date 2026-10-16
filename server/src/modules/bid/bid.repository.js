@@ -32,7 +32,7 @@ const bidSelect = {
 export function findShipmentForBid(shipmentId) {
   return prisma.shipment.findUnique({
     where: { id: shipmentId },
-    select: { id: true, shipperId: true, status: true, removedAt: true },
+    select: { id: true, shipperId: true, status: true, removedAt: true, specialRequirements: true },
   });
 }
 

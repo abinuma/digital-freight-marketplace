@@ -42,6 +42,12 @@ export async function createBid(user, shipmentId, input) {
     throw new AppError('Bids can only be submitted on published shipments', 422);
   }
 
+  const inviteMatch = shipment.specialRequirements?.match(/\[INVITED_DRIVER:([^\]]+)\]/);
+  const invitedDriverId = inviteMatch ? inviteMatch[1] : null;
+  if (invitedDriverId && invitedDriverId !== user.id) {
+    throw new AppError('This shipment is an exclusive load invitation for another transporter', 403);
+  }
+
   try {
     const bid = await bidRepository.createBid(user.id, shipmentId, shipment.shipperId, {
       ...input,

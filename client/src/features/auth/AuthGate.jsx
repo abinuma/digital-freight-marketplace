@@ -65,10 +65,10 @@ export function AuthGate() {
   if (user && !user.profileComplete) {
     return (
       <main
-        className={`flex min-h-screen flex-col items-center justify-center  bg-gray-100 text-slate-800 text-center         landing`}
+        className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-10 text-slate-800"
       >
         <div
-          className={`grid w-14 h-14 place-items-center rounded-2xl bg-blue-700 shadow-sm text-white font-display text-base font-extrabold tracking-wide brand-mark`}
+          className="grid h-14 w-14 place-items-center rounded-2xl bg-blue-700 text-base font-extrabold tracking-wide text-white shadow-sm"
           aria-hidden="true"
         >
           EF

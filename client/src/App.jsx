@@ -25,6 +25,7 @@ import { ShipmentDetailPage as TransporterShipmentDetailPage } from './features/
 import { MessagesPage } from './features/messaging/MessagesPage.jsx';
 import { NetworkErrorToaster } from './shared/components/NetworkErrorToaster.jsx';
 import { ToastProvider } from './shared/components/ToastProvider.jsx';
+import { FormValidationScroll } from './shared/components/FormValidationScroll.jsx';
 import { AdminLayout } from './features/admin/AdminLayout.jsx';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage.jsx';
 import { AdminUsersPage } from './features/admin/pages/AdminUsersPage.jsx';
@@ -44,6 +45,7 @@ function App() {
       <AuthProvider>
         <ToastProvider>
           <BrowserRouter>
+            <FormValidationScroll />
             <Routes>
             <Route path="/" element={<AuthGate />} />
             <Route element={<PublicOnlyRoute />}>

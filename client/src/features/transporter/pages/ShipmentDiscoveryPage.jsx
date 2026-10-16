@@ -441,14 +441,21 @@ export function ShipmentDiscoveryPage() {
 
                 {/* Middle: Info */}
                 <div className="flex-1 min-w-0 space-y-2">
-                  <h3 className="m-0 text-base font-bold text-slate-900">
-                    <Link
-                      className="text-inherit no-underline hover:text-blue-600 transition-colors"
-                      to={`/transporter/shipments/${shipment.id}`}
-                    >
-                      {shipment.goodsDescription}
-                    </Link>
-                  </h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="m-0 text-base font-bold text-slate-900">
+                      <Link
+                        className="text-inherit no-underline hover:text-blue-600 transition-colors"
+                        to={`/transporter/shipments/${shipment.id}`}
+                      >
+                        {shipment.goodsDescription}
+                      </Link>
+                    </h3>
+                    {shipment.isDirectInvite && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">
+                        ★ Direct invite for you
+                      </span>
+                    )}
+                  </div>
 
                   <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
                     <svg className="w-4 h-4 text-slate-400 shrink-0 fill-current" viewBox="0 0 24 24">

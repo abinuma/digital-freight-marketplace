@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import {
@@ -15,6 +15,7 @@ import {
   transitionShipment,
   uploadShipmentImages,
 } from "../shipper.api.js";
+import { startConversation, sendConversationMessage } from "../../messaging/messaging.api.js";
 import { ShipmentCargoFields } from "../components/ShipmentCargoFields.jsx";
 import { ShipmentFormSection } from "../components/ShipmentFormSection.jsx";
 import { ShipmentPhotoUploader } from "../components/ShipmentPhotoUploader.jsx";
@@ -67,8 +68,28 @@ const empty = {
   pickupDate: "",
   specialRequirements: "",
 };
+
+const dateLabel = (date) =>
+  date
+    ? new Intl.DateTimeFormat(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }).format(new Date(date))
+    : "—";
+
 export function ShipmentFormPage() {
   const { id: routeId } = useParams();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
+  const invitedDriverId = searchParams.get("driverId") || location.state?.invitedDriver?.id || null;
+  const invitedDriverName = searchParams.get("driverName") || location.state?.invitedDriver?.name || "Driver";
+  const invitedCity = searchParams.get("city") || location.state?.invitedDriver?.city || "";
+  const invitedDestination = searchParams.get("destination") || location.state?.invitedDriver?.intendedDestination || "";
+  const invitedVehicle = searchParams.get("vehicleType") || location.state?.invitedDriver?.vehicleType || "";
+  const prefillShipment = location.state?.prefillShipment || null;
+
   const shipmentQuery = useQuery({
     queryKey: ["shipper", "shipment", routeId],
     queryFn: () => getShipment(routeId),
@@ -94,30 +115,57 @@ export function ShipmentFormPage() {
 
   return (
     <ShipmentForm
-      key={routeId || "new-shipment"}
+      key={routeId || (invitedDriverId ? `invite-${invitedDriverId}` : "new-shipment")}
       routeId={routeId}
       initialShipment={shipmentQuery.data || null}
+      invitedDriver={
+        invitedDriverId
+          ? {
+              id: invitedDriverId,
+              name: invitedDriverName,
+              city: invitedCity,
+              destination: invitedDestination,
+              vehicleType: invitedVehicle,
+            }
+          : null
+      }
+      prefillShipment={prefillShipment}
     />
   );
 }
 
-function ShipmentForm({ routeId, initialShipment }) {
+function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const showSuccess = useSuccessToast();
   const [shipmentId, setShipmentId] = useState(routeId || null);
-  const [values, setValues] = useState(() =>
-    initialShipment
-      ? {
-          ...empty,
-          ...initialShipment,
-          weightKg: String(initialShipment.weightKg),
-          volumeM3: initialShipment.volumeM3 != null ? String(initialShipment.volumeM3) : "",
-          pickupDate: initialShipment.pickupDate?.slice(0, 10),
-          specialRequirements: initialShipment.specialRequirements || "",
-        }
-      : empty,
-  );
+  const [values, setValues] = useState(() => {
+    if (initialShipment) {
+      return {
+        ...empty,
+        ...initialShipment,
+        weightKg: String(initialShipment.weightKg),
+        volumeM3: initialShipment.volumeM3 != null ? String(initialShipment.volumeM3) : "",
+        pickupDate: initialShipment.pickupDate?.slice(0, 10),
+        specialRequirements: initialShipment.specialRequirements || "",
+      };
+    }
+    if (prefillShipment) {
+      return {
+        ...empty,
+        ...prefillShipment,
+        weightKg: String(prefillShipment.weightKg || ""),
+        volumeM3: prefillShipment.volumeM3 != null ? String(prefillShipment.volumeM3) : "",
+        pickupDate: prefillShipment.pickupDate ? prefillShipment.pickupDate.slice(0, 10) : "",
+        specialRequirements: prefillShipment.specialRequirements || "",
+      };
+    }
+    return {
+      ...empty,
+      pickupLocation: invitedDriver?.city || "",
+      deliveryLocation: invitedDriver?.destination || "",
+    };
+  });
   const [files, setFiles] = useState([]);
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState("");
@@ -126,7 +174,6 @@ function ShipmentForm({ routeId, initialShipment }) {
   function setField(name, value) {
     setValues((current) => ({ ...current, [name]: value }));
   }
-
 
   async function submit(event) {
     event.preventDefault();
@@ -158,9 +205,16 @@ function ShipmentForm({ routeId, initialShipment }) {
         else if (values[field] == null) delete payload[field];
         else payload[field] = Number(values[field]);
       }
-      if (!payload.specialRequirements.trim()) {
+      let specialReq = (payload.specialRequirements || "").trim();
+      if (invitedDriver?.id) {
+        const cleanReq = specialReq.replace(/\[INVITED_DRIVER:[a-f0-9-]+\]\s*/g, '').trim();
+        specialReq = `[INVITED_DRIVER:${invitedDriver.id}] ${cleanReq}`.trim();
+      }
+      if (!specialReq) {
         if (shipmentId) payload.specialRequirements = null;
         else delete payload.specialRequirements;
+      } else {
+        payload.specialRequirements = specialReq;
       }
       const saved = await saveShipment({ id: shipmentId, values: payload });
       setShipmentId(saved.id);
@@ -168,7 +222,33 @@ function ShipmentForm({ routeId, initialShipment }) {
       if (intent === "publish" && saved.status === "DRAFT")
         await transitionShipment({ id: saved.id, action: "publish" });
       await queryClient.invalidateQueries({ queryKey: ["shipper"] });
-      showSuccess(routeId ? 'Shipment updated' : intent === 'publish' ? 'Shipment posted' : 'Draft saved');
+
+      if (invitedDriver?.id) {
+        try {
+          const conversation = await startConversation(invitedDriver.id);
+          const inviteMsg =
+            `Hello ${invitedDriver.name}, I would like to invite you to take this load:\n` +
+            `• Cargo: ${saved.goodsDescription} (${saved.goodsType})\n` +
+            `• Weight: ${saved.weightKg} kg${saved.volumeM3 ? ` · Volume: ${saved.volumeM3} m³` : ""}\n` +
+            `• Route: ${saved.pickupLocation} → ${saved.deliveryLocation}\n` +
+            `• Pickup date: ${dateLabel(saved.pickupDate)}\n` +
+            `Please check the details and submit your bid here: /transporter/shipments/${saved.id}`;
+
+          await sendConversationMessage({
+            conversationId: conversation.id,
+            content: inviteMsg,
+          });
+          showSuccess(`Load invite sent directly to ${invitedDriver.name}`);
+          navigate(`/shipper/messages?conversationId=${conversation.id}`);
+          return;
+        } catch (inviteError) {
+          showSuccess(`Shipment posted. Message not delivered: ${inviteError.message}`);
+          navigate(`/shipper/shipments/${saved.id}`);
+          return;
+        }
+      }
+
+      showSuccess(routeId ? "Shipment updated" : intent === "publish" ? "Shipment posted" : "Draft saved");
       navigate(`/shipper/shipments/${saved.id}`);
     } catch (error) {
       setSaveError(error.message);
@@ -184,15 +264,46 @@ function ShipmentForm({ routeId, initialShipment }) {
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
       <div>
         <p className="mb-1 text-xs font-bold tracking-widest text-blue-700">
-          {routeId ? "SHIPMENT DETAILS" : "NEW POSTING"}
+          {routeId
+            ? "SHIPMENT DETAILS"
+            : invitedDriver?.id
+            ? "DIRECT LOAD INVITATION"
+            : "NEW POSTING"}
         </p>
         <h1 className="m-0 text-3xl font-semibold tracking-tight text-slate-900 max-md:text-2xl">
-          {routeId ? "Edit shipment" : "Post a shipment"}
+          {routeId
+            ? "Edit shipment"
+            : invitedDriver?.id
+            ? `Send load invite to ${invitedDriver.name}`
+            : "Post a shipment"}
         </h1>
         <p className="mb-0 mt-2 text-sm text-slate-500">
-          Add the details transporters need to send you the right offer.
+          {invitedDriver?.id
+            ? `Add the details below to dispatch this load invite directly to ${invitedDriver.name}.`
+            : "Add the details transporters need to send you the right offer."}
         </p>
       </div>
+
+      {invitedDriver?.id && (
+        <div className="flex items-center gap-3.5 rounded-2xl border border-blue-200 bg-blue-50/80 p-4 shadow-2xs">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
+            <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+              <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+            </svg>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-slate-900">Inviting: {invitedDriver.name}</span>
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">Direct Invite</span>
+            </div>
+            <p className="m-0 mt-0.5 text-xs text-slate-600">
+              {invitedDriver.vehicleType ? `Vehicle: ${invitedDriver.vehicleType} · ` : ""}
+              {invitedDriver.city ? `Available in ${invitedDriver.city}` : "Available driver"}
+              {invitedDriver.destination ? ` → Heading to ${invitedDriver.destination}` : ""}
+            </p>
+          </div>
+        </div>
+      )}
 
       {!isEditable && (
         <Alert tone="warning" title="This shipment can’t be edited">
@@ -270,21 +381,23 @@ function ShipmentForm({ routeId, initialShipment }) {
           >
             Cancel
           </Button>
-          <Button
-            variant="secondary"
-            type="submit"
-            name="intent"
-            value="draft"
-            disabled={!isEditable || isSaving}
-          >
-            {isSaving ? (
-              <>
-                <Spinner /> Saving…
-              </>
-            ) : (
-              "Save as draft"
-            )}
-          </Button>
+          {!invitedDriver?.id && (
+            <Button
+              variant="secondary"
+              type="submit"
+              name="intent"
+              value="draft"
+              disabled={!isEditable || isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Spinner /> Saving…
+                </>
+              ) : (
+                "Save as draft"
+              )}
+            </Button>
+          )}
           <Button
             type="submit"
             name="intent"
@@ -293,10 +406,12 @@ function ShipmentForm({ routeId, initialShipment }) {
           >
             {isSaving ? (
               <>
-                <Spinner /> Saving…
+                <Spinner /> {invitedDriver?.id ? "Sending invite…" : "Saving…"}
               </>
             ) : routeId && initialShipment?.status === "PUBLISHED" ? (
               "Save changes"
+            ) : invitedDriver?.id ? (
+              "Send load invite"
             ) : (
               "Publish shipment"
             )}

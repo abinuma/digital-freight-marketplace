@@ -105,7 +105,15 @@ describe('shipment update service', () => {
     expect(shipmentRepository.findShipments).toHaveBeenCalledWith({
       where: {
         AND: [
-          { status: 'PUBLISHED', removedAt: null },
+          {
+            status: 'PUBLISHED',
+            removedAt: null,
+            OR: [
+              { specialRequirements: null },
+              { NOT: { specialRequirements: { contains: '[INVITED_DRIVER:' } } },
+              { specialRequirements: { contains: '[INVITED_DRIVER:transporter-id]' } },
+            ],
+          },
           { pickupLocation: { contains: 'addis', mode: 'insensitive' } },
           { deliveryLocation: { contains: 'hawassa', mode: 'insensitive' } },
           { goodsType: { equals: 'Furniture', mode: 'insensitive' } },
@@ -135,7 +143,32 @@ describe('shipment update service', () => {
     await shipmentService.listShipments({ id: 'transporter-id', role: 'TRANSPORTER' }, {});
 
     expect(shipmentRepository.findShipments).toHaveBeenCalledWith({
-      where: { status: 'PUBLISHED', removedAt: null },
+      where: {
+        status: 'PUBLISHED',
+        removedAt: null,
+        OR: [
+          { specialRequirements: null },
+          { NOT: { specialRequirements: { contains: '[INVITED_DRIVER:' } } },
+          { specialRequirements: { contains: '[INVITED_DRIVER:transporter-id]' } },
+        ],
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      skip: 0,
+      take: 20,
+    });
+  });
+
+  it('filters to invited shipments only when requested by a transporter', async () => {
+    shipmentRepository.findShipments.mockResolvedValue({ shipments: [], total: 0 });
+
+    await shipmentService.listShipments({ id: 'transporter-id', role: 'TRANSPORTER' }, { invitedOnly: 'true' });
+
+    expect(shipmentRepository.findShipments).toHaveBeenCalledWith({
+      where: {
+        status: 'PUBLISHED',
+        removedAt: null,
+        specialRequirements: { contains: '[INVITED_DRIVER:transporter-id]' },
+      },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       skip: 0,
       take: 20,
@@ -155,6 +188,40 @@ describe('shipment update service', () => {
     shipmentRepository.findShipmentById.mockResolvedValue({ ...draft, weightKg: '100.00', images: [] });
 
     await expect(shipmentService.getShipment({ id: 'transporter-id', role: 'TRANSPORTER' }, draft.id)).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it('prevents non-invited transporters from viewing a direct invite shipment', async () => {
+    shipmentRepository.findShipmentById.mockResolvedValue({
+      ...draft,
+      status: 'PUBLISHED',
+      weightKg: '100.00',
+      specialRequirements: '[INVITED_DRIVER:invited-driver-1] Handle with care',
+      images: [],
+    });
+
+    await expect(
+      shipmentService.getShipment({ id: 'other-transporter', role: 'TRANSPORTER' }, draft.id),
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it('allows the invited transporter to view a direct invite shipment', async () => {
+    shipmentRepository.findShipmentById.mockResolvedValue({
+      ...draft,
+      status: 'PUBLISHED',
+      weightKg: '100.00',
+      specialRequirements: '[INVITED_DRIVER:invited-driver-1] Handle with care',
+      images: [],
+    });
+
+    const result = await shipmentService.getShipment(
+      { id: 'invited-driver-1', role: 'TRANSPORTER' },
+      draft.id,
+    );
+
+    expect(result.status).toBe('PUBLISHED');
+    expect(result.specialRequirements).toBe('Handle with care');
+    expect(result.invitedDriverId).toBe('invited-driver-1');
+    expect(result.isDirectInvite).toBe(true);
   });
 
   it('updates a draft owned by the requesting shipper', async () => {

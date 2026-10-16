@@ -64,6 +64,7 @@ export const shipmentListQuerySchema = {
     pickupDateTo: z.iso.date().optional(),
     q: z.string().trim().min(1).max(255).optional(),
     sortBy: z.enum(['createdAt', 'pickupDate']).optional(),
+    invitedOnly: z.enum(['true', 'false']).optional(),
   }).refine(
     ({ pickupDateFrom, pickupDateTo }) => !pickupDateFrom || !pickupDateTo || pickupDateFrom <= pickupDateTo,
     { path: ['pickupDateTo'], message: 'pickupDateTo must be the same as or later than pickupDateFrom' },

@@ -118,6 +118,18 @@ export function ShipmentDetailPage() {
         </Alert>
       )}
 
+      {shipment.isDirectInvite && (
+        <div className="flex items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50/80 p-4 shadow-2xs">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
+            ★
+          </div>
+          <div>
+            <p className="m-0 text-sm font-bold text-slate-900">Direct Load Invitation for You</p>
+            <p className="m-0 text-xs text-slate-600">The shipper sent this load invitation directly to you. Only you can view and bid on this shipment.</p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-3 items-start gap-4 max-lg:grid-cols-1">
         <div className="grid gap-4 lg:col-span-2">
           <ShipmentInformation shipment={shipment} />
