@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/AuthContext.jsx';
+import { PreviewableImage } from './PreviewableImage.jsx';
 
 /**
  * UserMenu – header avatar dropdown for all roles.
@@ -65,12 +66,13 @@ export function UserMenu() {
       >
         {/* Avatar circle */}
         {avatar && !imageFailed ? (
-          <img
+          <PreviewableImage
             src={avatar}
             alt={fullName}
             className="h-9 w-9 rounded-full object-cover"
             referrerPolicy="no-referrer"
             onError={() => setImageFailed(true)}
+            nestedInteractive
           />
         ) : (
           <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-200 font-bold text-blue-700">

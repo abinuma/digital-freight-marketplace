@@ -6,6 +6,7 @@ import {
   Skeleton,
 } from "../../../shared/components/index.js";
 import { dateLabel, money } from "../../shipments/shipmentFormatters.js";
+import { PreviewableImage } from "../../../shared/components/PreviewableImage.jsx";
 
 const tones = { PENDING: "warning", ACCEPTED: "success", DECLINED: "danger" };
 
@@ -65,7 +66,7 @@ export function ShipperBidsPanel({
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-slate-100 text-sm font-bold text-blue-700">
                             {profile?.profilePhoto ? (
-                              <img
+                              <PreviewableImage
                                 className="h-full w-full object-cover"
                                 src={profile.profilePhoto}
                                 alt=""

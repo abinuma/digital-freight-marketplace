@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
-  Badge,
   Card,
   Skeleton,
   useSuccessToast,
@@ -11,39 +10,28 @@ import { listAvailableShipments, listMyBids } from "../transporter.api.js";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import { setLoadAvailability } from "../../profile/profile.api.js";
 
-const dateLabel = (date) =>
-  new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(date));
-
 const metrics = [
   {
     key: "PENDING",
     title: "Pending bids",
-    subtitle: "Waiting for shipper response",
     stage: "Pending",
     marker: "bg-teal-400",
   },
   {
     key: "ACCEPTED",
     title: "Accepted bids",
-    subtitle: "Ready or underway",
     stage: "Accepted",
     marker: "bg-cyan-400",
   },
   {
     key: "DECLINED",
     title: "Declined bids",
-    subtitle: "Offers that have closed",
     stage: "Closed",
     marker: "bg-blue-400",
   },
   {
     key: "AVAILABLE",
     title: "Available shipments",
-    subtitle: "Open listings to bid on",
     stage: "Available",
     marker: "border-2 border-slate-500 bg-slate-900",
   },
@@ -87,22 +75,10 @@ export function TransporterDashboardPage() {
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
       <div className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
         <div>
-          <p className="mb-1 text-xs font-bold tracking-widest text-blue-700">
-            TRANSPORTER WORKSPACE
-          </p>
-          <h1 className="m-0 text-3xl font-semibold tracking-tight text-slate-900 max-md:text-2xl">
-            Good to see you
-          </h1>
           <p className="mb-0 mt-2 text-sm text-slate-500">
             Keep track of your offers and find your next delivery.
           </p>
         </div>
-        <Link
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-slate-800"
-          to="/transporter/shipments"
-        >
-          Browse shipments <span aria-hidden="true">↗</span>
-        </Link>
       </div>
 
       {error && (
@@ -120,7 +96,7 @@ export function TransporterDashboardPage() {
         </div>
         <div className="relative grid grid-cols-4 gap-4 max-sm:grid-cols-2 max-sm:gap-y-6">
           <div className="absolute left-[12.5%] right-[12.5%] top-[7px] border-t border-dashed border-slate-600 max-sm:hidden" aria-hidden="true" />
-          {metrics.map(({ key, title, subtitle, stage, marker }, index) => (
+        {metrics.map(({ key, title, stage, marker }, index) => (
             <div className="relative min-w-0" key={key}>
               <div className="mb-4 flex h-4 items-center max-sm:mb-2">
                 <span className={`z-10 h-3.5 w-3.5 rounded-full ${marker}`} aria-hidden="true" />
@@ -131,7 +107,6 @@ export function TransporterDashboardPage() {
                 </strong>
               )}
               <p className="mb-0 mt-2 text-sm font-semibold text-white">{title}</p>
-              <p className="mb-0 mt-0.5 text-xs text-slate-300">{subtitle}</p>
               <span className="sr-only">Pipeline stage: {stage}</span>
             </div>
           ))}
@@ -145,21 +120,15 @@ export function TransporterDashboardPage() {
       </section>
 
       <Card className="flex flex-wrap items-center justify-between gap-4 border border-emerald-200 bg-emerald-50/70 p-5">
-        <div>
-          <p className="m-0 text-xs font-bold tracking-widest text-emerald-800">LOAD AVAILABILITY</p>
-          <h2 className="mb-0 mt-1 text-lg font-semibold text-slate-900">
-            {user.lookingForLoads ? "You’re visible to shippers" : "Looking for a load right now?"}
-          </h2>
-          <p className="mb-0 mt-1 text-sm text-slate-600">
-            {user.lookingForLoads ? "Shippers can find you in your city." : "Turn this on when you’re ready to take a load."}
-          </p>
-          {availabilityMutation.isError && <p className="mb-0 mt-2 text-sm text-red-700">{availabilityMutation.error.message}</p>}
+        <div className="grid gap-2">
+          <span id="load-availability-label" className="text-sm font-semibold text-slate-800">I’m available right now</span>
+          {availabilityMutation.isError && <p className="m-0 text-sm text-red-700">{availabilityMutation.error.message}</p>}
         </div>
         <button
           type="button"
           role="switch"
           aria-checked={Boolean(user.lookingForLoads)}
-          aria-label="Available for loads"
+          aria-labelledby="load-availability-label"
           aria-busy={availabilityMutation.isPending}
           disabled={availabilityMutation.isPending}
           onClick={() => availabilityMutation.mutate(!user.lookingForLoads)}
@@ -220,17 +189,7 @@ export function TransporterDashboardPage() {
                     <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-bold text-white shadow-2xs">
                       ★ Direct invite for you
                     </span>
-                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                      {shipment.goodsType}
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      Pickup {dateLabel(shipment.pickupDate)}
-                    </span>
                   </div>
-
-                  <h3 className="m-0 text-base font-bold text-slate-900 truncate">
-                    {shipment.goodsDescription}
-                  </h3>
 
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-slate-600">
                     <div className="flex items-center gap-1.5 font-semibold text-slate-800">
@@ -341,20 +300,6 @@ export function TransporterDashboardPage() {
         </Card>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
-        <span>
-          <Badge tone="warning">PENDING</Badge> bids need a response
-        </span>
-        <span>
-          <Badge tone="success">ACCEPTED</Badge> bids open shipment messages
-        </span>
-        <span className="flex items-center gap-2 text-slate-400">
-          <span className="text-green-600" aria-hidden="true">
-            ●
-          </span>{" "}
-          Dashboard data updates automatically.
-        </span>
-      </div>
     </div>
   );
 }

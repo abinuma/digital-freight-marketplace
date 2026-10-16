@@ -118,15 +118,9 @@ export function MyBidsPage() {
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
       <div className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
         <div>
-          <p className="mb-1 text-xs font-bold tracking-widest text-blue-700">
-            YOUR OFFERS
-          </p>
           <h1 className="m-0 text-3xl font-semibold tracking-tight text-slate-900 max-md:text-2xl">
             My bids
           </h1>
-          <p className="mb-0 mt-2 text-sm text-slate-500">
-            Review the offers you’ve sent to shippers.
-          </p>
         </div>
         <label className="grid gap-1.5 text-sm font-medium text-slate-700">
           <span>Filter by status</span>

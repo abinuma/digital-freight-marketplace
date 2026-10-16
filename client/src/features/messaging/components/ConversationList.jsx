@@ -1,5 +1,6 @@
 import { Alert, Input, Skeleton } from '../../../shared/components/index.js';
 import { dateLabel, initials, timeLabel } from '../messaging.formatters.js';
+import { PreviewableImage } from '../../../shared/components/PreviewableImage.jsx';
 
 const emptyStateClass = 'flex flex-col items-center justify-center gap-2 p-6 text-center text-slate-500';
 
@@ -54,7 +55,7 @@ export function ConversationList({
               >
                 <span className="flex h-8 w-8 min-w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo-100 text-xs font-bold text-blue-700 lg:h-9 lg:w-9 lg:min-w-9 xl:h-10 xl:w-10 xl:min-w-10 lg:text-sm">
                   {conversation.counterpart.profilePhoto ? (
-                    <img className="h-full w-full object-cover" src={conversation.counterpart.profilePhoto} alt="" />
+                    <PreviewableImage className="h-full w-full object-cover" src={conversation.counterpart.profilePhoto} alt={`${conversation.counterpart.name} profile photo`} nestedInteractive />
                   ) : (
                     initials(conversation.counterpart.name)
                   )}

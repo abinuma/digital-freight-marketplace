@@ -16,6 +16,7 @@ import { ShipperDashboardPage } from './features/shipper/pages/ShipperDashboardP
 import { ShipmentListPage } from './features/shipper/pages/ShipmentListPage.jsx';
 import { ShipmentFormPage } from './features/shipper/pages/ShipmentFormPage.jsx';
 import { ShipmentDetailPage } from './features/shipper/pages/ShipmentDetailPage.jsx';
+import { BidsReviewPage } from './features/shipper/pages/BidsReviewPage.jsx';
 import { TransporterLayout } from './features/transporter/TransporterLayout.jsx';
 import { TransporterDashboardPage } from './features/transporter/pages/TransporterDashboardPage.jsx';
 import { ShipmentDiscoveryPage } from './features/transporter/pages/ShipmentDiscoveryPage.jsx';
@@ -26,6 +27,7 @@ import { MessagesPage } from './features/messaging/MessagesPage.jsx';
 import { NetworkErrorToaster } from './shared/components/NetworkErrorToaster.jsx';
 import { ToastProvider } from './shared/components/ToastProvider.jsx';
 import { FormValidationScroll } from './shared/components/FormValidationScroll.jsx';
+import { ImagePreviewProvider } from './shared/components/ImagePreviewProvider.jsx';
 import { AdminLayout } from './features/admin/AdminLayout.jsx';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage.jsx';
 import { AdminUsersPage } from './features/admin/pages/AdminUsersPage.jsx';
@@ -44,6 +46,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
+          <ImagePreviewProvider>
           <BrowserRouter>
             <FormValidationScroll />
             <Routes>
@@ -61,6 +64,7 @@ function App() {
                 <Route path="/shipper/messages" element={<MessagesPage />} />
                 <Route path="/shipper" element={<ShipperLayout />}>
                   <Route index element={<ShipperDashboardPage />} />
+                  <Route path="bids" element={<BidsReviewPage />} />
                   <Route path="shipments" element={<ShipmentListPage />} />
                   <Route path="shipments/new" element={<ShipmentFormPage />} />
                   <Route path="shipments/:id" element={<ShipmentDetailPage />} />
@@ -88,6 +92,7 @@ function App() {
             </Routes>
             <NetworkErrorToaster />
           </BrowserRouter>
+          </ImagePreviewProvider>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>

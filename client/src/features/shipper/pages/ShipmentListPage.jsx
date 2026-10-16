@@ -52,12 +52,6 @@ export function ShipmentListPage() {
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
       <div className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
         <div>
-          <p className="mb-1 text-xs font-bold tracking-widest text-blue-700">
-            SHIPMENTS
-          </p>
-          <h1 className="m-0 text-3xl font-semibold tracking-tight text-slate-900 max-md:text-2xl">
-            My shipments
-          </h1>
           <p className="mb-0 mt-2 text-sm text-slate-500">
             Track and manage the freight you’ve posted.
           </p>

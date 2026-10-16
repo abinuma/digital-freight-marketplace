@@ -89,10 +89,23 @@ export async function listShipments(user, query) {
   const sortField = query.sortBy === 'pickupDate' ? 'pickupDate' : 'createdAt';
   const sortDirection = sortField === 'pickupDate' ? 'asc' : 'desc';
   const orderBy = [{ [sortField]: sortDirection }, { id: 'asc' }];
-  const { shipments, total } = await shipmentRepository.findShipments({ where, orderBy, skip, take });
+  const { shipments, total } = await shipmentRepository.findShipments({
+    where,
+    orderBy,
+    skip,
+    take,
+    includeImages: user.role === 'TRANSPORTER',
+  });
+
+  const bidCounts = user.role === 'SHIPPER'
+    ? await shipmentRepository.countActiveBidsByShipment(shipments.map(({ id }) => id))
+    : {};
 
   return {
-    shipments: shipments.map(toApiShipment),
+    shipments: shipments.map((shipment) => ({
+      ...toApiShipment(shipment),
+      ...(user.role === 'SHIPPER' ? { bidCount: bidCounts[shipment.id] || 0 } : {}),
+    })),
     pagination: formatPagination({ page, limit, total }),
   };
 }
@@ -255,8 +268,8 @@ export function completeShipment(user, id) {
 export async function uploadShipmentImages(user, id, files) {
   await getOwnedShipment(user, id);
   const currentCount = await shipmentRepository.countShipmentImages(id);
-  if (currentCount + files.length > 5) {
-    throw new AppError('A shipment may have no more than 5 images', 409);
+  if (currentCount + files.length > 1) {
+    throw new AppError('A shipment may have no more than one cargo photo', 409);
   }
 
   const uploadedImages = [];
@@ -267,7 +280,7 @@ export async function uploadShipmentImages(user, id, files) {
 
     const savedImages = await shipmentRepository.createShipmentImages(id, uploadedImages);
     if (!savedImages) {
-      throw new AppError('A shipment may have no more than 5 images', 409);
+      throw new AppError('A shipment may have no more than one cargo photo', 409);
     }
     return savedImages;
   } catch (error) {

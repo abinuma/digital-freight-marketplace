@@ -7,14 +7,14 @@ const maxFileSize = 5 * 1024 * 1024;
 
 const parser = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: maxFileSize, files: 5 },
+  limits: { fileSize: maxFileSize, files: 1 },
   fileFilter(req, file, callback) {
     if (!allowedMimeTypes.has(file.mimetype)) {
       return callback(new AppError('Only JPEG, PNG, and WebP images are allowed', 400));
     }
     return callback(null, true);
   },
-}).array('images', 5);
+}).array('images', 1);
 
 function hasValidSignature(file) {
   const { buffer, mimetype } = file;
@@ -31,7 +31,7 @@ export function parseShipmentImages(req, res, next) {
       if (error instanceof multer.MulterError) {
         const message = error.code === 'LIMIT_FILE_SIZE'
           ? 'Each image must be 5 MB or smaller'
-          : 'A maximum of 5 images may be uploaded per request';
+          : 'Only one cargo photo may be uploaded per shipment';
         return next(new AppError(message, 400));
       }
       return next(error);

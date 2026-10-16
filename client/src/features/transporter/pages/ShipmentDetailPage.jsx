@@ -12,6 +12,7 @@ import {
   useSuccessToast,
 } from "../../../shared/components/index.js";
 import {
+  getInviterProfile,
   getShipment,
   listMyBids,
   withdrawBid,
@@ -34,6 +35,12 @@ export function ShipmentDetailPage() {
     queryFn: () => getShipment(id),
     refetchInterval: 15_000,
   });
+  const inviterQuery = useQuery({
+    queryKey: ["users", "publicProfile", shipmentQuery.data?.shipperId],
+    queryFn: () => getInviterProfile(shipmentQuery.data.shipperId),
+    enabled: Boolean(shipmentQuery.data?.isDirectInvite && shipmentQuery.data?.shipperId),
+    staleTime: 5 * 60_000,
+  });
   const ownBidQuery = useQuery({
     queryKey: ["transporter", "bidForShipment", id],
     queryFn: () => listMyBids({ shipmentId: id, limit: 1 }),
@@ -41,6 +48,7 @@ export function ShipmentDetailPage() {
     refetchInterval: 15_000,
   });
   const shipment = shipmentQuery.data;
+  const inviterName = inviterQuery.data?.name || "The shipper";
   const latestBid = ownBidQuery.data?.bids?.[0] || null;
   const activeBid =
     latestBid && ["PENDING", "ACCEPTED"].includes(latestBid.status)
@@ -103,7 +111,7 @@ export function ShipmentDetailPage() {
       </Link>
 
       <header className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
-        <ShipmentHeading shipment={shipment} />
+        <ShipmentHeading shipment={shipment} hidePublishedStatus hideCargoSummary />
         <Link
           className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50"
           to="/transporter/bids"
@@ -124,8 +132,7 @@ export function ShipmentDetailPage() {
             ★
           </div>
           <div>
-            <p className="m-0 text-sm font-bold text-slate-900">Direct Load Invitation for You</p>
-            <p className="m-0 text-xs text-slate-600">The shipper sent this load invitation directly to you. Only you can view and bid on this shipment.</p>
+            <p className="m-0 text-sm font-semibold text-slate-900">{inviterName} sent this load invitation to you.</p>
           </div>
         </div>
       )}

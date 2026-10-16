@@ -6,6 +6,7 @@ import {
   Pagination,
   Skeleton,
 } from "../../../shared/components/index.js";
+import { PreviewableImage } from "../../../shared/components/PreviewableImage.jsx";
 import { listAvailableShipments } from "../transporter.api.js";
 import { ShipmentMap } from "../components/ShipmentMap.jsx";
 
@@ -407,7 +408,7 @@ export function ShipmentDiscoveryPage() {
                 {/* Left: Image / placeholder */}
                 <div className="relative h-36 w-full md:w-56 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-emerald-100 via-teal-50 to-blue-50 border border-slate-100">
                   {shipment.images?.[0]?.url || shipment.photoUrl ? (
-                    <img
+                    <PreviewableImage
                       src={shipment.images?.[0]?.url || shipment.photoUrl}
                       alt={shipment.goodsDescription}
                       className="h-full w-full object-cover"

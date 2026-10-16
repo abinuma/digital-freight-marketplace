@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Badge, Button, Card } from '../../../shared/components/index.js';
 import { dateLabel, initials, timeLabel } from '../messaging.formatters.js';
+import { PreviewableImage } from '../../../shared/components/PreviewableImage.jsx';
 
 const statusTones = {
   PENDING: 'warning',
@@ -35,7 +36,7 @@ export function ConversationBidCard({
       <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-blue-200 bg-blue-100 text-sm font-bold text-blue-700 shadow-xs">
           {profile?.profilePhoto ? (
-            <img className="h-full w-full object-cover" src={profile.profilePhoto} alt="" />
+            <PreviewableImage className="h-full w-full object-cover" src={profile.profilePhoto} alt={`${name} profile photo`} />
           ) : (
             initials(name)
           )}

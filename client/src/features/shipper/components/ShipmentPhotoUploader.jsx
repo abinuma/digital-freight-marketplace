@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { PreviewableImage } from "../../../shared/components/PreviewableImage.jsx";
 
 const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
@@ -8,6 +9,8 @@ export function ShipmentPhotoUploader({
   onFilesChange,
   onError,
 }) {
+  const [isDragging, setIsDragging] = useState(false);
+  const inputId = "shipment-cargo-photo";
   const stagedFiles = useMemo(
     () => files.map((file) => ({ file, preview: URL.createObjectURL(file) })),
     [files],
@@ -19,8 +22,9 @@ export function ShipmentPhotoUploader({
     [stagedFiles],
   );
 
-  function addFiles(event) {
-    const selected = Array.from(event.target.files || []);
+  function addFiles(selectedFiles, input) {
+    const selected = Array.from(selectedFiles || []);
+    if (!selected.length) return;
     if (
       selected.some(
         (file) =>
@@ -28,48 +32,58 @@ export function ShipmentPhotoUploader({
       )
     ) {
       onError("Images must be JPEG, PNG, or WebP files up to 5 MB each.");
-      event.target.value = "";
+      if (input) input.value = "";
       return;
     }
-    if (existingImages.length + files.length + selected.length > 5) {
-      onError("A shipment can include up to five images.");
-      event.target.value = "";
+    if (selected.length > 1 || existingImages.length + files.length + selected.length > 1) {
+      onError("A shipment can include one cargo photo.");
+      if (input) input.value = "";
       return;
     }
     onError("");
     onFilesChange([...files, ...selected]);
-    event.target.value = "";
+    if (input) input.value = "";
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    setIsDragging(false);
+    if (existingImages.length + files.length >= 1) return;
+    addFiles(event.dataTransfer.files);
   }
 
   return (
     <div className="grid gap-2 text-sm font-medium text-slate-700">
-      <div>
-        <span>Shipment photos</span>
-        <p className="mb-0 mt-1 text-xs font-normal text-slate-500">
-          Optional · JPEG, PNG or WebP · 5 MB each · up to 5 photos
-        </p>
-      </div>
-      <label className="grid min-h-28 cursor-pointer place-items-center gap-2 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-4 text-center hover:border-blue-400 hover:bg-blue-50">
-        <span className="text-2xl text-blue-700" aria-hidden="true">
-          ＋
-        </span>
-        <span className="font-semibold text-slate-700">Choose photos</span>
-        <span className="text-xs text-slate-500">
-          {existingImages.length + files.length} of 5 selected
-        </span>
+      <label
+        htmlFor={inputId}
+        className={`grid min-h-28 cursor-pointer place-items-center gap-3 rounded-lg border-2 border-dashed p-4 text-center transition-colors ${isDragging ? "border-blue-500 bg-blue-50" : "border-slate-300 bg-slate-50 hover:border-blue-400 hover:bg-blue-50"}`}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragOver={(event) => event.preventDefault()}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setIsDragging(false);
+        }}
+        onDrop={handleDrop}
+      >
+        <span className="font-semibold text-slate-700">Drop photo here</span>
         <input
-          className="w-full max-w-sm text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-blue-700 file:px-3 file:py-2 file:font-semibold file:text-white"
+          id={inputId}
+          className="sr-only"
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          multiple
-          onChange={addFiles}
-          disabled={existingImages.length + files.length >= 5}
+          onChange={(event) => addFiles(event.target.files, event.target)}
+          disabled={existingImages.length + files.length >= 1}
         />
+        <span className="rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-800">
+          Choose photo
+        </span>
       </label>
       {(existingImages.length > 0 || stagedFiles.length > 0) && (
         <div className="flex flex-wrap gap-3">
           {existingImages.map((image) => (
-            <img
+            <PreviewableImage
               className="h-20 w-20 rounded-lg border border-slate-200 object-cover"
               key={image.id}
               src={image.url}
@@ -78,7 +92,7 @@ export function ShipmentPhotoUploader({
           ))}
           {stagedFiles.map(({ file, preview }, index) => (
             <div className="relative" key={`${file.name}-${index}`}>
-              <img
+              <PreviewableImage
                 className="h-20 w-20 rounded-lg border border-slate-200 object-cover"
                 src={preview}
                 alt={file.name}

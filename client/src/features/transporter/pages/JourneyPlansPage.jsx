@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import {
@@ -75,6 +75,7 @@ export function JourneyPlansPage() {
   const [formErrors, setFormErrors] = useState({});
   const [requestError, setRequestError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const departureTimeSelection = useRef(null);
 
   const cache = useQueryClient();
   const query = useQuery({
@@ -84,6 +85,29 @@ export function JourneyPlansPage() {
   });
 
   const plans = query.data?.journeyPlans || [];
+
+  function updateDepartureDate(event) {
+    const input = event.currentTarget;
+    const [date = '', time = ''] = input.value.split('T');
+    setFormValues((prev) => ({ ...prev, departureDate: input.value }));
+
+    if (!date || !time) return;
+
+    const selection = departureTimeSelection.current;
+    if (!selection || selection.date !== date) {
+      departureTimeSelection.current = { date, time, timePartsChanged: 0 };
+      return;
+    }
+
+    if (selection.time !== time) {
+      selection.time = time;
+      selection.timePartsChanged += 1;
+      if (selection.timePartsChanged >= 3) {
+        input.blur();
+        departureTimeSelection.current = null;
+      }
+    }
+  }
 
   function resetForm() {
     setFormValues({
@@ -125,7 +149,24 @@ export function JourneyPlansPage() {
       setIsModalOpen(false);
       showSuccess('Plan created');
     } catch (err) {
-      setRequestError(err.message || 'Could not create journey plan');
+      if (err.details && Array.isArray(err.details) && err.details.length > 0) {
+        const fieldErrors = {};
+        const globalErrors = [];
+        for (const issue of err.details) {
+          const field = issue.path?.[issue.path.length - 1];
+          if (field) {
+            fieldErrors[field] = issue.message;
+          } else {
+            globalErrors.push(issue.message);
+          }
+        }
+        if (Object.keys(fieldErrors).length > 0) {
+          setFormErrors(fieldErrors);
+        }
+        setRequestError(globalErrors.join(', ') || err.message || 'Could not create journey plan');
+      } else {
+        setRequestError(err.message || 'Could not create journey plan');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -384,9 +425,16 @@ export function JourneyPlansPage() {
               type="datetime-local"
               min={toLocalDateTime(new Date())}
               value={formValues.departureDate}
-              onChange={(e) =>
-                setFormValues((prev) => ({ ...prev, departureDate: e.target.value }))
-              }
+              onChange={updateDepartureDate}
+              onFocus={(event) => {
+                const [date = '', time = ''] = event.currentTarget.value.split('T');
+                departureTimeSelection.current = date && time
+                  ? { date, time, timePartsChanged: 0 }
+                  : null;
+              }}
+              onBlur={() => {
+                departureTimeSelection.current = null;
+              }}
               required
             />
             {formErrors.departureDate && (

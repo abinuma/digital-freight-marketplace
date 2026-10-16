@@ -1,3 +1,5 @@
+import { PreviewableImage } from "../../../shared/components/PreviewableImage.jsx";
+
 export function ProfilePhotoCard({
   avatar,
   userName,
@@ -11,7 +13,7 @@ export function ProfilePhotoCard({
       <div className="relative">
         <div className="h-32 w-32 rounded-full overflow-hidden bg-blue-500 shadow-inner flex items-center justify-center text-white border-4 border-white shadow-sm">
           {avatar ? (
-            <img
+            <PreviewableImage
               className="h-full w-full object-cover"
               src={avatar}
               alt={`${userName || 'User'} profile`}

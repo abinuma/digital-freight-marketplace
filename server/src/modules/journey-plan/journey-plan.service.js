@@ -59,11 +59,15 @@ export async function createJourneyPlan(user, input) {
   const maxWeightKg = Number(vehicle.capacityTons) * 1000;
   const maxVolumeM3 = vehicle.volumeM3 !== null ? Number(vehicle.volumeM3) : null;
 
+  const departureDate = input.departureDate.includes('T')
+    ? new Date(input.departureDate)
+    : new Date(`${input.departureDate}T00:00:00.000Z`);
+
   const plan = await journeyPlanRepository.createJourneyPlan({
     transporterId: user.id,
     originCity: input.originCity,
     destinationCity: input.destinationCity,
-    departureDate: new Date(`${input.departureDate}T00:00:00.000Z`),
+    departureDate,
     fullLoadPrice: input.fullLoadPrice,
     maxWeightKg,
     maxVolumeM3,

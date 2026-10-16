@@ -263,13 +263,11 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
   return (
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
       <div>
-        <p className="mb-1 text-xs font-bold tracking-widest text-blue-700">
-          {routeId
-            ? "SHIPMENT DETAILS"
-            : invitedDriver?.id
-            ? "DIRECT LOAD INVITATION"
-            : "NEW POSTING"}
-        </p>
+        {(routeId || invitedDriver?.id) && (
+          <p className="mb-1 text-xs font-bold tracking-widest text-blue-700">
+            {routeId ? "SHIPMENT DETAILS" : "DIRECT LOAD INVITATION"}
+          </p>
+        )}
         <h1 className="m-0 text-3xl font-semibold tracking-tight text-slate-900 max-md:text-2xl">
           {routeId
             ? "Edit shipment"

@@ -44,7 +44,9 @@ export function ShipmentDetailPage() {
     enabled: Boolean(shipmentQuery.data),
     refetchInterval: 15_000,
   });
-  const bids = bidsQuery.data || [];
+  const bids = [...(bidsQuery.data || [])].sort(
+    (first, second) => Number(first.price) - Number(second.price),
+  );
   const profileQueries = useQueries({
     queries: [...new Set(bids.map((bid) => bid.transporterId))].map(
       (transporterId) => ({

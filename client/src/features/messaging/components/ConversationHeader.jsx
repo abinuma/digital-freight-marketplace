@@ -1,4 +1,5 @@
 import { initials } from '../messaging.formatters.js';
+import { PreviewableImage } from '../../../shared/components/PreviewableImage.jsx';
 
 export function ConversationHeader({
   conversation,
@@ -22,7 +23,7 @@ export function ConversationHeader({
         )}
         <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo-100 text-xs font-bold text-blue-700 sm:h-10 sm:w-10 sm:text-sm">
           {conversation.counterpart.profilePhoto ? (
-            <img className="h-full w-full object-cover" src={conversation.counterpart.profilePhoto} alt="" />
+            <PreviewableImage className="h-full w-full object-cover" src={conversation.counterpart.profilePhoto} alt={`${conversation.counterpart.name} profile photo`} />
           ) : (
             initials(conversation.counterpart.name)
           )}

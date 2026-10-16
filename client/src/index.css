@@ -121,6 +121,16 @@ textarea:focus-visible {
   color: #202b3c;
 }
 
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'] {
+  cursor: pointer;
+}
+
+input:not(:disabled)::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
 @keyframes toast-bounce-in {
   0% {
     opacity: 0;

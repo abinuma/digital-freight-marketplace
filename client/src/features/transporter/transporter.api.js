@@ -12,6 +12,10 @@ export async function getShipment(id) {
   return unwrap(await apiClient.get(`/shipments/${id}`));
 }
 
+export async function getInviterProfile(id) {
+  return unwrap(await apiClient.get(`/users/${id}`));
+}
+
 export async function listMyBids(params) {
   const response = await apiClient.get('/bids/my', { params });
   return { bids: response.data.data, pagination: response.data.meta.pagination };

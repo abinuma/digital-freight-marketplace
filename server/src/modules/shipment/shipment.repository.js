@@ -28,11 +28,19 @@ export function createShipment(shipperId, data) {
   });
 }
 
-export async function findShipments({ where, orderBy, skip, take }) {
+export async function findShipments({ where, orderBy, skip, take, includeImages = false }) {
   const [shipments, total] = await Promise.all([
     prisma.shipment.findMany({
       where,
-      select: shipmentListSelect,
+      select: {
+        ...shipmentListSelect,
+        ...(includeImages ? {
+          images: {
+            select: { id: true, url: true, order: true },
+            orderBy: [{ order: 'asc' }, { id: 'asc' }],
+          },
+        } : {}),
+      },
       orderBy,
       skip,
       take,
@@ -41,6 +49,16 @@ export async function findShipments({ where, orderBy, skip, take }) {
   ]);
 
   return { shipments, total };
+}
+
+export async function countActiveBidsByShipment(shipmentIds) {
+  if (!shipmentIds.length) return {};
+  const groups = await prisma.bid.groupBy({
+    by: ['shipmentId'],
+    where: { shipmentId: { in: shipmentIds }, status: { not: 'WITHDRAWN' } },
+    _count: { _all: true },
+  });
+  return Object.fromEntries(groups.map(({ shipmentId, _count }) => [shipmentId, _count._all]));
 }
 
 export async function getShipperDashboardSummary(shipperId) {
@@ -214,7 +232,7 @@ export function countShipmentImages(shipmentId) {
 export function createShipmentImages(shipmentId, uploadedImages) {
   return prisma.$transaction(async (transaction) => {
     const currentCount = await transaction.shipmentImage.count({ where: { shipmentId } });
-    if (currentCount + uploadedImages.length > 5) return null;
+    if (currentCount + uploadedImages.length > 1) return null;
 
     const lastImage = await transaction.shipmentImage.findFirst({
       where: { shipmentId },

@@ -18,7 +18,7 @@ export async function listMyJourneyPlans(params = {}) {
   const response = await apiClient.get('/journey-plans/my', { params: query });
   return {
     journeyPlans: response.data.data,
-    pagination: response.data.meta?.pagination || { page: 1, limit: 10, total: 0, totalPages: 1 },
+    pagination: response.data.meta?.pagination || { page: 1, limit: 10, total: response.data.data?.length ?? 0, totalPages: 1 },
   };
 }
 

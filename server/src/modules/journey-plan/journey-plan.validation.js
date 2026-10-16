@@ -5,8 +5,12 @@ const bidId = z.uuid();
 
 const departureDate = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'departureDate must be YYYY-MM-DD')
-  .refine((date) => date >= new Date().toISOString().slice(0, 10), 'departureDate must be today or later');
+  .refine((date) => !Number.isNaN(new Date(date).getTime()), 'departureDate must be a valid date or datetime')
+  .refine((date) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const datePart = date.slice(0, 10);
+    return datePart >= today;
+  }, 'departureDate must be today or later');
 
 export const createJourneyPlanSchema = {
   body: z.object({
@@ -31,5 +35,7 @@ export const journeyPlanIdParamsSchema = {
 export const listJourneyPlansQuerySchema = {
   query: z.object({
     status: z.enum(['ACTIVE', 'FULL', 'COMPLETED', 'CANCELLED']).optional(),
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
   }),
 };

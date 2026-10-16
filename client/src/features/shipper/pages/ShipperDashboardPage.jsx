@@ -86,7 +86,6 @@ export function ShipperDashboardPage() {
     refetchInterval: 15_000,
   });
   const summary = query.data;
-  const shipmentWithBids = summary?.recentShipments?.find((shipment) => shipment.bidCount > 0);
   const selectedShipment = summary?.recentShipments?.find(({ id }) => id === shipmentId);
   const driversQuery = useQuery({
     queryKey: ["shipper", "availableTransporters", city],
@@ -157,12 +156,6 @@ export function ShipperDashboardPage() {
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
       <div className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
         <div>
-          <p className="mb-1 text-xs font-bold tracking-widest text-blue-700">
-            SHIPPER WORKSPACE
-          </p>
-          <h1 className="m-0 text-3xl font-semibold tracking-tight text-slate-900 max-md:text-2xl">
-            Good to see you
-          </h1>
           <p className="mb-0 mt-2 text-sm text-slate-500">
             Here’s what’s happening with your freight today.
           </p>
@@ -208,7 +201,7 @@ export function ShipperDashboardPage() {
         </div>
         <Link
           className="absolute bottom-4 right-6 inline-flex min-h-9 items-center justify-center rounded-md bg-blue-700 px-4 text-sm font-semibold text-white no-underline transition-colors hover:bg-blue-600 max-sm:right-4"
-          to={shipmentWithBids ? `/shipper/shipments/${shipmentWithBids.id}` : "/shipper/shipments"}
+          to="/shipper/bids"
         >
           Review bids
         </Link>
@@ -271,7 +264,6 @@ export function ShipperDashboardPage() {
       <Card className="flex flex-wrap items-center justify-between gap-3 border border-blue-100 bg-blue-50/50 p-4">
         <div className="min-w-0 flex-1">
           <h2 className="m-0 text-sm font-semibold text-slate-900">Tell us your usual loads for quicker transport recommendations.</h2>
-          <p className="mb-0 mt-1 text-xs text-slate-500">Choose the cargo types you ship most often.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {usualLoadTypes.map((type) => {
               const checked = usualLoads.includes(type);
@@ -389,12 +381,6 @@ export function ShipperDashboardPage() {
         )}
       </Card>
 
-      <p className="m-0 flex items-center gap-2 text-xs text-slate-400">
-        <span className="text-green-600" aria-hidden="true">
-          ●
-        </span>{" "}
-        Shipment data updates automatically.
-      </p>
     </div>
   );
 }

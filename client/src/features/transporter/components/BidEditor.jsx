@@ -157,9 +157,6 @@ export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
         <h2 className="m-0 text-base font-semibold text-slate-900">
           {initialBid ? "Update your offer" : "Make an offer"}
         </h2>
-        <p className="mb-0 mt-1 text-sm text-slate-500">
-          Send the shipper a clear price and pickup time.
-        </p>
       </div>
       {requestError && (
         <Alert tone="danger" title="Your bid could not be saved">

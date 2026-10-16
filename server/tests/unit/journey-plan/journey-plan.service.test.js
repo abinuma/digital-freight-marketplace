@@ -90,6 +90,45 @@ describe('journey-plan service', () => {
       expect(plan.remainingVolumeM3).toBe(20);
       expect(plan.isFull).toBe(false);
     });
+
+    it('creates journey plan when departureDate is an ISO datetime string', async () => {
+      journeyPlanRepository.findTransporterVehicle.mockResolvedValue({
+        id: 'vehicle-id',
+        capacityTons: 5,
+        volumeM3: 20,
+      });
+
+      journeyPlanRepository.createJourneyPlan.mockResolvedValue({
+        id: 'plan-id-2',
+        transporterId: transporter.id,
+        originCity: 'Adama',
+        destinationCity: 'Hawassa',
+        departureDate: new Date('2026-10-20T14:30:00.000Z'),
+        fullLoadPrice: 15000,
+        status: 'ACTIVE',
+        maxWeightKg: 5000,
+        maxVolumeM3: 20,
+        allocatedWeightKg: 0,
+        allocatedVolumeM3: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        _count: { assignments: 0 },
+      });
+
+      const plan = await journeyPlanService.createJourneyPlan(transporter, {
+        originCity: 'Adama',
+        destinationCity: 'Hawassa',
+        departureDate: '2026-10-20T14:30:00.000Z',
+        fullLoadPrice: 15000,
+      });
+
+      expect(plan.id).toBe('plan-id-2');
+      expect(journeyPlanRepository.createJourneyPlan).toHaveBeenCalledWith(
+        expect.objectContaining({
+          departureDate: new Date('2026-10-20T14:30:00.000Z'),
+        })
+      );
+    });
   });
 
   describe('assignBidToJourneyPlan', () => {

@@ -1,7 +1,8 @@
 import { Badge, Card } from "../../../shared/components/index.js";
+import { PreviewableImage } from "../../../shared/components/PreviewableImage.jsx";
 import { dateLabel, shipmentTones } from "../shipmentFormatters.js";
 
-export function ShipmentHeading({ shipment, eyebrow = "SHIPMENT DETAILS" }) {
+export function ShipmentHeading({ shipment, eyebrow = "SHIPMENT DETAILS", hidePublishedStatus = false, hideCargoSummary = false }) {
   return (
     <div className="grid justify-items-start gap-2">
       <p className="m-0 text-xs font-bold tracking-widest text-blue-700">
@@ -11,12 +12,18 @@ export function ShipmentHeading({ shipment, eyebrow = "SHIPMENT DETAILS" }) {
         {shipment.goodsDescription}
       </h1>
       <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-        <Badge tone={shipmentTones[shipment.status]}>
-          {shipment.status.replace("_", " ")}
-        </Badge>
-        <span>{shipment.goodsType}</span>
-        <span aria-hidden="true">·</span>
-        <span>{shipment.weightKg} kg</span>
+        {!(hidePublishedStatus && shipment.status === "PUBLISHED") && (
+          <Badge tone={shipmentTones[shipment.status]}>
+            {shipment.status.replace("_", " ")}
+          </Badge>
+        )}
+        {!hideCargoSummary && (
+          <>
+            <span>{shipment.goodsType}</span>
+            <span aria-hidden="true">·</span>
+            <span>{shipment.weightKg} kg</span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -87,7 +94,7 @@ export function ShipmentInformation({
                 className="relative m-0 overflow-hidden rounded-lg"
                 key={image.id}
               >
-                <img
+                <PreviewableImage
                   className="h-36 w-full object-cover"
                   src={image.url}
                   alt="Shipment cargo"

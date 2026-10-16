@@ -26,6 +26,13 @@ router.get(
 );
 
 router.get(
+  '/journey-plans/my',
+  authorize('TRANSPORTER'),
+  validate(listJourneyPlansQuerySchema),
+  journeyPlanController.listMyJourneyPlans
+);
+
+router.get(
   '/journey-plans/:id',
   validate(journeyPlanIdParamsSchema),
   journeyPlanController.getJourneyPlan
