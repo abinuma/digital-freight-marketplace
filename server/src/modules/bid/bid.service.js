@@ -3,9 +3,9 @@ import { formatPagination, getPagination } from '../../shared/utils/pagination.j
 import * as bidRepository from './bid.repository.js';
 import * as notificationService from '../notification/notification.service.js';
 
-function toApiBid(bid) {
+function toApiBid(bid, { includeShipment = false } = {}) {
   const apiBid = { ...bid };
-  delete apiBid.shipment;
+  if (!includeShipment) delete apiBid.shipment;
   return { ...apiBid, price: Number(apiBid.price) };
 }
 
@@ -110,7 +110,10 @@ export async function listMyBids(user, query = {}) {
   const orderBy = [{ createdAt: 'desc' }, { id: 'asc' }];
   const { bids, total } = await bidRepository.findTransporterBids({ where, orderBy, skip, take });
 
-  return { bids: toApiBids(bids), pagination: formatPagination({ page, limit, total }) };
+  return {
+    bids: bids.map((bid) => toApiBid(bid, { includeShipment: true })),
+    pagination: formatPagination({ page, limit, total }),
+  };
 }
 
 export async function getBid(user, shipmentId, id) {

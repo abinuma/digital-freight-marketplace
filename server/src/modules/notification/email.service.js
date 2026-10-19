@@ -42,8 +42,10 @@ export async function sendEmail({ to, ...emailInput }) {
     const responseText = await response.text();
     const result = responseText ? JSON.parse(responseText) : {};
     if (!response.ok) {
+      logger.error({ status: response.status, body: result, type: emailInput.type, recipient: to }, 'Brevo API error response');
       throw new Error(`Brevo API returned ${response.status}: ${result.message || 'Email request failed'}`);
     }
+    logger.info({ messageId: result.messageId, type: emailInput.type, recipient: to }, 'Brevo email accepted');
     return { sent: true, messageId: result.messageId };
   } catch (error) {
     logger.error({ err: error, type: emailInput.type, recipient: to }, 'Brevo email delivery failed');

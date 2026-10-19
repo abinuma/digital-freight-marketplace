@@ -28,6 +28,7 @@ function toApiShipment(shipment) {
 export async function createShipment(shipperId, input) {
   const data = {
     ...input,
+    status: 'PUBLISHED',
     pickupDate: new Date(`${input.pickupDate}T00:00:00.000Z`),
   };
   const shipment = await shipmentRepository.createShipment(shipperId, data);

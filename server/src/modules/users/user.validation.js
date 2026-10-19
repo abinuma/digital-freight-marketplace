@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ethiopianPhoneSchema } from '../../shared/utils/ethiopianPhone.js';
 
 const userId = z.uuid();
 
@@ -11,7 +12,7 @@ export const updateProfileSchema = {
   body: z
     .object({
       name: z.string().trim().min(1).max(100).optional(),
-      phone: z.string().trim().min(7).max(20).optional(),
+      phone: ethiopianPhoneSchema.optional(),
       location: z.string().trim().min(1).max(255).nullable().optional(),
       region: z.string().trim().max(100).nullable().optional(),
       zone: z.string().trim().max(100).nullable().optional(),
@@ -38,6 +39,7 @@ export const upsertVehicleSchema = {
     capacityTons: z.number().positive().max(99_999_999.99),
     volumeM3: z.number().positive().max(99_999_999.99).nullable().optional(),
     plateNumber: z.string().trim().min(1).max(20),
+    photo: z.string().url().max(500).nullable().optional(),
   }),
 };
 

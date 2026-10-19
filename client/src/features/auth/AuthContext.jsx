@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   completeCurrentUserProfile,
@@ -36,6 +36,16 @@ export function AuthProvider({ children }) {
     staleTime: 60_000,
   });
 
+  useEffect(() => {
+    function handleUnauthorized() {
+      queryClient.clear();
+      queryClient.setQueryData(currentUserQueryKey, null);
+    }
+
+    window.addEventListener("app:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("app:unauthorized", handleUnauthorized);
+  }, [queryClient]);
+
   const refreshUser = useCallback(async () => {
     const result = await refetch();
     if (result.error) throw result.error;
@@ -59,9 +69,12 @@ export function AuthProvider({ children }) {
   );
 
   const logout = useCallback(async () => {
-    await logoutCurrentUser();
-    queryClient.clear();
-    queryClient.setQueryData(currentUserQueryKey, null);
+    try {
+      await logoutCurrentUser();
+    } finally {
+      queryClient.clear();
+      queryClient.setQueryData(currentUserQueryKey, null);
+    }
   }, [queryClient]);
 
   const completeProfile = useCallback(

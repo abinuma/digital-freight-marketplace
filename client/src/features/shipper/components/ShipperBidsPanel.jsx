@@ -79,13 +79,11 @@ export function ShipperBidsPanel({
                             <strong className="truncate text-sm text-slate-800">
                               {name}
                             </strong>
-                            <small className="text-xs text-slate-500">
-                              {profile?.averageRating
-                                ? `★ ${Number(profile.averageRating).toFixed(1)} (${profile.reviewCount} reviews)`
-                                : profile
-                                  ? "No ratings yet"
-                                  : "Loading profile…"}
-                            </small>
+                            {profile?.averageRating > 0 && (
+                              <small className="text-xs text-slate-500">
+                                ★ {Number(profile.averageRating).toFixed(1)} ({profile.reviewCount || 0} reviews)
+                              </small>
+                            )}
                           </div>
                         </div>
                         <Badge tone={tones[bid.status]}>{bid.status}</Badge>

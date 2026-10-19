@@ -36,7 +36,13 @@ export function ForgotPasswordPage() {
       await requestPasswordReset(parsed.data.toLowerCase());
       setIsSubmitted(true);
     } catch (error) {
-      setFormError(error.message);
+      setFormError(
+        error.status === 404
+          ? "No account was found with this email address."
+          : error.status === 503
+          ? "We couldn’t send the reset email right now. Please try again later."
+          : error.message,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -66,7 +72,7 @@ export function ForgotPasswordPage() {
           <path d="m10.85 12.15 8.15-8.15 2 2-2 2 2 2-2 2-2-2-5.3 5.3" />
         </svg>
       }
-      footer={<Link to="/login">← Back to Login</Link>}
+      footer={<Link className="group inline-flex min-h-9 items-center gap-1.5 rounded-full border border-blue-200 bg-white px-4 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white" to="/login"><img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-3.5 w-3.5 group-hover:brightness-0 group-hover:invert" />Back</Link>}
     >
       {isSubmitted ? (
         <div
@@ -105,7 +111,7 @@ export function ForgotPasswordPage() {
           </AuthField>
           {formError && (
             <p
-              className={`m-0 text-slate-500 text-sm auth-form__error`}
+              className="m-0 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 auth-form__error"
               role="alert"
             >
               {formError}

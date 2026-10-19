@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import { ethiopianPhoneSchema } from '../../shared/utils/ethiopianPhone.js';
 
 const emailSchema = z.string().trim().email().max(255).transform((email) => email.toLowerCase());
-const phoneSchema = z.string().trim().min(7).max(20);
+const phoneSchema = ethiopianPhoneSchema;
 const roleSchema = z.enum(['SHIPPER', 'TRANSPORTER']);
 const passwordSchema = z
   .string()

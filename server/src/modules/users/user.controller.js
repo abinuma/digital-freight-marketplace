@@ -57,6 +57,16 @@ export async function updateVehicle(req, res, next) {
   }
 }
 
+export async function uploadVehiclePhoto(req, res, next) {
+  try {
+    const vehicle = await userService.uploadVehiclePhoto(req.user, req.params.id, req.file);
+    return res.json({ data: vehicle });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+
 export async function getReviews(req, res, next) {
   try {
     const { reviews, pagination } = await userService.getReviews(req.params.id, req.query);

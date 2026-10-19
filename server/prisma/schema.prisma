@@ -85,6 +85,7 @@ model Vehicle {
   capacityTons Decimal  @db.Decimal(10, 2)
   volumeM3     Decimal? @db.Decimal(10, 2)
   plateNumber  String   @db.VarChar(20)
+  photo        String?  @db.VarChar(500)
   createdAt    DateTime @default(now()) @db.Timestamp(3)
   updatedAt    DateTime @updatedAt @db.Timestamp(3)
 

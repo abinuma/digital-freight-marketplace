@@ -116,6 +116,55 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* ==========================================================================
+   Form Required & Invalid Field Highlight (Red Accent)
+   ========================================================================== */
+input[aria-invalid="true"]:not(:disabled),
+select[aria-invalid="true"]:not(:disabled),
+textarea[aria-invalid="true"]:not(:disabled),
+[data-submitted="true"] input:invalid:not(:disabled),
+[data-submitted="true"] select:invalid:not(:disabled),
+[data-submitted="true"] textarea:invalid:not(:disabled),
+.field-error-accent {
+  border-color: #dc2626 !important;
+}
+
+input[aria-invalid="true"]:not(:disabled):focus,
+input[aria-invalid="true"]:not(:disabled):focus-visible,
+select[aria-invalid="true"]:not(:disabled):focus,
+select[aria-invalid="true"]:not(:disabled):focus-visible,
+textarea[aria-invalid="true"]:not(:disabled):focus,
+textarea[aria-invalid="true"]:not(:disabled):focus-visible,
+[data-submitted="true"] input:invalid:not(:disabled):focus,
+[data-submitted="true"] input:invalid:not(:disabled):focus-visible,
+[data-submitted="true"] select:invalid:not(:disabled):focus,
+[data-submitted="true"] select:invalid:not(:disabled):focus-visible,
+[data-submitted="true"] textarea:invalid:not(:disabled):focus,
+[data-submitted="true"] textarea:invalid:not(:disabled):focus-visible,
+.field-error-accent:focus,
+.field-error-accent:focus-visible {
+  border-color: #dc2626 !important;
+  outline: 3px solid rgba(220, 38, 38, 0.35) !important;
+  outline-offset: 1px !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+}
+
+@keyframes field-pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(220, 38, 38, 0.25);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+  }
+}
+
+.field-error-pulse {
+  animation: field-pulse-red 0.5s ease-out;
+}
+
 ::selection {
   background: #dfe6ff;
   color: #202b3c;

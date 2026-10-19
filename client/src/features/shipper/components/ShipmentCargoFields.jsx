@@ -13,6 +13,7 @@ export function ShipmentCargoFields({ values, errors, setField }) {
           maxLength={1000}
           value={values.goodsDescription}
           onChange={(event) => setField("goodsDescription", event.target.value)}
+          aria-invalid={Boolean(errors.goodsDescription)}
           placeholder="Describe your cargo, packaging, and anything transporters should know"
         />
         {fieldError(errors, "goodsDescription")}
@@ -27,6 +28,7 @@ export function ShipmentCargoFields({ values, errors, setField }) {
           maxLength={50}
           value={values.goodsType}
           onChange={(event) => setField("goodsType", event.target.value)}
+          aria-invalid={Boolean(errors.goodsType)}
           placeholder="e.g. agricultural, industrial, household"
         />
         {fieldError(errors, "goodsType")}
@@ -42,6 +44,7 @@ export function ShipmentCargoFields({ values, errors, setField }) {
           step="0.01"
           value={values.weightKg}
           onChange={(event) => setField("weightKg", event.target.value)}
+          aria-invalid={Boolean(errors.weightKg)}
           placeholder="e.g. 1200"
         />
         {fieldError(errors, "weightKg")}

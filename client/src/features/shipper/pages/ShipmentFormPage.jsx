@@ -188,7 +188,6 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
       return;
     }
     setErrors({});
-    const intent = event.nativeEvent.submitter?.value || "draft";
     setIsSaving(true);
     try {
       const payload = {
@@ -219,7 +218,7 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
       const saved = await saveShipment({ id: shipmentId, values: payload });
       setShipmentId(saved.id);
       if (files.length) await uploadShipmentImages({ id: saved.id, files });
-      if (intent === "publish" && saved.status === "DRAFT")
+      if (saved.status === "DRAFT")
         await transitionShipment({ id: saved.id, action: "publish" });
       await queryClient.invalidateQueries({ queryKey: ["shipper"] });
 
@@ -238,17 +237,17 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
             conversationId: conversation.id,
             content: inviteMsg,
           });
-          showSuccess(`Load invite sent directly to ${invitedDriver.name}`);
+          showSuccess('Invite sent');
           navigate(`/shipper/messages?conversationId=${conversation.id}`);
           return;
         } catch (inviteError) {
-          showSuccess(`Shipment posted. Message not delivered: ${inviteError.message}`);
+          showSuccess('Shipment posted');
           navigate(`/shipper/shipments/${saved.id}`);
           return;
         }
       }
 
-      showSuccess(routeId ? "Shipment updated" : intent === "publish" ? "Shipment posted" : "Draft saved");
+      showSuccess(routeId ? "Shipment updated" : "Shipment posted");
       navigate(`/shipper/shipments/${saved.id}`);
     } catch (error) {
       setSaveError(error.message);
@@ -379,27 +378,8 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
           >
             Cancel
           </Button>
-          {!invitedDriver?.id && (
-            <Button
-              variant="secondary"
-              type="submit"
-              name="intent"
-              value="draft"
-              disabled={!isEditable || isSaving}
-            >
-              {isSaving ? (
-                <>
-                  <Spinner /> Saving…
-                </>
-              ) : (
-                "Save as draft"
-              )}
-            </Button>
-          )}
           <Button
             type="submit"
-            name="intent"
-            value="publish"
             disabled={!isEditable || isSaving}
           >
             {isSaving ? (

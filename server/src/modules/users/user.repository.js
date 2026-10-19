@@ -24,6 +24,7 @@ const vehicleSelect = {
   capacityTons: true,
   volumeM3: true,
   plateNumber: true,
+  photo: true,
   createdAt: true,
   updatedAt: true,
 };
@@ -61,7 +62,7 @@ export async function findAvailableTransporters(city) {
     where: { role: 'TRANSPORTER', status: 'ACTIVE', lookingForLoads: true, city: { equals: city, mode: 'insensitive' } },
     select: {
       id: true, name: true, city: true, availabilityUpdatedAt: true, image: true, availableDays: true,
-      vehicle: { select: { type: true, capacityTons: true, volumeM3: true } },
+      vehicle: { select: { type: true, capacityTons: true, volumeM3: true, photo: true } },
       journeyPlans: {
         where: { status: 'ACTIVE', departureDate: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
         select: { destinationCity: true, departureDate: true },
@@ -79,6 +80,7 @@ export async function findAvailableTransporters(city) {
     vehicleType: user.vehicle.type,
     capacityTons: Number(user.vehicle.capacityTons),
     volumeM3: user.vehicle.volumeM3 == null ? null : Number(user.vehicle.volumeM3),
+    vehiclePhoto: user.vehicle.photo,
     intendedDestination: user.journeyPlans[0]?.destinationCity || null,
     plannedDepartureDate: user.journeyPlans[0]?.departureDate || null,
     availableDays: user.availableDays,
@@ -114,3 +116,18 @@ export async function upsertVehicle(userId, input) {
     volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
   };
 }
+
+export async function updateVehiclePhoto(userId, photoUrl) {
+  const vehicle = await prisma.vehicle.update({
+    where: { userId },
+    data: { photo: photoUrl },
+    select: vehicleSelect,
+  });
+
+  return {
+    ...vehicle,
+    capacityTons: Number(vehicle.capacityTons),
+    volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
+  };
+}
+

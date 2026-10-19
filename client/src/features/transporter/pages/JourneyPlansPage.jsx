@@ -176,13 +176,9 @@ export function JourneyPlansPage() {
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
       <div className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
         <div>
-          <p className="mb-1 text-xs font-bold tracking-widest text-blue-700">AVAILABILITY & TRIPS</p>
           <h1 className="m-0 text-3xl font-semibold tracking-tight text-slate-900 max-md:text-2xl">
             My Journey Plans
           </h1>
-          <p className="mb-0 mt-2 text-sm text-slate-500">
-            List your scheduled routes, full load prices, and manage capacity per trip.
-          </p>
         </div>
         <div className="flex items-center gap-3 max-sm:w-full max-sm:flex-col max-sm:items-stretch">
           <Select
@@ -202,12 +198,13 @@ export function JourneyPlansPage() {
             ))}
           </Select>
           <Button
+            className="whitespace-nowrap"
             onClick={() => {
               resetForm();
               setIsModalOpen(true);
             }}
           >
-            + New Journey Plan
+            New plan
           </Button>
         </div>
       </div>
@@ -277,7 +274,9 @@ export function JourneyPlansPage() {
                       />
                     </div>
                     <span className="text-xs text-slate-500">
-                      {plan.remainingWeightKg.toLocaleString()} kg remaining
+                      {plan.remainingWeightKg <= 0
+                        ? 'Full'
+                        : `${plan.remainingWeightKg.toLocaleString()} kg remaining`}
                     </span>
                   </div>
 
@@ -301,7 +300,9 @@ export function JourneyPlansPage() {
                           />
                         </div>
                         <span className="text-xs text-slate-500">
-                          {plan.remainingVolumeM3?.toLocaleString()} m³ remaining
+                          {plan.remainingVolumeM3 <= 0
+                            ? 'Full'
+                            : `${plan.remainingVolumeM3?.toLocaleString()} m³ remaining`}
                         </span>
                       </>
                     ) : (
@@ -342,9 +343,7 @@ export function JourneyPlansPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="m-0 text-xs italic text-slate-500">
-                      No loads assigned yet. When shippers accept your bids, assign them to this journey plan.
-                    </p>
+                    <p className="m-0 text-xs italic text-slate-500">No loads assigned yet.</p>
                   )}
                 </div>
               </Card>
@@ -401,8 +400,16 @@ export function JourneyPlansPage() {
             placeholder="Search origin city..."
             city={formValues.originCity}
             error={formErrors.originCity}
+            required
             onChange={(item) =>
-              setFormValues((prev) => ({ ...prev, originCity: item.city }))
+              setFormValues((prev) => ({
+                ...prev,
+                originCity: item.city,
+                destinationCity:
+                  prev.destinationCity.toLowerCase() === item.city.toLowerCase()
+                    ? ''
+                    : prev.destinationCity,
+              }))
             }
           />
 
@@ -411,7 +418,9 @@ export function JourneyPlansPage() {
             id="plan-destination-city"
             placeholder="Search destination city..."
             city={formValues.destinationCity}
+            excludeCity={formValues.originCity}
             error={formErrors.destinationCity}
+            required
             onChange={(item) =>
               setFormValues((prev) => ({ ...prev, destinationCity: item.city }))
             }
@@ -426,6 +435,7 @@ export function JourneyPlansPage() {
               min={toLocalDateTime(new Date())}
               value={formValues.departureDate}
               onChange={updateDepartureDate}
+              aria-invalid={Boolean(formErrors.departureDate)}
               onFocus={(event) => {
                 const [date = '', time = ''] = event.currentTarget.value.split('T');
                 departureTimeSelection.current = date && time
@@ -452,6 +462,7 @@ export function JourneyPlansPage() {
               step="0.01"
               placeholder="e.g. 25000"
               value={formValues.fullLoadPrice}
+              aria-invalid={Boolean(formErrors.fullLoadPrice)}
               onChange={(e) =>
                 setFormValues((prev) => ({ ...prev, fullLoadPrice: e.target.value }))
               }

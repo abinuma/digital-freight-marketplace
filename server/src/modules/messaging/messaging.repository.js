@@ -13,8 +13,8 @@ const conversationSelect = {
   shipperId: true,
   transporterId: true,
   updatedAt: true,
-  shipper: { select: { id: true, name: true, image: true } },
-  transporter: { select: { id: true, name: true, image: true } },
+  shipper: { select: { id: true, name: true, image: true, location: true, city: true, phone: true } },
+  transporter: { select: { id: true, name: true, image: true, location: true, city: true, phone: true } },
 };
 
 export async function listConversations(user) {
@@ -114,6 +114,16 @@ export function findConversationBids(conversation) {
           deliveryLocation: true,
           pickupDate: true,
           status: true,
+          shipper: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+              phone: true,
+              location: true,
+              city: true,
+            },
+          },
         },
       },
     },

@@ -23,6 +23,10 @@ export function findAuthUserById(id) {
   return prisma.user.findUnique({ where: { id }, select: authUserSelect });
 }
 
+export function findAuthUserByEmail(email) {
+  return prisma.user.findUnique({ where: { email }, select: { id: true } });
+}
+
 export async function completeUserProfile(id, input) {
   const currentUser = await prisma.user.findUnique({
     where: { id },

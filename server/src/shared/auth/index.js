@@ -7,6 +7,7 @@ import { config } from '../config/index.js';
 import { prisma } from '../db/prisma.js';
 import { authSessionOptions } from './session.config.js';
 import * as notificationService from '../../modules/notification/notification.service.js';
+import { ethiopianPhoneSchema } from '../utils/ethiopianPhone.js';
 
 const requiredEnv = ['BETTER_AUTH_SECRET', 'BETTER_AUTH_URL', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'];
 const missingEnv = requiredEnv.filter((name) => !process.env[name]);
@@ -15,7 +16,7 @@ if (missingEnv.length > 0) {
   throw new Error(`Missing Better Auth environment variables: ${missingEnv.join(', ')}`);
 }
 
-const phoneSchema = z.string().trim().min(7).max(20);
+const phoneSchema = ethiopianPhoneSchema;
 const roleSchema = z.enum(['SHIPPER', 'TRANSPORTER']);
 const passwordSchema = z
   .string()

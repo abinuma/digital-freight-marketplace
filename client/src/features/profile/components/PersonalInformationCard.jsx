@@ -40,6 +40,7 @@ export function PersonalInformationCard({
             id="profile-name"
             name="name"
             type="text"
+            required
             autoComplete="name"
             placeholder="John Doe"
             value={profile.name}
@@ -86,14 +87,18 @@ export function PersonalInformationCard({
             id="profile-phone"
             name="phone"
             type="tel"
+            required
             autoComplete="tel"
-            placeholder="+251 912 345 678"
+            inputMode="tel"
+            placeholder="0912345678"
+            maxLength={25}
             value={profile.phone}
             onChange={onChange}
             className="flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
             aria-invalid={Boolean(errors.phone)}
-            aria-describedby={errors.phone ? 'profile-phone-error' : undefined}
+            aria-describedby={errors.phone ? 'profile-phone-error' : 'profile-phone-hint'}
           />
+          {!errors.phone && <small className="mt-1 block text-xs text-slate-500" id="profile-phone-hint">Enter a valid Ethiopian mobile</small>}
           {errors.phone && (
             <small className="text-xs text-red-600 mt-1 block" id="profile-phone-error">
               {errors.phone}
@@ -117,9 +122,6 @@ export function PersonalInformationCard({
             disabled={busy}
             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2.5 shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
           >
-            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7l-4-4zm-5 16a3 3 0 110-6 3 3 0 010 6zm3-10H5V5h10v4z" />
-            </svg>
             {busy ? 'Saving…' : 'Save Changes'}
           </button>
         </div>

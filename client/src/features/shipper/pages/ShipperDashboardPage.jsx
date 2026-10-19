@@ -160,12 +160,6 @@ export function ShipperDashboardPage() {
             Here’s what’s happening with your freight today.
           </p>
         </div>
-        <Link
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-slate-800"
-          to="/shipper/shipments/new"
-        >
-          Post a shipment
-        </Link>
       </div>
 
       {query.isError && (
@@ -251,7 +245,6 @@ export function ShipperDashboardPage() {
                   <p className="mb-0 mt-1 text-xs text-slate-500">{driver.intendedDestination ? `Heading to ${driver.intendedDestination} · ` : "Destination not specified · "}Updated {availabilityDate(driver.availabilityUpdatedAt)}</p>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <button type="button" className="min-h-9 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setSelectedDriver(driver)}>View profile</button>
                   <button type="button" className="min-h-9 rounded-lg bg-blue-700 px-3 text-sm font-semibold text-white hover:bg-blue-800" onClick={() => handleContactInvite(driver)}>Contact / invite</button>
                 </div>
               </div>
@@ -297,12 +290,6 @@ export function ShipperDashboardPage() {
               Your latest freight activity and bids.
             </p>
           </div>
-          <Link
-            className="shrink-0 text-sm font-semibold text-blue-700 no-underline hover:text-blue-800"
-            to="/shipper/shipments"
-          >
-            View all shipments&nbsp;↗
-          </Link>
         </div>
 
         {query.isPending ? (
@@ -371,12 +358,6 @@ export function ShipperDashboardPage() {
             <p className="m-0 text-sm text-slate-500">
               Post your first shipment to receive offers from transporters.
             </p>
-            <Link
-              className="mt-2 inline-flex min-h-10 items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-blue-800"
-              to="/shipper/shipments/new"
-            >
-              Post a shipment
-            </Link>
           </div>
         )}
       </Card>

@@ -29,6 +29,19 @@ const bidSelect = {
   },
 };
 
+const transporterBidSelect = {
+  ...bidSelect,
+  shipment: {
+    select: {
+      goodsDescription: true,
+      pickupLocation: true,
+      deliveryLocation: true,
+      status: true,
+      removedAt: true,
+    },
+  },
+};
+
 export function findShipmentForBid(shipmentId) {
   return prisma.shipment.findUnique({
     where: { id: shipmentId },
@@ -140,7 +153,7 @@ export async function findVisibleShipmentBids({ where, status, orderBy, skip, ta
 
 export async function findTransporterBids({ where, orderBy, skip, take }) {
   const [bids, total] = await Promise.all([
-    prisma.bid.findMany({ where, select: bidSelect, orderBy, skip, take }),
+    prisma.bid.findMany({ where, select: transporterBidSelect, orderBy, skip, take }),
     prisma.bid.count({ where }),
   ]);
 

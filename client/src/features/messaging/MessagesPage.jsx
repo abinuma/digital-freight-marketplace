@@ -11,7 +11,7 @@ import {
   sendConversationMessage,
 } from './messaging.api.js';
 import { decideBid } from '../shipper/shipper.api.js';
-import { markNotificationsReadByReference } from '../notifications/notifications.api.js';
+import { listNotifications, markNotificationsReadByReference } from '../notifications/notifications.api.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { ConversationHeader } from './components/ConversationHeader.jsx';
 import { ConversationContextPanel } from './components/ConversationContextPanel.jsx';
@@ -29,6 +29,7 @@ export function MessagesPage() {
   const cache = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
+  const [conversationFilter, setConversationFilter] = useState('all');
   const [content, setContent] = useState('');
   const [sendError, setSendError] = useState('');
   const [sending, setSending] = useState(false);
@@ -45,6 +46,19 @@ export function MessagesPage() {
     refetchInterval: 15_000,
   });
   const conversations = conversationsQuery.data || noConversations;
+  const unreadQuery = useQuery({
+    queryKey: ['notifications', 'messages-unread'],
+    queryFn: () => listNotifications({ limit: 100, unreadOnly: true }),
+    refetchInterval: 15_000,
+  });
+  const unreadCountByConversation = new Map();
+  for (const notification of unreadQuery.data?.notifications || []) {
+    if (notification.type !== 'NEW_MESSAGE') continue;
+    unreadCountByConversation.set(
+      notification.referenceId,
+      (unreadCountByConversation.get(notification.referenceId) || 0) + 1,
+    );
+  }
 
   const requestedConversation = searchParams.get('conversationId');
   const shipmentId = searchParams.get('shipmentId');
@@ -61,10 +75,8 @@ export function MessagesPage() {
       )
     : null;
 
-  // On desktop default to the first conversation if none selected in params.
-  // On mobile (<768px), allow null selected so the conversations list is shown.
-  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
-  const selected = requested || fromShipment || (isDesktop ? conversations[0] : null) || null;
+  // Opening the messages page shows the conversation list until a chat is chosen.
+  const selected = requested || fromShipment || null;
   const selectedId = selected?.id || '';
 
   const profileQuery = useQuery({
@@ -118,13 +130,24 @@ export function MessagesPage() {
 
   const filteredConversations = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase();
-    if (!needle) return conversations;
-    return conversations.filter((conversation) =>
-      `${conversation.counterpart.name} ${conversation.lastMessage?.content || ''}`
-        .toLocaleLowerCase()
-        .includes(needle)
-    );
-  }, [conversations, search]);
+    return conversations.filter((conversation) => {
+      const matchesSearch = !needle ||
+        `${conversation.counterpart.name || ''}`
+          .toLocaleLowerCase()
+          .includes(needle);
+      const matchesFilter = conversationFilter === 'all'
+        || (conversationFilter === 'unread' && unreadCountByConversation.has(conversation.id))
+        || (conversationFilter === 'bids' && conversation.shipmentIds.length > 0);
+      return matchesSearch && matchesFilter;
+    }).sort((first, second) => {
+      const unreadDifference = (unreadCountByConversation.get(second.id) || 0)
+        - (unreadCountByConversation.get(first.id) || 0);
+      if (unreadDifference) return unreadDifference;
+      const firstActivity = new Date(first.lastMessage?.createdAt || first.updatedAt || 0).getTime();
+      const secondActivity = new Date(second.lastMessage?.createdAt || second.updatedAt || 0).getTime();
+      return secondActivity - firstActivity;
+    });
+  }, [conversations, search, conversationFilter, unreadQuery.data]);
 
   useEffect(() => {
     if (messagesRef.current) {
@@ -200,38 +223,8 @@ export function MessagesPage() {
     }
   }
 
-  const roleLabel = user.role === 'SHIPPER' ? 'Transporter' : 'Shipper';
-
   return (
-    <main className="flex h-screen min-h-0 flex-col bg-white text-slate-800">
-      <header className="flex min-h-14 items-center justify-between border-b border-blue-800 bg-blue-700 px-4 py-2 text-white sm:min-h-16 sm:px-6">
-        <div className="flex items-center gap-3">
-          <Link
-            className="text-2xl text-white no-underline transition-colors hover:text-blue-200"
-            to={user.role === 'SHIPPER' ? '/shipper' : '/transporter'}
-            aria-label="Back to dashboard"
-          >
-            ←
-          </Link>
-          <div>
-            <p className="m-0 text-xs font-bold tracking-widest text-blue-200">ETHIOFREIGHT</p>
-            <h1 className="m-0 text-lg font-bold">Messages</h1>
-          </div>
-        </div>
-
-        {selected && (
-          <button
-            type="button"
-            onClick={() => setBidsDrawerOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-600 bg-blue-800/80 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-blue-800 lg:hidden"
-            aria-label="View conversation bids"
-          >
-            <span aria-hidden="true">🏷️</span>
-            <span>Bids ({bids.length})</span>
-          </button>
-        )}
-      </header>
-
+    <main className="flex h-screen min-h-0 bg-white text-slate-800">
       {/* Main Responsive Grid Layout */}
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Column 1: Conversations List */}
@@ -246,6 +239,10 @@ export function MessagesPage() {
           error={conversationsQuery.error?.message}
           onSelect={selectConversation}
           hasSelectedConversation={Boolean(selected)}
+          dashboardPath={user.role === 'SHIPPER' ? '/shipper' : '/transporter'}
+          filter={conversationFilter}
+          onFilterChange={setConversationFilter}
+          unreadCountByConversation={unreadCountByConversation}
         />
 
         {/* Column 2: Chatting Board */}
@@ -259,7 +256,7 @@ export function MessagesPage() {
             <>
               <ConversationHeader
                 conversation={selected}
-                roleLabel={roleLabel}
+                profile={profileQuery.data}
                 bidsCount={bids.length}
                 onOpenBids={() => setBidsDrawerOpen(true)}
                 onBack={handleBackToConversations}

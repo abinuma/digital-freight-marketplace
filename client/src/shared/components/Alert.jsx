@@ -1,9 +1,9 @@
 const roles = { info: 'status', success: 'status', warning: 'alert', danger: 'alert' };
 const toneClasses = {
-  info: 'ui-alert--info border-gray-200 bg-gray-50 text-slate-500',
-  success: 'ui-alert--success border-gray-300 bg-gray-100 text-slate-500',
-  warning: 'ui-alert--warning border-gray-50 bg-gray-50 text-slate-500',
-  danger: 'ui-alert--danger border-gray-100 bg-gray-50 text-slate-500',
+  info: 'ui-alert--info border-sky-200 bg-sky-50 text-sky-950',
+  success: 'ui-alert--success border-emerald-200 bg-emerald-50 text-emerald-950',
+  warning: 'ui-alert--warning border-amber-200 bg-amber-50 text-amber-950',
+  danger: 'ui-alert--danger border-red-200 bg-red-50 text-red-900',
 };
 
 export function Alert({ tone = 'info', title, className = '', children, ...props }) {

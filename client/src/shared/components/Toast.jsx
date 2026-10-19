@@ -16,12 +16,13 @@ export function Toast({ tone = 'success', title, children, onDismiss, closing = 
           closing ? 'animate-toast-out' : 'animate-toast-in'
         } items-center gap-2 rounded-lg border-0 px-3 py-2 shadow-[0_2px_10px_rgba(15,23,42,0.12)]`}
       >
-        <img
-          className="h-5 w-5 shrink-0"
-          src="/correct-success-tick-svgrepo-com.svg"
-          alt=""
-          aria-hidden="true"
-        />
+        {tone === 'success' ? (
+          <img className="h-5 w-5 shrink-0" src="/correct-success-tick-svgrepo-com.svg" alt="" aria-hidden="true" />
+        ) : (
+          <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-xs font-bold ${tone === 'danger' ? 'bg-red-100 text-red-700' : 'bg-sky-100 text-sky-700'}`} aria-hidden="true">
+            {tone === 'danger' ? '!' : 'i'}
+          </span>
+        )}
         <div className="min-w-0 text-sm">
           {title && <strong className="mr-1 font-semibold">{title}</strong>}
           <span>{children}</span>

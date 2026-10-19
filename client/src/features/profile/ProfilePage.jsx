@@ -3,15 +3,16 @@ import { z } from 'zod';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Alert, useSuccessToast } from '../../shared/components/index.js';
 import { useAuth } from '../auth/AuthContext.jsx';
-import { getVehicle, updateProfile, updateVehicle, uploadProfilePhoto } from './profile.api.js';
+import { getVehicle, updateProfile, updateVehicle, uploadProfilePhoto, uploadVehiclePhoto } from './profile.api.js';
 import { PersonalInformationCard } from './components/PersonalInformationCard.jsx';
 import { ProfilePhotoCard } from './components/ProfilePhotoCard.jsx';
 import { VehicleDetailsCard } from './components/VehicleDetailsCard.jsx';
 import { TransporterPreferencesCard } from './components/TransporterPreferencesCard.jsx';
+import { ethiopianPhoneSchema } from '../../shared/utils/ethiopianPhone.js';
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, 'Enter your name').max(100),
-  phone: z.string().trim().min(7, 'Enter a valid phone number').max(20),
+  phone: ethiopianPhoneSchema,
   location: z.string().trim().max(255).optional(),
   region: z.string().trim().max(100).optional(),
   zone: z.string().trim().max(100).optional(),
@@ -41,7 +42,7 @@ export function ProfilePage() {
     zone: user.zone || '',
     city: user.city || '',
   });
-  const [vehicle, setVehicle] = useState({ type: '', capacityTons: '', volumeM3: '', plateNumber: '' });
+  const [vehicle, setVehicle] = useState({ type: '', capacityTons: '', volumeM3: '', plateNumber: '', photo: '' });
   const [availableDays, setAvailableDays] = useState(user.availableDays || []);
   const [preferredLoadTypes, setPreferredLoadTypes] = useState(user.preferredLoadTypes || []);
   const [hasVehicle, setHasVehicle] = useState(false);
@@ -56,6 +57,9 @@ export function ProfilePage() {
   const [prefBusy, setPrefBusy] = useState(false);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
+  const [vehiclePhotoFile, setVehiclePhotoFile] = useState(null);
+  const [vehiclePhotoPreview, setVehiclePhotoPreview] = useState('');
+  const [vehiclePhotoBusy, setVehiclePhotoBusy] = useState(false);
 
   useEffect(() => {
     if (user.role !== 'TRANSPORTER') return undefined;
@@ -68,6 +72,7 @@ export function ProfilePage() {
           capacityTons: String(result.capacityTons),
           volumeM3: result.volumeM3 != null ? String(result.volumeM3) : '',
           plateNumber: result.plateNumber,
+          photo: result.photo || '',
         });
         setHasVehicle(true);
       })
@@ -82,6 +87,7 @@ export function ProfilePage() {
   }, [user.id, user.role]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAvailableDays(user.availableDays || []);
     setPreferredLoadTypes(user.preferredLoadTypes || []);
   }, [user.availableDays, user.preferredLoadTypes]);
@@ -89,6 +95,10 @@ export function ProfilePage() {
   useEffect(() => () => {
     if (photoPreview) URL.revokeObjectURL(photoPreview);
   }, [photoPreview]);
+
+  useEffect(() => () => {
+    if (vehiclePhotoPreview) URL.revokeObjectURL(vehiclePhotoPreview);
+  }, [vehiclePhotoPreview]);
 
   function changeProfile(event) {
     const { name, value } = event.target;
@@ -185,11 +195,64 @@ export function ProfilePage() {
       await refreshUser();
       setPhotoPreview('');
       setPhotoFile(null);
-      showSuccess('Profile photo updated');
+      showSuccess('Photo updated');
     } catch (error) {
       setStatus({ tone: 'danger', text: error.message });
     } finally {
       setPhotoBusy(false);
+    }
+  }
+
+  function chooseVehiclePhoto(event) {
+    setStatus(null);
+    const file = event.target.files?.[0] || null;
+    if (!file) {
+      if (vehiclePhotoPreview) URL.revokeObjectURL(vehiclePhotoPreview);
+      setVehiclePhotoPreview('');
+      setVehiclePhotoFile(null);
+      return;
+    }
+    if (!allowedPhotoTypes.has(file.type)) {
+      setStatus({ tone: 'danger', text: 'Choose a JPEG, PNG, or WebP image for your vehicle.' });
+      event.target.value = '';
+      return;
+    }
+    if (file.size > maxPhotoSize) {
+      setStatus({ tone: 'danger', text: 'Vehicle photos must be 5 MB or smaller.' });
+      event.target.value = '';
+      return;
+    }
+    if (vehiclePhotoPreview) URL.revokeObjectURL(vehiclePhotoPreview);
+    setVehiclePhotoPreview(URL.createObjectURL(file));
+    setVehiclePhotoFile(file);
+  }
+
+  function clearChosenVehiclePhoto() {
+    if (vehiclePhotoPreview) URL.revokeObjectURL(vehiclePhotoPreview);
+    setVehiclePhotoPreview('');
+    setVehiclePhotoFile(null);
+  }
+
+  async function uploadSelectedVehiclePhoto(event) {
+    if (event) event.preventDefault();
+    if (!vehiclePhotoFile) return;
+    setStatus(null);
+    setVehiclePhotoBusy(true);
+    try {
+      const result = await uploadVehiclePhoto(user.id, vehiclePhotoFile);
+      setVehicle((current) => ({
+        ...current,
+        photo: result.photo || current.photo,
+      }));
+      if (result.id) setHasVehicle(true);
+      if (vehiclePhotoPreview) URL.revokeObjectURL(vehiclePhotoPreview);
+      setVehiclePhotoPreview('');
+      setVehiclePhotoFile(null);
+      showSuccess('Vehicle photo updated');
+    } catch (error) {
+      setStatus({ tone: 'danger', text: error.message });
+    } finally {
+      setVehiclePhotoBusy(false);
     }
   }
 
@@ -207,7 +270,26 @@ export function ProfilePage() {
     setVehicleErrors({});
     setVehicleBusy(true);
     try {
-      await updateVehicle(user.id, parsed.data);
+      let currentPhoto = vehicle.photo || null;
+      if (vehiclePhotoFile) {
+        const uploadResult = await uploadVehiclePhoto(user.id, vehiclePhotoFile);
+        currentPhoto = uploadResult.photo || currentPhoto;
+        if (vehiclePhotoPreview) URL.revokeObjectURL(vehiclePhotoPreview);
+        setVehiclePhotoPreview('');
+        setVehiclePhotoFile(null);
+      }
+      const updated = await updateVehicle(user.id, {
+        ...parsed.data,
+        photo: currentPhoto || undefined,
+      });
+      setVehicle((curr) => ({
+        ...curr,
+        type: updated.type,
+        capacityTons: String(updated.capacityTons),
+        volumeM3: updated.volumeM3 != null ? String(updated.volumeM3) : '',
+        plateNumber: updated.plateNumber,
+        photo: updated.photo || curr.photo,
+      }));
       setHasVehicle(true);
       showSuccess('Details updated');
     } catch (error) {
@@ -217,6 +299,7 @@ export function ProfilePage() {
     }
   }
 
+
   async function savePreferences(event) {
     event.preventDefault();
     setStatus(null);
@@ -224,7 +307,7 @@ export function ProfilePage() {
     try {
       await updateProfile(user.id, { availableDays, preferredLoadTypes });
       await refreshUser();
-      showSuccess('Availability and load preferences updated');
+      showSuccess('Preferences updated');
     } catch (error) {
       setStatus({ tone: 'danger', text: error.message });
     } finally {
@@ -241,16 +324,6 @@ export function ProfilePage() {
   return (
     <main className="mx-auto w-full max-w-5xl py-8 px-4 sm:px-6 lg:px-8 space-y-6">
       <header className="flex flex-col gap-3">
-        <div>
-          <button
-            type="button"
-            onClick={() => navigate(backPath)}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
-          >
-            ← Back
-          </button>
-        </div>
-
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
@@ -299,20 +372,6 @@ export function ProfilePage() {
 
       {/* Card 1: Your Profile */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-        <div className="flex items-center gap-3.5 mb-6">
-          <div className="h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-            </svg>
-          </div>
-          <div>
-            <h2 className="m-0 text-xl font-bold text-slate-900">Your Profile</h2>
-            <p className="m-0 mt-0.5 text-xs text-slate-500">
-              Manage your contact information and account details.
-            </p>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-4 flex justify-center">
             <ProfilePhotoCard
@@ -351,6 +410,12 @@ export function ProfilePage() {
             busy={vehicleBusy}
             onChange={changeVehicle}
             onSave={saveVehicle}
+            photoFile={vehiclePhotoFile}
+            photoPreview={vehiclePhotoPreview}
+            photoBusy={vehiclePhotoBusy}
+            onChoosePhoto={chooseVehiclePhoto}
+            onUploadPhoto={uploadSelectedVehiclePhoto}
+            onClearPhoto={clearChosenVehiclePhoto}
           />
           <TransporterPreferencesCard
             availableDays={availableDays}
@@ -362,6 +427,17 @@ export function ProfilePage() {
           />
         </>
       )}
+
+      <div className="flex justify-start pt-2">
+        <button
+          type="button"
+          onClick={() => navigate(backPath)}
+          className="group inline-flex min-h-10 items-center gap-2 rounded-full border border-blue-200 bg-white px-5 text-sm font-semibold text-slate-900 transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white cursor-pointer"
+        >
+          <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-4 w-4 group-hover:brightness-0 group-hover:invert" />
+          Back
+        </button>
+      </div>
     </main>
   );
 }

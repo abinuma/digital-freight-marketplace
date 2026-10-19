@@ -6,9 +6,11 @@ export function CityLocationPicker({
   id = 'profile-city',
   placeholder = 'Type or select a city...',
   city,
+  excludeCity,
   zone,
   region,
   error,
+  required = false,
   onChange,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +28,9 @@ export function CityLocationPicker({
         item.displayName.toLowerCase().includes(query.trim().toLowerCase())
       )
     : SORTED_CITIES;
+  const availableCities = excludeCity
+    ? filteredCities.filter((item) => item.city.toLowerCase() !== excludeCity.trim().toLowerCase())
+    : filteredCities;
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -101,8 +106,9 @@ export function CityLocationPicker({
           name="city"
           type="text"
           autoComplete="off"
+          required={required}
           placeholder={placeholder}
-          className="flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 pr-14 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className={`flex h-10 w-full rounded-lg border bg-white px-3 py-2 pr-14 text-sm text-slate-800 focus:outline-none focus:ring-1 ${error ? 'border-red-600 focus:border-red-600 focus:ring-red-100' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500'}`}
           value={query}
           onChange={handleInputChange}
           onFocus={() => setIsOpen(true)}
@@ -139,8 +145,8 @@ export function CityLocationPicker({
           className="absolute z-50 left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg list-none p-0 m-0 text-sm text-slate-800"
           role="listbox"
         >
-          {filteredCities.length > 0 ? (
-            filteredCities.map((item) => {
+          {availableCities.length > 0 ? (
+            availableCities.map((item) => {
               const isSelected = item.city === city && item.zone === zone && (!region || item.region === region);
               return (
                 <li

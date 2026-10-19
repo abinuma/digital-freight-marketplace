@@ -41,7 +41,7 @@ export function MessageList({ messages, userId, isPending, error, listRef }) {
   return (
     <>
       {error && <Alert tone="danger">{error}</Alert>}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-slate-50 p-4" ref={listRef}>
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[#eaf0fb] p-4" ref={listRef}>
         {isPending ? (
           <div className="grid content-start gap-4 p-4"><Skeleton /><Skeleton /></div>
         ) : messages.length ? messages.map((message, index) => {
@@ -61,6 +61,7 @@ export function MessageList({ messages, userId, isPending, error, listRef }) {
           <div className={emptyStateClass}>
             <span className="text-2xl text-blue-700">✉</span>
             <strong>No messages yet</strong>
+            <p className="m-0 max-w-sm text-sm">Start the conversation.</p>
             <p className="m-0 max-w-sm text-sm">Start the conversation.</p>
           </div>
         )}

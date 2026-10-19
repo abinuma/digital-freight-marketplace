@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ethiopianPhoneSchema } from '../../shared/utils/ethiopianPhone.js';
 
 const emailSchema = z.string().trim().email('Enter a valid email address').max(255);
 const passwordSchema = z
@@ -19,7 +20,7 @@ export const registrationSchema = z.object({
   lastName: z.string().trim().min(1, 'Enter your last name').max(50),
   role: z.enum(['SHIPPER', 'TRANSPORTER'], { error: 'Choose how you will use EthioFreight' }),
   email: emailSchema,
-  phone: z.string().trim().min(7, 'Enter a valid phone number').max(20, 'Phone number is too long'),
+  phone: ethiopianPhoneSchema,
   password: passwordSchema,
   confirmPassword: z.string(),
 }).superRefine((values, context) => {

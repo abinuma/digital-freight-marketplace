@@ -44,7 +44,7 @@ export function ShipmentDetailPage() {
   const ownBidQuery = useQuery({
     queryKey: ["transporter", "bidForShipment", id],
     queryFn: () => listMyBids({ shipmentId: id, limit: 1 }),
-    enabled: Boolean(shipmentQuery.data),
+    enabled: Boolean(id),
     refetchInterval: 15_000,
   });
   const shipment = shipmentQuery.data;
@@ -86,30 +86,32 @@ export function ShipmentDetailPage() {
     );
   }
   if (shipmentQuery.isError) {
+    const unavailableBid = ownBidQuery.data?.bids?.[0];
+    const isCancelled = Boolean(unavailableBid?.shipment?.removedAt)
+      || unavailableBid?.shipment?.status === "CANCELLED";
     return (
       <div className="grid gap-4 px-6 py-6 max-md:px-4">
+        <Alert tone="danger" title={isCancelled ? "This shipment is cancelled" : "Shipment unavailable"}>
+          {isCancelled ? "This shipment was cancelled or removed and is no longer available." : shipmentQuery.error.message}
+        </Alert>
+        {unavailableBid?.shipment?.pickupLocation && unavailableBid?.shipment?.deliveryLocation && (
+          <p className="m-0 text-sm text-slate-600">
+            {unavailableBid.shipment.pickupLocation} → {unavailableBid.shipment.deliveryLocation}
+          </p>
+        )}
         <Link
-          className="text-sm font-semibold text-blue-700 no-underline hover:text-blue-800"
+          className="group inline-flex w-fit min-h-10 items-center gap-2 rounded-full border border-blue-200 bg-white px-5 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white"
           to="/transporter/shipments"
         >
-          ← Back to available shipments
+          <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-4 w-4 group-hover:brightness-0 group-hover:invert" />
+          Back
         </Link>
-        <Alert tone="danger" title="Shipment unavailable">
-          {shipmentQuery.error.message}
-        </Alert>
       </div>
     );
   }
 
   return (
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
-      <Link
-        className="text-sm font-semibold text-blue-700 no-underline hover:text-blue-800"
-        to="/transporter/shipments"
-      >
-        ← Find shipments
-      </Link>
-
       <header className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
         <ShipmentHeading shipment={shipment} hidePublishedStatus hideCargoSummary />
         <Link
@@ -140,14 +142,6 @@ export function ShipmentDetailPage() {
       <div className="grid grid-cols-3 items-start gap-4 max-lg:grid-cols-1">
         <div className="grid gap-4 lg:col-span-2">
           <ShipmentInformation shipment={shipment} />
-          {activeBid && (
-            <Link
-              className="text-sm font-semibold text-blue-700 no-underline hover:text-blue-800"
-              to={`/transporter/messages?shipmentId=${id}`}
-            >
-              ✉ Open conversation with shipper
-            </Link>
-          )}
           {shipment.status === "COMPLETED" && (
             <ShipmentReviews
               shipmentId={id}
@@ -209,7 +203,7 @@ export function ShipmentDetailPage() {
                   </Button>
                 )}
                 {activeBid.status === "ACCEPTED" && (
-                  <Alert tone="success" title="Your offer was accepted">
+                  <Alert tone="success" title="Offer accepted">
                     You can now message the shipper about this shipment.
                   </Alert>
                 )}
@@ -271,6 +265,14 @@ export function ShipmentDetailPage() {
           )}
         </aside>
       </div>
+
+      <Link
+        className="group inline-flex w-fit min-h-10 items-center gap-2 rounded-full border border-blue-200 bg-white px-5 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white"
+        to="/transporter/shipments"
+      >
+        <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-4 w-4 group-hover:brightness-0 group-hover:invert" />
+        Back
+      </Link>
 
       <Modal
         open={withdrawOpen}

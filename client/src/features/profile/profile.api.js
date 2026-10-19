@@ -27,6 +27,14 @@ export async function updateVehicle(userId, vehicle) {
   return data.data;
 }
 
+export async function uploadVehiclePhoto(userId, file) {
+  const formData = new FormData();
+  formData.append('photo', file);
+  const { data } = await apiClient.post(`/users/${userId}/vehicle-photo`, formData);
+  return data.data;
+}
+
+
 export async function setLoadAvailability(userId, lookingForLoads) {
   const { data } = await apiClient.patch(`/users/${userId}/availability`, { lookingForLoads });
   return data.data;

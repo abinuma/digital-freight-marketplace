@@ -202,7 +202,6 @@ export function TransporterPreferencesCard({
                         : 'bg-blue-50/50 border border-slate-200 text-slate-700 hover:bg-slate-100'
                     }`}
                     aria-pressed={selected}
-                    title={label}
                   >
                     <span className="sr-only">{label}</span>
                     <span>{short}</span>
@@ -252,9 +251,6 @@ export function TransporterPreferencesCard({
             disabled={busy}
             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2.5 shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
           >
-            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7l-4-4zm-5 16a3 3 0 110-6 3 3 0 010 6zm3-10H5V5h10v4z" />
-            </svg>
             {busy ? 'Saving…' : 'Save Preferences'}
           </button>
         </div>

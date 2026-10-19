@@ -1,20 +1,28 @@
 import { useState } from "react";
 import { useAuth } from "./AuthContext.jsx";
+import { ethiopianPhoneSchema } from "../../shared/utils/ethiopianPhone.js";
 
 export function ProfileCompletionForm({ onComplete = () => {} }) {
   const { completeProfile } = useAuth();
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState("");
   const [error, setError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+    const parsedPhone = ethiopianPhoneSchema.safeParse(phone);
+    if (!parsedPhone.success) {
+      setPhoneError(parsedPhone.error.issues[0]?.message || "Enter a valid Ethiopian mobile");
+      return;
+    }
+    setPhoneError("");
     setIsSaving(true);
 
     try {
-      const user = await completeProfile({ phone, role });
+      const user = await completeProfile({ phone: parsedPhone.data, role });
       onComplete(user);
     } catch (requestError) {
       setError(requestError.message);
@@ -51,12 +59,21 @@ export function ProfileCompletionForm({ onComplete = () => {} }) {
             name="phone"
             type="tel"
             autoComplete="tel"
-            minLength={7}
-            maxLength={20}
+            inputMode="tel"
+            placeholder="0912345678"
+            maxLength={25}
             value={phone}
-            onChange={(event) => setPhone(event.target.value)}
+            onChange={(event) => {
+              setPhone(event.target.value);
+              setPhoneError("");
+            }}
+            aria-invalid={Boolean(phoneError)}
+            aria-describedby={phoneError ? "phone-error" : "phone-hint"}
             required
           />
+          <small id={phoneError ? "phone-error" : "phone-hint"} className={phoneError ? "text-xs text-red-700" : "text-xs text-slate-500"}>
+            {phoneError || "Enter a valid Ethiopian mobile"}
+          </small>
         </div>
 
         <div className="grid gap-2">

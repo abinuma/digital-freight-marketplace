@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation } from "react-router-dom";
 import { Button } from "../../shared/components/index.js";
 import { useAuth } from "./AuthContext.jsx";
 import { ProfileCompletionForm } from "./ProfileCompletionForm.jsx";
+import LandingPage from "./LandingPage.jsx";
 
 export function AuthGate() {
   const {
@@ -39,7 +40,7 @@ export function AuthGate() {
     }
   }
 
-  if (isLoading) {
+  if (location.pathname !== "/" && isLoading) {
     return (
       <main
         className={`flex min-h-screen flex-col items-center justify-center  bg-gray-100 text-slate-800 text-center         landing`}
@@ -50,8 +51,11 @@ export function AuthGate() {
     );
   }
 
-  if (location.pathname === "/" && !isError) {
-    if (!user) return <Navigate to="/login" replace />;
+  if (location.pathname === "/" && (!user || isError)) return <LandingPage />;
+
+  if (isError) return <Navigate to="/" replace />;
+
+  if (location.pathname === "/") {
     if (!user.profileComplete)
       return <Navigate to="/complete-profile" replace />;
     const roleHome = {
@@ -102,17 +106,12 @@ export function AuthGate() {
           : "A simpler way for shippers and transporters to connect. Sign in with Google to get started."}
       </p>
 
-      {isError && (
-        <p className={`text-red-700 text-base form-error`} role="alert">
-          {error.message}
-        </p>
-      )}
       {actionError && (
         <p className={`text-red-700 text-base form-error`} role="alert">
           {actionError}
         </p>
       )}
-      {!user && !isError && (
+      {!user && (
         <Button
           className={`min-h-12 mt-4 py-3 px-4 border rounded-lg bg-blue-700 text-white cursor-pointer font-bold transition    disabled:cursor-wait disabled:opacity-75 primary-button`}
           onClick={handleGoogleSignIn}
@@ -141,15 +140,6 @@ export function AuthGate() {
             </Button>
           </div>
         </>
-      )}
-      {isError && (
-        <Button
-          variant="secondary"
-          className={`min-h-12 mt-4 py-3 px-4 border rounded-lg bg-blue-700 text-white cursor-pointer font-bold transition border-gray-200 bg-slate-500 text-blue-800 hover:bg-indigo-50 secondary-button`}
-          onClick={() => refreshUser().catch(() => undefined)}
-        >
-          Try again
-        </Button>
       )}
     </main>
   );

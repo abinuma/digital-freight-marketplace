@@ -2,6 +2,9 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { Button } from './Button.jsx'
+import { Input } from './Input.jsx'
+import { Select } from './Select.jsx'
+import { Textarea } from './Textarea.jsx'
 import { Toast } from './Toast.jsx'
 import { AuthField } from '../../features/auth/AuthField.jsx'
 
@@ -48,5 +51,36 @@ describe('shared UI components', () => {
     expect(markup).toContain('Success')
     expect(markup).toContain('Profile updated successfully')
     expect(markup).toContain('Dismiss notification')
+  })
+
+  it('applies red accent classes to Input when aria-invalid is true', () => {
+    const markup = renderToStaticMarkup(createElement(Input, {
+      id: 'test-input',
+      'aria-invalid': true,
+    }))
+
+    expect(markup).toContain('border-red-600')
+    expect(markup).toContain('focus:border-red-600')
+  })
+
+  it('applies red accent classes to Select when aria-invalid is true', () => {
+    const markup = renderToStaticMarkup(createElement(Select, {
+      id: 'test-select',
+      'aria-invalid': true,
+      children: createElement('option', { value: '' }, 'Choose'),
+    }))
+
+    expect(markup).toContain('border-red-600')
+    expect(markup).toContain('focus:border-red-600')
+  })
+
+  it('applies red accent classes to Textarea when aria-invalid is true', () => {
+    const markup = renderToStaticMarkup(createElement(Textarea, {
+      id: 'test-textarea',
+      'aria-invalid': true,
+    }))
+
+    expect(markup).toContain('border-red-600')
+    expect(markup).toContain('focus:border-red-600')
   })
 })

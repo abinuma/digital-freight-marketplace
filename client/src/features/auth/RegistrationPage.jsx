@@ -24,13 +24,11 @@ const roles = [
     value: "SHIPPER",
     title: "Shipper",
     detail: "I need to move goods",
-    symbol: "▣",
   },
   {
     value: "TRANSPORTER",
     title: "Transporter",
     detail: "I own or drive trucks",
-    symbol: "▰",
   },
 ];
 
@@ -145,22 +143,17 @@ export function RegistrationPage() {
             {roles.map((role) => (
               <label
                 key={role.value}
-                className={`relative grid min-h-20 justify-items-center  gap-0.5 p-2 border rounded-lg bg-white cursor-pointer text-center transition hover:border-slate-500          role-choice__option${form.role === role.value ? " is-selected" : ""}`}
+                className={`relative grid min-h-20 justify-items-center gap-0.5 p-2 border rounded-lg bg-white cursor-pointer text-center transition hover:border-slate-500 role-choice__option${form.role === role.value ? " is-selected" : ""}${fieldErrors.role ? " border-red-500 ring-1 ring-red-500" : ""}`}
               >
                 <input
                   type="radio"
                   name="role"
                   value={role.value}
+                  required
                   checked={form.role === role.value}
                   onChange={updateField}
                   aria-invalid={Boolean(fieldErrors.role)}
                 />
-                <span
-                  className={`text-blue-700 text-lg leading-tight role-choice__symbol`}
-                  aria-hidden="true"
-                >
-                  {role.symbol}
-                </span>
                 <span
                   className={`text-slate-500 text-sm font-bold role-choice__title`}
                 >
@@ -202,13 +195,16 @@ export function RegistrationPage() {
             name="phone"
             type="tel"
             autoComplete="tel"
-            placeholder="+251 912 345 678"
+            inputMode="tel"
+            placeholder="0912345678"
+            maxLength={25}
             value={form.phone}
             onChange={updateField}
             required
             aria-invalid={Boolean(fieldErrors.phone)}
-            aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
+            aria-describedby={fieldErrors.phone ? "phone-error" : "phone-hint"}
           />
+          <small id="phone-hint" className="text-xs text-slate-500">Enter a valid Ethiopian mobile</small>
         </AuthField>
         <div
           className={`grid gap-3 auth-form__grid grid-cols-2 max-md:grid-cols-1 auth-form__grid--two`}

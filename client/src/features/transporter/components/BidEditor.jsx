@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   Input,
-  Select,
   Spinner,
   Textarea,
   useSuccessToast,
@@ -45,7 +44,6 @@ export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
     pickupDate: toLocalDateTime(initialBid?.pickupDate),
     message: initialBid?.message || "",
   });
-  const [selectedPlanId, setSelectedPlanId] = useState("");
   const [errors, setErrors] = useState({});
   const [requestError, setRequestError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -64,21 +62,7 @@ export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
     queryFn: () => listMyJourneyPlans({ limit: 50 }),
   });
   const allPlans = plansQuery.data?.journeyPlans || [];
-  const activePlans = allPlans.filter((p) => p.status === "ACTIVE");
-
-  const selectedPlan = activePlans.find((p) => p.id === selectedPlanId);
   const shipmentWeight = Number(shipment?.weightKg || 0);
-  const shipmentVolume = shipment?.volumeM3 != null ? Number(shipment.volumeM3) : null;
-
-  const selectedPlanWeightExceeded = selectedPlan
-    ? selectedPlan.remainingWeightKg < shipmentWeight
-    : false;
-  const selectedPlanVolumeExceeded =
-    selectedPlan && shipmentVolume != null && selectedPlan.maxVolumeM3 != null
-      ? selectedPlan.remainingVolumeM3 < shipmentVolume
-      : false;
-
-  const isSelectedPlanFull = selectedPlanWeightExceeded || selectedPlanVolumeExceeded;
 
   const matchingRoutePlans = allPlans.filter(
     (p) =>
@@ -93,7 +77,7 @@ export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
       (p) => p.status === "FULL" || p.remainingWeightKg < shipmentWeight
     );
 
-  const isCapacityBlocked = isSelectedPlanFull || (!selectedPlanId && allMatchingRoutePlansFull);
+  const isCapacityBlocked = allMatchingRoutePlansFull;
 
   function update(name, value) {
     setValues((current) => ({ ...current, [name]: value }));
@@ -175,6 +159,7 @@ export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
             step="0.01"
             value={values.price}
             onChange={(event) => update("price", event.target.value)}
+            aria-invalid={Boolean(errors.price)}
             placeholder="Enter your offer"
           />
           {errors.price && (
@@ -191,6 +176,7 @@ export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
             min={toLocalDateTime(new Date())}
             value={values.pickupDate}
             onChange={updatePickupTime}
+            aria-invalid={Boolean(errors.pickupDate)}
             onFocus={(event) => {
               const [date = "", time = ""] = event.currentTarget.value.split("T");
               pickupTimeSelection.current = date && time
@@ -205,30 +191,6 @@ export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
             <small className="text-sm text-red-700">{errors.pickupDate}</small>
           )}
         </label>
-        {activePlans.length > 0 && (
-          <label className={fieldClass}>
-            <span>Intended Journey Plan (optional)</span>
-            <Select
-              value={selectedPlanId}
-              onChange={(event) => setSelectedPlanId(event.target.value)}
-            >
-              <option value="">No specific journey plan selected</option>
-              {activePlans.map((plan) => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.originCity} → {plan.destinationCity} (Remaining: {plan.remainingWeightKg} kg
-                  {plan.maxVolumeM3 ? `, ${plan.remainingVolumeM3} m³` : ""})
-                </option>
-              ))}
-            </Select>
-            {selectedPlan && (
-              <small className="text-xs text-slate-500">
-                Plan capacity available: {selectedPlan.remainingWeightKg?.toLocaleString()} kg
-                {selectedPlan.maxVolumeM3 ? `, ${selectedPlan.remainingVolumeM3} m³` : ""}
-              </small>
-            )}
-          </label>
-        )}
-
         <label className={fieldClass}>
           <span>Message to shipper</span>
           <Textarea

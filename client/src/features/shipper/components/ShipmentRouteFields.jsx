@@ -25,6 +25,7 @@ export function ShipmentRouteFields({ values, errors, setField, setErrors }) {
           maxLength={255}
           value={values.pickupLocation}
           onChange={(event) => setField("pickupLocation", event.target.value)}
+          aria-invalid={Boolean(errors.pickupLocation)}
           placeholder="City, area, or address"
         />
         {fieldError(errors, "pickupLocation")}
@@ -38,6 +39,7 @@ export function ShipmentRouteFields({ values, errors, setField, setErrors }) {
           maxLength={255}
           value={values.deliveryLocation}
           onChange={(event) => setField("deliveryLocation", event.target.value)}
+          aria-invalid={Boolean(errors.deliveryLocation)}
           placeholder="City, area, or address"
         />
         {fieldError(errors, "deliveryLocation")}
@@ -68,6 +70,7 @@ export function ShipmentRouteFields({ values, errors, setField, setErrors }) {
           min={todayDate()}
           value={values.pickupDate}
           onChange={(event) => updatePickupDate(event.target.value)}
+          aria-invalid={Boolean(errors.pickupDate)}
         />
         {fieldError(errors, "pickupDate")}
       </label>

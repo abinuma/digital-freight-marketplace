@@ -1,7 +1,5 @@
-import { Link } from 'react-router-dom';
 import { Badge, Button, Card } from '../../../shared/components/index.js';
-import { dateLabel, initials, timeLabel } from '../messaging.formatters.js';
-import { PreviewableImage } from '../../../shared/components/PreviewableImage.jsx';
+import { dateLabel, timeLabel } from '../messaging.formatters.js';
 
 const statusTones = {
   PENDING: 'warning',
@@ -13,99 +11,74 @@ const statusTones = {
 export function ConversationBidCard({
   bid,
   role,
-  profile,
   vehicle,
-  counterpartName,
   accepting,
   onAcceptBid,
 }) {
   const shipment = bid?.shipment;
-  const shipmentPath = bid && (role === 'SHIPPER'
-    ? `/shipper/shipments/${bid.shipmentId}`
-    : `/transporter/shipments/${bid.shipmentId}`);
   const canAccept = role === 'SHIPPER'
     && shipment?.status === 'PUBLISHED'
     && bid?.status === 'PENDING';
-
   const tone = statusTones[bid?.status] || 'neutral';
-  const name = profile?.name || counterpartName || 'User';
+  const bidTime = bid.createdAt ? timeLabel(bid.createdAt) : '';
+  const vehicleLabel = vehicle
+    ? `${vehicle.type}${vehicle.capacityTons ? ` (${vehicle.capacityTons}t)` : ''}`
+    : '—';
 
   return (
-    <Card className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-xs transition-shadow hover:shadow-sm">
-      {/* 1. Transporter / Profile Section */}
-      <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-blue-200 bg-blue-100 text-sm font-bold text-blue-700 shadow-xs">
-          {profile?.profilePhoto ? (
-            <PreviewableImage className="h-full w-full object-cover" src={profile.profilePhoto} alt={`${name} profile photo`} />
-          ) : (
-            initials(name)
+    <Card className="overflow-hidden rounded-xl border border-blue-600 bg-white p-0 shadow-xs transition-shadow hover:shadow-sm">
+      <div className="flex flex-col gap-2.5 bg-blue-50 px-3.5 pb-3 pt-3">
+        <h3 className="m-0 text-xs font-bold text-slate-900">
+          {shipment?.goodsDescription || 'Shipment details'}
+          {shipment?.weightKg != null && (
+            <span> · {Number(shipment.weightKg).toLocaleString()} kg</span>
           )}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-1.5">
-            <strong className="truncate text-sm font-semibold text-slate-900">
-              {name}
-            </strong>
-            <Badge tone={tone}>{bid.status}</Badge>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
-            {profile?.averageRating > 0 ? (
-              <span className="font-medium text-amber-600">
-                ★ {Number(profile.averageRating).toFixed(1)}{' '}
-                <span className="text-slate-400">({profile.reviewCount})</span>
-              </span>
-            ) : (
-              <span>No ratings yet</span>
-            )}
-            {role === 'SHIPPER' && vehicle && (
-              <>
-                <span className="text-slate-300">·</span>
-                <span className="truncate">
-                  {vehicle.type} ({vehicle.capacityTons}t{vehicle.volumeM3 ? ` · ${vehicle.volumeM3}m³` : ''})
-                </span>
-              </>
-            )}
-          </div>
+        </h3>
+        <div className="flex min-w-0 items-end gap-2 text-xs font-semibold text-blue-900">
+          <span className="min-w-0 flex-1">
+            <span className="mb-0.5 block text-[9px] font-medium uppercase tracking-wide text-slate-500">From</span>
+            <span className="block truncate">{shipment?.pickupLocation || 'Pickup location'}</span>
+          </span>
+          <span className="mb-1 min-w-4 flex-1 border-t border-dashed border-blue-300" aria-hidden="true" />
+          <span className="min-w-0 flex-1 text-right">
+            <span className="mb-0.5 block text-[9px] font-medium uppercase tracking-wide text-slate-500">To</span>
+            <span className="block truncate">{shipment?.deliveryLocation || 'Delivery location'}</span>
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2 border-t border-blue-200/70 pt-2 text-[11px] text-blue-700">
+          <span>Pickup wanted</span>
+          <strong className="text-slate-800">
+            {shipment?.pickupDate ? dateLabel(shipment.pickupDate) : '—'}
+          </strong>
         </div>
       </div>
 
-      {/* 2. Shipment Details Section */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <h3 className="m-0 truncate text-sm font-bold text-slate-900" title={shipment?.goodsDescription}>
-              {shipment?.goodsDescription || 'Shipment details'}
-            </h3>
-            <p className="m-0 truncate text-xs text-slate-600">
-              {shipment?.pickupLocation} <span aria-hidden="true">→</span> {shipment?.deliveryLocation}
-            </p>
-          </div>
-          <strong className="shrink-0 text-base font-extrabold text-blue-700">
-            ETB {Number(bid.price).toLocaleString()}
-          </strong>
+      <div className="flex flex-col gap-2.5 border-t border-blue-100 px-3.5 py-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Current offer</span>
+          <Badge tone={tone}>{bid.status.toLowerCase()}</Badge>
         </div>
-
-        <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-slate-50 p-2 text-xs text-slate-600">
-          <div>
-            <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">Shipment pickup</span>
-            <span className="font-medium text-slate-700">{shipment?.pickupDate ? dateLabel(shipment.pickupDate) : '—'}</span>
+        <strong className="text-2xl font-extrabold leading-none text-blue-950">
+          ETB {Number(bid.price).toLocaleString()}
+        </strong>
+        <p className="m-0 text-[11px] text-slate-500">Sent{bidTime ? ` ${bidTime}` : ''}</p>
+        <div className="grid gap-1.5 pt-1 text-xs">
+          <div className="flex items-center justify-between gap-2 text-slate-600">
+            <span>Bid pickup</span>
+            <strong className="text-right text-slate-900">
+              {bid.pickupDate ? dateLabel(bid.pickupDate) : '—'}
+              {bid.pickupDate && <span className="block text-[10px] font-normal text-slate-500">Matches your date</span>}
+            </strong>
           </div>
-          <div>
-            <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">Bid pickup</span>
-            <span className="font-medium text-slate-700">{bid.pickupDate ? `${dateLabel(bid.pickupDate)} · ${timeLabel(bid.pickupDate)}` : '—'}</span>
+          <div className="flex items-center justify-between gap-2 text-slate-600">
+            <span>Vehicle</span>
+            <strong className="text-right text-slate-900">{vehicleLabel}</strong>
           </div>
-          {shipment?.weightKg != null && (
-            <div className="col-span-2 pt-0.5 text-xs text-slate-500">
-              Cargo weight: <span className="font-medium text-slate-700">{shipment.weightKg} kg</span>
-            </div>
-          )}
+          <div className="flex items-center justify-between gap-2 text-slate-600">
+            <span>Terms</span>
+            <strong className="max-w-[65%] text-right text-slate-900">{bid.message || '—'}</strong>
+          </div>
         </div>
-
-        {bid.message && (
-          <p className="m-0 rounded-lg bg-slate-50 p-2 text-xs italic leading-relaxed text-slate-600">
-            "{bid.message}"
-          </p>
-        )}
 
         {bid.declineReason && (
           <p className="m-0 rounded-lg bg-red-50 p-2 text-xs text-red-700">
@@ -113,30 +86,21 @@ export function ConversationBidCard({
           </p>
         )}
 
-        {shipmentPath && (
-          <Link
-            to={shipmentPath}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 no-underline hover:text-blue-800 hover:underline"
-          >
-            View shipment listing ↗
-          </Link>
-        )}
       </div>
 
-      {/* 3. Action Buttons Section */}
-      <div className="flex flex-col gap-2 border-t border-slate-100 pt-3">
+      <div className="flex flex-col gap-2 border-t border-slate-100 px-3.5 py-3">
         {role === 'SHIPPER' && canAccept && (
           <Button
-            className="min-h-10 w-full bg-green-600 text-sm font-semibold hover:bg-green-700"
+            className="min-h-9 w-full bg-blue-600 text-sm font-semibold hover:bg-blue-700"
             disabled={accepting}
             onClick={() => onAcceptBid(bid)}
           >
-            {accepting ? 'Accepting…' : 'Accept Bid'}
+            {accepting ? 'Accepting…' : 'Accept offer'}
           </Button>
         )}
         {role === 'SHIPPER' && bid.status === 'ACCEPTED' && (
-          <div className="flex items-center justify-center gap-1.5 rounded-lg bg-green-50 py-2 text-xs font-bold text-green-700">
-            <span>✓</span> Bid Accepted
+          <div className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-50 py-2 text-xs font-bold text-blue-700">
+            <span aria-hidden="true">✓</span> Offer accepted
           </div>
         )}
         {role === 'TRANSPORTER' && (
@@ -144,15 +108,6 @@ export function ConversationBidCard({
             Your bid is <strong className="text-slate-700">{bid.status.toLowerCase()}</strong>
           </div>
         )}
-        <Button
-          variant="secondary"
-          size="sm"
-          className="min-h-9 w-full text-xs text-slate-600"
-          disabled
-          title="Issue reporting is not configured yet."
-        >
-          Report Issue
-        </Button>
       </div>
     </Card>
   );

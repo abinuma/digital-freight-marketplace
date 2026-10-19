@@ -113,4 +113,56 @@ describe('ConversationBidCard', () => {
 
     expect(markup).toContain('Sinotruk (40t · 65m³)');
   });
+
+  it('renders shipper profile photo and details when viewed by a transporter', () => {
+    const shipperProfile = {
+      name: 'Alpha Trading PLC',
+      profilePhoto: 'https://cdn.example.test/shipper.png',
+      city: 'Addis Ababa',
+    };
+    const markup = renderToStaticMarkup(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(ConversationBidCard, {
+          bid: sampleBid,
+          role: 'TRANSPORTER',
+          profile: shipperProfile,
+          counterpartName: 'Alpha Trading PLC',
+          accepting: false,
+          onAcceptBid: () => {},
+        })
+      )
+    );
+
+    expect(markup).toContain('Alpha Trading PLC');
+    expect(markup).toContain('https://cdn.example.test/shipper.png');
+    expect(markup).toContain('Shipper · Addis Ababa');
+  });
+
+  it('falls back to conversation counterpart profile photo when profile is null', () => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(ConversationBidCard, {
+          bid: sampleBid,
+          role: 'TRANSPORTER',
+          profile: null,
+          conversation: {
+            counterpart: {
+              name: 'Beta Imports',
+              profilePhoto: 'https://cdn.example.test/counterpart.webp',
+            },
+          },
+          counterpartName: 'Beta Imports',
+          accepting: false,
+          onAcceptBid: () => {},
+        })
+      )
+    );
+
+    expect(markup).toContain('Beta Imports');
+    expect(markup).toContain('https://cdn.example.test/counterpart.webp');
+  });
 });

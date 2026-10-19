@@ -83,6 +83,30 @@ export async function updateVehicle(actor, targetId, input) {
   }
 }
 
+export async function uploadVehiclePhoto(actor, targetId, file) {
+  ensureOwner(actor.id, targetId);
+  if (actor.role !== 'TRANSPORTER') throw new AppError('Only Transporters can manage vehicle details', 403);
+
+  const existingVehicle = await userRepository.findVehicleByUserId(targetId);
+  const uploaded = await userStorage.uploadVehiclePhoto(file.buffer, targetId);
+
+  try {
+    if (existingVehicle) {
+      const vehicle = await userRepository.updateVehiclePhoto(targetId, uploaded.url);
+      if (existingVehicle.photo && existingVehicle.photo !== uploaded.url) {
+        await userStorage.deleteManagedVehiclePhoto(existingVehicle.photo, targetId).catch(() => undefined);
+      }
+      return vehicle;
+    }
+    return { photo: uploaded.url };
+  } catch (error) {
+    await userStorage.deleteUploadedProfilePhoto(uploaded.publicId).catch(() => undefined);
+    if (isMissingRecord(error)) throw new AppError('Vehicle was not found', 404);
+    throw error;
+  }
+}
+
+
 export async function getReviews(id, query) {
   if (!(await userRepository.userExists(id))) throw new AppError('User profile was not found', 404);
 

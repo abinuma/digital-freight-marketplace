@@ -4,6 +4,8 @@ import * as notificationRepository from './notification.repository.js';
 import { formatPagination, getPagination } from '../../shared/utils/pagination.js';
 import { AppError } from '../../shared/utils/AppError.js';
 
+const passwordResetDeliveries = new Map();
+
 async function notify(recipient, email) {
   if (!recipient?.email) return;
   try {
@@ -159,8 +161,19 @@ export function welcome(user) {
   return safely('WELCOME', () => notify(user, { type: 'WELCOME' }));
 }
 
-export function passwordReset(user, url) {
-  return safely('PASSWORD_RESET', () => notify(user, { type: 'PASSWORD_RESET', content: url }));
+export async function passwordReset(user, url) {
+  const result = user?.email
+    ? await sendEmail({ to: user.email, recipientName: user.name, type: 'PASSWORD_RESET', content: url })
+    : { sent: false, reason: 'missing_recipient' };
+  if (user?.email) passwordResetDeliveries.set(user.email.toLowerCase(), result);
+  return result;
+}
+
+export function takePasswordResetDelivery(email) {
+  const key = email.toLowerCase();
+  const result = passwordResetDeliveries.get(key);
+  passwordResetDeliveries.delete(key);
+  return result;
 }
 
 export function journeyPlanCapacityReached(userId, plan) {

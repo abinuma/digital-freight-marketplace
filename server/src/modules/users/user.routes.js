@@ -5,6 +5,7 @@ import { uploadRateLimiter } from '../../shared/middleware/rateLimiter.js';
 import { validate } from '../../shared/middleware/validate.js';
 import { AppError } from '../../shared/utils/AppError.js';
 import { parseProfilePhoto } from './profile-photo.upload.js';
+import { parseVehiclePhoto } from './vehicle-photo.upload.js';
 import {
   paginationQuerySchema,
   updateProfileSchema,
@@ -26,6 +27,15 @@ router.get('/available-transporters', authorize('SHIPPER'), validate(availableTr
 router.patch('/:id/availability', authorize('TRANSPORTER'), validate(updateAvailabilitySchema), requireProfileOwner, userController.setLoadAvailability);
 router.get('/:id/vehicle', validate(userIdParamsSchema), userController.getVehicle);
 router.put('/:id/vehicle', authorize('TRANSPORTER'), validate(upsertVehicleSchema), userController.updateVehicle);
+router.post(
+  '/:id/vehicle-photo',
+  authorize('TRANSPORTER'),
+  validate(userIdParamsSchema),
+  requireProfileOwner,
+  uploadRateLimiter,
+  parseVehiclePhoto,
+  userController.uploadVehiclePhoto,
+);
 router.post(
   '/:id/profile-photo',
   validate(userIdParamsSchema),

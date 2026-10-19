@@ -45,7 +45,7 @@ export function TransporterDashboardPage() {
     mutationFn: (lookingForLoads) => setLoadAvailability(user.id, lookingForLoads),
     onSuccess: async (availability) => {
       await Promise.all([refreshUser(), cache.invalidateQueries({ queryKey: ["transporter"] })]);
-      showSuccess(availability.lookingForLoads ? 'Availability turned on' : 'Availability turned off');
+      showSuccess(availability.lookingForLoads ? 'Availability enabled' : 'Availability disabled');
     },
   });
   const results = useQueries({
@@ -73,13 +73,29 @@ export function TransporterDashboardPage() {
 
   return (
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
-      <div className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
+      <div className="flex items-center justify-between gap-4 max-sm:flex-col max-sm:items-start">
         <div>
-          <p className="mb-0 mt-2 text-sm text-slate-500">
-            Keep track of your offers and find your next delivery.
-          </p>
+          <h1 className="m-0 text-3xl font-semibold tracking-tight text-slate-900 max-md:text-2xl">Dashboard</h1>
+          <p className="mb-0 mt-1 text-sm text-slate-500">Keep track of your offers and find your next delivery.</p>
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3 py-2">
+          <span id="load-availability-label" className="text-sm font-medium text-slate-800">I’m available right now</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={Boolean(user.lookingForLoads)}
+            aria-labelledby="load-availability-label"
+            aria-busy={availabilityMutation.isPending}
+            disabled={availabilityMutation.isPending}
+            onClick={() => availabilityMutation.mutate(!user.lookingForLoads)}
+            className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-0 p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 ${user.lookingForLoads ? "bg-emerald-600" : "bg-slate-300"}`}
+          >
+            <span aria-hidden="true" className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${user.lookingForLoads ? "translate-x-5" : "translate-x-0"}`} />
+          </button>
         </div>
       </div>
+
+      {availabilityMutation.isError && <Alert tone="danger">{availabilityMutation.error.message}</Alert>}
 
       {error && (
         <Alert tone="danger" title="Some dashboard information is unavailable">
@@ -119,51 +135,18 @@ export function TransporterDashboardPage() {
         </Link>
       </section>
 
-      <Card className="flex flex-wrap items-center justify-between gap-4 border border-emerald-200 bg-emerald-50/70 p-5">
-        <div className="grid gap-2">
-          <span id="load-availability-label" className="text-sm font-semibold text-slate-800">I’m available right now</span>
-          {availabilityMutation.isError && <p className="m-0 text-sm text-red-700">{availabilityMutation.error.message}</p>}
-        </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={Boolean(user.lookingForLoads)}
-          aria-labelledby="load-availability-label"
-          aria-busy={availabilityMutation.isPending}
-          disabled={availabilityMutation.isPending}
-          onClick={() => availabilityMutation.mutate(!user.lookingForLoads)}
-          className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-0 p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 ${user.lookingForLoads ? "bg-emerald-600" : "bg-slate-300"}`}
-        >
-          <span
-            aria-hidden="true"
-            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${user.lookingForLoads ? "translate-x-5" : "translate-x-0"}`}
-          />
-        </button>
-      </Card>
-
       <section aria-labelledby="direct-invites-heading" className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-white shadow-xs">
-              <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
-                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-              </svg>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 id="direct-invites-heading" className="m-0 text-lg font-bold text-slate-900">
+                Direct load invitations
+              </h2>
+              <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">
+                {invitesCount} {invitesCount === 1 ? 'invite' : 'invites'}
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 id="direct-invites-heading" className="m-0 text-base font-bold text-slate-900">
-                  Direct Load Invitations
-                </h2>
-                {invitesCount > 0 && (
-                  <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800">
-                    {invitesCount} {invitesCount === 1 ? 'invite' : 'invites'}
-                  </span>
-                )}
-              </div>
-              <p className="m-0 text-xs text-slate-500">
-                Exclusive loads sent directly to you by shippers
-              </p>
-            </div>
+            <p className="m-0 mt-1 text-xs text-slate-500">Exclusive loads sent directly to you by shippers.</p>
           </div>
           {invitesCount > 0 && (
             <Link
@@ -176,51 +159,41 @@ export function TransporterDashboardPage() {
         </div>
 
         {invitesQuery.isPending ? (
-          <Skeleton className="h-28 rounded-xl" />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <Skeleton className="h-40 rounded-xl" />
+            <Skeleton className="h-40 rounded-xl" />
+          </div>
         ) : invites.length > 0 ? (
-          <div className="grid gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {invites.map((shipment) => (
               <div
                 key={shipment.id}
-                className="group relative flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50/90 via-white to-amber-50/40 p-4 shadow-xs transition-all hover:border-amber-400 hover:shadow-sm"
+                className="flex min-w-0 flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-shadow hover:shadow-sm"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-bold text-white shadow-2xs">
-                      ★ Direct invite for you
-                    </span>
-                  </div>
-
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-slate-600">
-                    <div className="flex items-center gap-1.5 font-semibold text-slate-800">
-                      <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span>{shipment.pickupLocation} &rarr; {shipment.deliveryLocation}</span>
+                <div>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold text-amber-800">★ Direct invite for you</span>
+                  <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <div className="min-w-0">
+                      <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">From</span>
+                      <strong className="block truncate text-sm text-slate-900">{shipment.pickupLocation}</strong>
                     </div>
-
-                    <div className="flex items-center gap-1.5 text-slate-500">
-                      <svg className="w-3.5 h-3.5 text-slate-400 shrink-0 fill-current" viewBox="0 0 24 24">
-                        <path d="M12 3a4 4 0 0 0-4 4v1H6a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3h-2V7a4 4 0 0 0-4-4zm-2 4a2 2 0 1 1 4 0v1h-4V7z" />
-                      </svg>
-                      <span>{Number(shipment.weightKg)?.toLocaleString()} kg</span>
+                    <span className="text-xl leading-none text-blue-500" aria-hidden="true">→</span>
+                    <div className="min-w-0">
+                      <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">To</span>
+                      <strong className="block truncate text-sm text-slate-900">{shipment.deliveryLocation}</strong>
                     </div>
-
-                    {shipment.specialRequirements && (
-                      <span className="text-xs text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
-                        Note: {shipment.specialRequirements}
-                      </span>
-                    )}
                   </div>
+                  {shipment.specialRequirements && (
+                    <p className="mb-0 mt-2 line-clamp-2 text-xs text-slate-500">{shipment.specialRequirements}</p>
+                  )}
                 </div>
-
-                <div className="flex items-center gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-amber-100">
+                <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                  <span className="text-sm font-semibold text-slate-900">{Number(shipment.weightKg)?.toLocaleString()} <span className="text-xs font-normal text-slate-500">kg</span></span>
                   <Link
                     to={`/transporter/shipments/${shipment.id}`}
-                    className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 px-4 py-2 text-sm font-semibold text-white no-underline shadow-xs transition-colors"
+                    className="inline-flex min-h-9 items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white no-underline transition-colors hover:bg-blue-700"
                   >
-                    Review & place bid &rarr;
+                    Review & place bid
                   </Link>
                 </div>
               </div>
@@ -259,44 +232,48 @@ export function TransporterDashboardPage() {
       </section>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Card className="flex flex-col items-start justify-between gap-4 bg-slate-900 p-6 text-white rounded-xl">
-          <div>
-            <p className="mb-2 text-xs font-bold tracking-widest text-blue-200">
+        <Card className="relative flex min-h-48 flex-col items-start justify-between gap-4 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900 p-6 text-white">
+          <div className="relative z-10">
+            <p className="mb-2 text-[10px] font-bold tracking-[0.16em] text-blue-200">
               ETHIOFREIGHT MARKETPLACE
             </p>
             <h2 className="m-0 text-lg font-semibold text-white">
               Find a load that fits your route.
             </h2>
-            <p className="mb-0 mt-2 text-sm text-slate-300">
+            <p className="mb-0 mt-2 max-w-xs text-xs leading-5 text-blue-100">
               Browse current postings and send a clear offer to the shipper.
             </p>
           </div>
           <Link
-            className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 no-underline hover:bg-slate-100 transition-colors"
+            className="relative z-10 inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-blue-900 no-underline transition-colors hover:bg-blue-50"
             to="/transporter/shipments"
           >
             Explore shipments&nbsp;↗
           </Link>
+          <div className="pointer-events-none absolute -bottom-8 right-0 h-20 w-40 rounded-[50%] border-2 border-dashed border-blue-300/40" aria-hidden="true" />
         </Card>
 
-        <Card className="flex flex-col items-start justify-between gap-4 border border-blue-100 bg-blue-50/60 p-6 rounded-xl">
+        <Card className="flex min-h-48 items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6">
           <div>
-            <p className="mb-2 text-xs font-bold tracking-widest text-blue-700">
+            <p className="mb-2 text-[10px] font-bold tracking-[0.16em] text-blue-700">
               TRIP AVAILABILITY
             </p>
             <h2 className="m-0 text-lg font-semibold text-slate-900">
               Schedule your journey plans.
             </h2>
-            <p className="mb-0 mt-2 text-sm text-slate-600">
+            <p className="mb-0 mt-2 max-w-sm text-xs leading-5 text-slate-600">
               List origin & destination cities, full load price, and manage capacity per trip.
             </p>
+            <Link
+              className="mt-4 inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white no-underline transition-colors hover:bg-blue-700"
+              to="/transporter/journey-plans"
+            >
+              Manage journey plans&nbsp;→
+            </Link>
           </div>
-          <Link
-            className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white no-underline hover:bg-blue-800 transition-colors"
-            to="/transporter/journey-plans"
-          >
-            Manage journey plans&nbsp;→
-          </Link>
+          <div className="hidden h-16 w-20 shrink-0 rounded-xl bg-blue-50 p-2 sm:grid sm:grid-cols-3 sm:grid-rows-2 sm:gap-1" aria-hidden="true">
+            {Array.from({ length: 6 }, (_, index) => <span key={index} className={`rounded-sm ${index === 4 ? 'bg-blue-600' : 'bg-blue-200'}`} />)}
+          </div>
         </Card>
       </div>
 

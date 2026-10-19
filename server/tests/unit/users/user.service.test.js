@@ -5,7 +5,16 @@ vi.mock('../../../src/modules/users/user.repository.js', () => ({
   updateUserProfile: vi.fn(),
   findVehicleByUserId: vi.fn(),
   upsertVehicle: vi.fn(),
+  updateVehiclePhoto: vi.fn(),
   userExists: vi.fn(),
+}));
+
+vi.mock('../../../src/modules/users/user.storage.js', () => ({
+  uploadProfilePhoto: vi.fn(),
+  deleteUploadedProfilePhoto: vi.fn(),
+  deleteManagedProfilePhoto: vi.fn(),
+  uploadVehiclePhoto: vi.fn(),
+  deleteManagedVehiclePhoto: vi.fn(),
 }));
 
 vi.mock('../../../src/modules/shipment/review.service.js', () => ({
@@ -15,6 +24,7 @@ vi.mock('../../../src/modules/shipment/review.service.js', () => ({
 
 import * as reviewService from '../../../src/modules/shipment/review.service.js';
 import * as userRepository from '../../../src/modules/users/user.repository.js';
+import * as userStorage from '../../../src/modules/users/user.storage.js';
 import * as userService from '../../../src/modules/users/user.service.js';
 import { AppError } from '../../../src/shared/utils/AppError.js';
 import { paginationQuerySchema, updateProfileSchema, upsertVehicleSchema } from '../../../src/modules/users/user.validation.js';
@@ -107,6 +117,30 @@ describe('vehicle service', () => {
     await expect(userService.updateVehicle({ id: 'another-user', role: 'TRANSPORTER' }, profile.id, vehicle)).rejects.toMatchObject({ statusCode: 403 });
     expect(userRepository.upsertVehicle).not.toHaveBeenCalled();
   });
+
+  it('uploads a vehicle photo for an existing vehicle and updates the record', async () => {
+    userRepository.findVehicleByUserId.mockResolvedValue(vehicle);
+    userStorage.uploadVehiclePhoto.mockResolvedValue({ url: 'https://cdn.example.test/truck.webp', publicId: 'pid-1' });
+    userRepository.updateVehiclePhoto.mockResolvedValue({ ...vehicle, photo: 'https://cdn.example.test/truck.webp' });
+
+    const file = { buffer: Buffer.from('fake-image') };
+    await expect(userService.uploadVehiclePhoto({ id: profile.id, role: 'TRANSPORTER' }, profile.id, file)).resolves.toEqual({
+      ...vehicle,
+      photo: 'https://cdn.example.test/truck.webp',
+    });
+    expect(userStorage.uploadVehiclePhoto).toHaveBeenCalledWith(file.buffer, profile.id);
+    expect(userRepository.updateVehiclePhoto).toHaveBeenCalledWith(profile.id, 'https://cdn.example.test/truck.webp');
+  });
+
+  it('uploads a vehicle photo when no vehicle exists yet and returns the photo URL', async () => {
+    userRepository.findVehicleByUserId.mockResolvedValue(null);
+    userStorage.uploadVehiclePhoto.mockResolvedValue({ url: 'https://cdn.example.test/truck.webp', publicId: 'pid-2' });
+
+    const file = { buffer: Buffer.from('fake-image') };
+    await expect(userService.uploadVehiclePhoto({ id: profile.id, role: 'TRANSPORTER' }, profile.id, file)).resolves.toEqual({
+      photo: 'https://cdn.example.test/truck.webp',
+    });
+  });
 });
 
 describe('review service integration through user service', () => {
@@ -145,5 +179,16 @@ describe('user endpoint validation', () => {
     expect(upsertVehicleSchema.params.safeParse(base.params).success).toBe(true);
     expect(upsertVehicleSchema.body.safeParse(base.body).success).toBe(true);
     expect(upsertVehicleSchema.body.safeParse({ ...base.body, capacityTons: 0 }).success).toBe(false);
+  });
+
+  it('validates vehicle payload with optional photo URL', () => {
+    const payload = {
+      type: 'Truck',
+      capacityTons: 10,
+      plateNumber: 'AA-12345',
+      photo: 'https://cdn.example.test/truck.webp',
+    };
+    expect(upsertVehicleSchema.body.safeParse(payload).success).toBe(true);
+    expect(upsertVehicleSchema.body.safeParse({ ...payload, photo: 'invalid-url' }).success).toBe(false);
   });
 });

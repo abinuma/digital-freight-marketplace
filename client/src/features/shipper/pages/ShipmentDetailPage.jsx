@@ -115,15 +115,16 @@ export function ShipmentDetailPage() {
   if (shipmentQuery.isError)
     return (
       <div className="grid gap-4 px-6 py-6 max-md:px-4">
-        <Link
-          className="text-sm font-semibold text-blue-700 no-underline hover:text-blue-800"
-          to="/shipper/shipments"
-        >
-          ← Back to shipments
-        </Link>
         <Alert tone="danger" title="Shipment unavailable">
           {shipmentQuery.error.message}
         </Alert>
+        <Link
+          className="group inline-flex w-fit min-h-9 items-center gap-1.5 rounded-full border border-blue-200 bg-white px-3 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white"
+          to="/shipper/shipments"
+        >
+          <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-3.5 w-3.5 group-hover:brightness-0 group-hover:invert" />
+          Back
+        </Link>
       </div>
     );
 
@@ -137,16 +138,9 @@ export function ShipmentDetailPage() {
         : `Confirm ${confirmation?.action || "shipment action"}?`;
   return (
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
-      <Link
-        className="text-sm font-semibold text-blue-700 no-underline hover:text-blue-800"
-        to="/shipper/shipments"
-      >
-        ← My shipments
-      </Link>
-
       <header className="grid gap-4">
         <div className="flex items-end justify-between gap-4 max-lg:flex-col max-lg:items-start">
-          <ShipmentHeading shipment={shipment} eyebrow="SHIPMENT OVERVIEW" />
+          <ShipmentHeading shipment={shipment} eyebrow="SHIPMENT OVERVIEW" hideCargoSummary />
           <div className="flex flex-wrap gap-2">
             {canEdit && (
               <Button
@@ -197,24 +191,16 @@ export function ShipmentDetailPage() {
         <div className="grid gap-4 lg:col-span-2">
           <ShipmentInformation
             shipment={shipment}
+            description="Shipment information for transporters."
             pickupLabel="Pickup date"
             categoryLabel="Goods category"
             weightLabel="Cargo weight"
             postedLabel="Posted on"
-            description="Shipment information for transporters."
             canEditPhotos={canEdit}
             onRemoveImage={(image) =>
               setConfirmation({ type: "image", id: image.id })
             }
           />
-          {bids[0] && (
-            <Link
-              className="text-sm font-semibold text-blue-700 no-underline hover:text-blue-800"
-              to={`/shipper/messages?shipmentId=${id}&transporterId=${bids[0].transporterId}`}
-            >
-              ✉ Open shipment conversations
-            </Link>
-          )}
           {shipment.status === "COMPLETED" && (
             <ShipmentReviews
               shipmentId={id}
@@ -239,6 +225,14 @@ export function ShipmentDetailPage() {
           />
         </aside>
       </div>
+
+      <Link
+        className="group inline-flex w-fit min-h-9 items-center gap-1.5 rounded-full border border-blue-200 bg-white px-3 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white"
+        to="/shipper/shipments"
+      >
+        <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-3.5 w-3.5 group-hover:brightness-0 group-hover:invert" />
+        Back
+      </Link>
 
       <Modal
         open={Boolean(confirmation)}

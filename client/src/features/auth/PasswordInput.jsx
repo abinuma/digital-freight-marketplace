@@ -31,7 +31,6 @@ export function PasswordInput({
         type="button"
         onClick={() => setVisible((current) => !current)}
         aria-label={visible ? "Hide password" : "Show password"}
-        title={visible ? "Hide password" : "Show password"}
       >
         <span className="relative flex items-center justify-center h-5 w-5">
           <img

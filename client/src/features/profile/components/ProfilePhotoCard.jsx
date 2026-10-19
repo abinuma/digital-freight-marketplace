@@ -29,7 +29,6 @@ export function ProfilePhotoCard({
         <label
           htmlFor="profile-photo"
           className="absolute bottom-1 right-1 h-9 w-9 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors"
-          title="Choose photo"
         >
           <img
             src="/camera-solid-full.svg"
@@ -44,8 +43,6 @@ export function ProfilePhotoCard({
       </div>
 
       <h3 className="m-0 mt-4 text-sm font-bold text-slate-900">Profile Photo</h3>
-      <p className="m-0 mt-1 text-xs text-slate-400">JPEG, PNG, or WebP, up to 5 MB.</p>
-
       <form onSubmit={onSavePhoto} className="flex flex-col items-center w-full mt-4">
         <input
           className="sr-only"

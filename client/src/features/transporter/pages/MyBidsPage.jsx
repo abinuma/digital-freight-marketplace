@@ -22,6 +22,7 @@ const tones = {
   ACCEPTED: "success",
   DECLINED: "danger",
   WITHDRAWN: "neutral",
+  CANCELLED: "danger",
 };
 const money = (amount) =>
   new Intl.NumberFormat(undefined, {
@@ -47,6 +48,7 @@ export function MyBidsPage() {
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [assignWorking, setAssignWorking] = useState(false);
   const [assignError, setAssignError] = useState("");
+  const [assignedPlans, setAssignedPlans] = useState({});
 
   const cache = useQueryClient();
   const query = useQuery({
@@ -75,10 +77,15 @@ export function MyBidsPage() {
     setAssignWorking(true);
     setAssignError("");
     try {
-      await assignBidToJourneyPlan({
+      const assignment = await assignBidToJourneyPlan({
         journeyPlanId: selectedPlanId,
         bidId: assigningBid.id,
       });
+      const assignedPlan = activePlans.find((plan) => plan.id === selectedPlanId);
+      setAssignedPlans((current) => ({
+        ...current,
+        [assigningBid.id]: assignment?.journeyPlan || assignment?.assignment?.journeyPlan || assignedPlan,
+      }));
       setAssigningBid(null);
       setSelectedPlanId("");
       await cache.invalidateQueries({ queryKey: ["transporter"] });
@@ -162,15 +169,23 @@ export function MyBidsPage() {
           {bids.map((bid, index) => {
             const shipment = shipmentQueries[index]?.data;
             const shipmentUnavailable = shipmentQueries[index]?.isError;
+            const shipmentSummary = bid.shipment;
+            const isCancelled = shipment?.status === "CANCELLED"
+              || shipmentSummary?.status === "CANCELLED"
+              || Boolean(shipmentSummary?.removedAt);
+            const displayedStatus = isCancelled ? "CANCELLED" : bid.status;
             return (
               <Card className="grid gap-4 p-4" key={bid.id}>
                 <div className="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-2">
                   <div className="grid justify-items-start gap-2">
-                    <Badge tone={tones[bid.status]}>{bid.status}</Badge>
+                    <Badge tone={tones[displayedStatus]}>{displayedStatus}</Badge>
                     <h2 className="m-0 text-base font-semibold text-slate-900">
                       {shipment?.goodsDescription ||
-                        (shipmentUnavailable
-                          ? "Shipment unavailable"
+                        shipmentSummary?.goodsDescription ||
+                        (isCancelled
+                          ? "This shipment is cancelled"
+                          : shipmentUnavailable
+                          ? "Shipment details unavailable"
                           : "Loading shipment…")}
                     </h2>
                   </div>
@@ -186,33 +201,24 @@ export function MyBidsPage() {
 
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
                   <span className="font-medium">
-                    {shipment?.pickupLocation || "Pickup location"}
+                    {shipment?.pickupLocation || shipmentSummary?.pickupLocation || "—"}
                   </span>
                   <span className="text-blue-700" aria-hidden="true">
                     →
                   </span>
                   <span className="font-medium">
-                    {shipment?.deliveryLocation || "Delivery location"}
+                    {shipment?.deliveryLocation || shipmentSummary?.deliveryLocation || "—"}
                   </span>
                 </div>
 
-                {bid.status === "ACCEPTED" && (
-                  bid.journeyPlanAssignment ? (
-                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-blue-200 bg-blue-50/70 px-3 py-2 text-xs">
-                      <div className="flex items-center gap-2 text-blue-950 font-medium">
-                        <span className="font-bold">Assigned Trip:</span>
-                        <span>
-                          {bid.journeyPlanAssignment.journeyPlan?.originCity} → {bid.journeyPlanAssignment.journeyPlan?.destinationCity}
-                        </span>
-                        <span className="text-blue-700">
-                          (Departure: {dateLabel(bid.journeyPlanAssignment.journeyPlan?.departureDate)})
-                        </span>
-                      </div>
+                {bid.status === "ACCEPTED" && !isCancelled && (
+                  bid.journeyPlanAssignment || assignedPlans[bid.id] ? (
+                    <div className="text-sm">
                       <Link
-                        className="font-semibold text-blue-700 underline hover:text-blue-900"
+                        className="font-semibold text-blue-700 underline underline-offset-2 hover:text-blue-900"
                         to="/transporter/journey-plans"
                       >
-                        View Journey Plans →
+                        Journey plan
                       </Link>
                     </div>
                   ) : (
@@ -240,13 +246,19 @@ export function MyBidsPage() {
                     <span>Pickup offered {dateLabel(bid.pickupDate)}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      className="inline-flex min-h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50"
-                      to={`/transporter/shipments/${bid.shipmentId}`}
-                    >
-                      View shipment
-                    </Link>
-                    {bid.status === "PENDING" && (
+                    {isCancelled ? (
+                      <span className="inline-flex min-h-8 cursor-not-allowed items-center justify-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-400" aria-disabled="true">
+                        Shipment cancelled
+                      </span>
+                    ) : (
+                      <Link
+                        className="inline-flex min-h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50"
+                        to={`/transporter/shipments/${bid.shipmentId}`}
+                      >
+                        View shipment
+                      </Link>
+                    )}
+                    {bid.status === "PENDING" && !isCancelled && (
                       <Button
                         size="sm"
                         variant="danger"
@@ -346,7 +358,8 @@ export function MyBidsPage() {
       <Modal
         open={Boolean(assigningBid)}
         onClose={() => !assignWorking && setAssigningBid(null)}
-        title="Assign load to Journey Plan"
+        title="Assign load to journey plan"
+        className="max-w-2xl rounded-2xl"
       >
         {(() => {
           const assigningShipment = shipmentQueries.find(
@@ -355,16 +368,15 @@ export function MyBidsPage() {
 
           return (
             <div className="grid gap-4">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
-                <span className="font-semibold text-slate-800">
-                  {assigningShipment?.goodsDescription || "Shipment load"}
-                </span>
-                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
-                  <span>Weight: <strong>{assigningShipment?.weightKg?.toLocaleString()} kg</strong></span>
+              <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                <span className="block text-[10px] font-bold tracking-[0.16em] text-blue-700">SHIPMENT</span>
+                <strong className="mt-1 block text-sm text-slate-900">{assigningShipment?.goodsDescription || "Shipment load"}</strong>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                  <span className="rounded-full border border-blue-100 bg-white px-3 py-1.5 text-slate-600">Weight <strong className="text-slate-900">{assigningShipment?.weightKg?.toLocaleString()} kg</strong></span>
                   {assigningShipment?.volumeM3 != null && (
-                    <span>Volume: <strong>{assigningShipment.volumeM3} m³</strong></span>
+                    <span className="rounded-full border border-blue-100 bg-white px-3 py-1.5 text-slate-600">Volume <strong className="text-slate-900">{assigningShipment.volumeM3} m³</strong></span>
                   )}
-                  <span>Route: <strong>{assigningShipment?.pickupLocation} → {assigningShipment?.deliveryLocation}</strong></span>
+                  <span className="rounded-full border border-blue-100 bg-white px-3 py-1.5 text-slate-600">Route <strong className="text-slate-900">{assigningShipment?.pickupLocation} <span className="px-1 text-blue-600">→</span> {assigningShipment?.deliveryLocation}</strong></span>
                 </div>
               </div>
 
@@ -393,8 +405,8 @@ export function MyBidsPage() {
                   </Link>
                 </div>
               ) : (
-                <div className="grid gap-2 max-h-60 overflow-y-auto pr-1">
-                  <p className="m-0 text-xs font-medium text-slate-500">
+                <div className="grid max-h-[min(50vh,400px)] gap-3 overflow-y-auto pr-1">
+                  <p className="m-0 text-sm font-semibold text-slate-700">
                     Select a suitable journey plan for this delivery:
                   </p>
                   {activePlans.map((plan) => {
@@ -403,17 +415,25 @@ export function MyBidsPage() {
                       !assigningShipment?.volumeM3 ||
                       !plan.maxVolumeM3 ||
                       plan.remainingVolumeM3 >= assigningShipment.volumeM3;
-                    const isEligible = fitsWeight && fitsVolume;
+                    const fitsPlanStatus = plan.status === "ACTIVE";
+                    const isEligible = fitsWeight && fitsVolume && fitsPlanStatus;
+                    const weightPercent = plan.maxWeightKg > 0
+                      ? Math.min(100, Math.round((plan.allocatedWeightKg / plan.maxWeightKg) * 100))
+                      : 0;
+                    const volumePercent = plan.maxVolumeM3 > 0
+                      ? Math.min(100, Math.round((plan.allocatedVolumeM3 / plan.maxVolumeM3) * 100))
+                      : 0;
 
                     return (
                       <label
                         key={plan.id}
-                        className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition-colors ${
+                        aria-disabled={!isEligible}
+                        className={`flex items-start gap-3 rounded-2xl border p-4 text-sm transition-colors ${
                           !isEligible
-                            ? "border-slate-200 bg-slate-100 opacity-60 cursor-not-allowed"
+                            ? "cursor-not-allowed border-slate-200 bg-slate-50"
                             : selectedPlanId === plan.id
-                            ? "border-blue-600 bg-blue-50/50"
-                            : "border-slate-200 bg-white hover:bg-slate-50"
+                            ? "cursor-pointer border-2 border-blue-600 bg-blue-50/70"
+                            : "cursor-pointer border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50"
                         }`}
                       >
                         <input
@@ -423,32 +443,44 @@ export function MyBidsPage() {
                           disabled={!isEligible}
                           checked={selectedPlanId === plan.id}
                           onChange={() => setSelectedPlanId(plan.id)}
-                          className="mt-1"
+                          className="sr-only"
                         />
-                        <div className="grid flex-1 gap-1">
-                          <div className="flex items-center justify-between">
-                            <strong className="text-slate-900">
+                        <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${selectedPlanId === plan.id ? "border-blue-600 bg-blue-600 text-white" : "border-slate-400 bg-white text-transparent"}`} aria-hidden="true">
+                          <span className="text-xs font-bold">✓</span>
+                        </span>
+                        <div className="grid min-w-0 flex-1 gap-2">
+                          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                            <div>
+                              <strong className="block text-slate-900">
                               {plan.originCity} → {plan.destinationCity}
-                            </strong>
-                            <span className="text-xs text-slate-500">
-                              {dateLabel(plan.departureDate)}
-                            </span>
+                              </strong>
+                              <span className="block text-xs text-slate-500">{dateLabel(plan.departureDate)}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="block text-[10px] text-slate-500">Full load</span>
+                              <strong className="text-base text-slate-900">{money(plan.fullLoadPrice)}</strong>
+                            </div>
                           </div>
-                          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
-                            <span>
-                              Remaining weight: <strong>{plan.remainingWeightKg?.toLocaleString()} kg</strong>
-                            </span>
-                            {plan.maxVolumeM3 ? (
-                              <span>
-                                Remaining volume: <strong>{plan.remainingVolumeM3?.toLocaleString()} m³</strong>
-                              </span>
-                            ) : null}
+                          <div className={`grid gap-3 ${plan.maxVolumeM3 != null ? "sm:grid-cols-2" : ""}`}>
+                            <div>
+                              <div className="mb-1 flex justify-between gap-2 text-[10px] text-slate-500"><span>Weight</span><strong className="text-slate-700">{plan.allocatedWeightKg?.toLocaleString()} / {plan.maxWeightKg?.toLocaleString()} kg</strong></div>
+                              <div className="h-1.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-blue-500" style={{ width: `${weightPercent}%` }} /></div>
+                            </div>
+                            {plan.maxVolumeM3 != null && (
+                              <div>
+                                <div className="mb-1 flex justify-between gap-2 text-[10px] text-slate-500"><span>Volume</span><strong className="text-slate-700">{plan.allocatedVolumeM3?.toLocaleString()} / {plan.maxVolumeM3?.toLocaleString()} m³</strong></div>
+                                <div className="h-1.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-blue-500" style={{ width: `${volumePercent}%` }} /></div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-500">
+                            <span>Remaining: <strong className="text-slate-700">{plan.remainingWeightKg?.toLocaleString()} kg</strong>{plan.maxVolumeM3 != null && <> · <strong className="text-slate-700">{plan.remainingVolumeM3?.toLocaleString()} m³</strong></>}</span>
+                            <span>{plan.assignments?.length ?? plan._count?.assignments ?? 0} assigned loads</span>
                           </div>
                           {!isEligible && (
-                            <div className="text-xs text-red-700 font-medium">
-                              {!fitsWeight && `Exceeds remaining weight (has ${plan.remainingWeightKg} kg, needs ${assigningShipment?.weightKg} kg). `}
-                              {!fitsVolume && `Exceeds remaining volume (has ${plan.remainingVolumeM3} m³, needs ${assigningShipment?.volumeM3} m³).`}
-                            </div>
+                            <span className="w-fit rounded-full bg-red-100 px-2.5 py-1 text-[10px] font-semibold text-red-800">
+                              {!fitsPlanStatus ? "Plan is inactive" : !fitsWeight ? "Not enough weight capacity" : "Not enough volume capacity"}
+                            </span>
                           )}
                         </div>
                       </label>
@@ -457,7 +489,7 @@ export function MyBidsPage() {
                 </div>
               )}
 
-              <div className="mt-4 flex justify-end gap-2 max-sm:flex-col-reverse">
+              <div className="-mx-5 -mb-5 mt-1 flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 max-sm:flex-col-reverse">
                 <Button
                   variant="secondary"
                   onClick={() => setAssigningBid(null)}
@@ -474,7 +506,7 @@ export function MyBidsPage() {
                       <Spinner /> Assigning...
                     </>
                   ) : (
-                    "Confirm Assignment"
+                    "Assign load"
                   )}
                 </Button>
               </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../../shared/components/index.js';
 import { resetPassword } from './auth.api.js';
 import { AuthField } from './AuthField.jsx';
@@ -9,6 +9,7 @@ import { PasswordInput } from './PasswordInput.jsx';
 import { PasswordRulesList } from './PasswordRulesList.jsx';
 
 export function ResetPasswordPage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
   const [form, setForm] = useState({ password: '', confirmPassword: '' });
@@ -51,11 +52,14 @@ export function ResetPasswordPage() {
   return (
     <AuthPageLayout
       title={isComplete ? 'Password updated' : 'Reset Password'}
-      subtitle={isComplete ? 'Your password has been changed. You can sign in with your new password.' : 'Choose a new password for your account.'}
-      footer={<Link to="/login">← Back to Login</Link>}
+      subtitle={isComplete ? 'You can sign in with your new password.' : 'Choose a new password for your account.'}
     >
       {isComplete ? (
-        <div className={`     grid gap-4 text-slate-500 text-base text-center   auth-success`} role="status"><p>Password updated</p><Link className={`inline-flex min-h-10 items-center justify-center gap-2 py-3 px-4 border rounded-lg cursor-pointer font-bold leading-tight no-underline transition  disabled:cursor-not-allowed disabled:opacity-50 ui-button bg-blue-700 text-white   ui-button--primary w-full min-h-10 rounded-lg text-sm auth-submit`} to="/login">Go to Sign In</Link></div>
+        <div className="auth-success" role="status">
+          <Button className="w-full text-sm" onClick={() => navigate('/login')}>
+            Sign in
+          </Button>
+        </div>
       ) : (
         <form className={`grid gap-4      auth-form`} onSubmit={handleSubmit} noValidate>
           <AuthField id="password" label="New Password" error={fieldErrors.password}>

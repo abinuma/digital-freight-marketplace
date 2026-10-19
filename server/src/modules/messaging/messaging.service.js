@@ -3,8 +3,10 @@ import * as messagingRepository from './messaging.repository.js';
 import * as notificationService from '../notification/notification.service.js';
 
 function serializeConversation(conversation, user) {
-  const counterpart = user.role === 'SHIPPER' ? conversation.transporter : conversation.shipper;
-  const { image, ...profile } = counterpart;
+  const isShipper = user.role?.toUpperCase() === 'SHIPPER';
+  const counterpart = isShipper ? conversation.transporter : conversation.shipper;
+  const photo = counterpart?.image || counterpart?.profilePhoto || null;
+  const { image: _img, profilePhoto: _pPhoto, ...profile } = counterpart || {};
 
   return {
     id: conversation.id,
@@ -12,8 +14,8 @@ function serializeConversation(conversation, user) {
     transporterId: conversation.transporterId,
     shipmentIds: conversation.shipmentIds,
     updatedAt: conversation.updatedAt,
-    counterpart: { ...profile, profilePhoto: image },
-    lastMessage: conversation.messages[0] || null,
+    counterpart: { ...profile, profilePhoto: photo, image: photo },
+    lastMessage: conversation.messages?.[0] || null,
   };
 }
 
@@ -48,7 +50,24 @@ export async function startConversation(user, transporterId) {
 export async function listConversationBids(user, conversationId) {
   const conversation = await getParticipantConversation(user, conversationId);
   const bids = await messagingRepository.findConversationBids(conversation);
-  return bids.map((bid) => ({ ...bid, price: Number(bid.price), shipment: { ...bid.shipment, weightKg: Number(bid.shipment.weightKg) } }));
+  return bids.map((bid) => {
+    const shipperPhoto = bid.shipment?.shipper?.image || bid.shipment?.shipper?.profilePhoto || null;
+    return {
+      ...bid,
+      price: Number(bid.price),
+      shipment: {
+        ...bid.shipment,
+        weightKg: Number(bid.shipment.weightKg),
+        shipper: bid.shipment?.shipper
+          ? {
+              ...bid.shipment.shipper,
+              profilePhoto: shipperPhoto,
+              image: shipperPhoto,
+            }
+          : null,
+      },
+    };
+  });
 }
 
 export async function listMessages(user, conversationId) {

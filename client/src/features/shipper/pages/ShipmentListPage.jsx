@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Alert,
@@ -25,14 +25,8 @@ const tones = {
   COMPLETED: "success",
   CANCELLED: "danger",
 };
-const formatDate = (date) =>
-  new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(date));
-
 export function ShipmentListPage() {
+  const navigate = useNavigate();
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const query = useQuery({
@@ -56,12 +50,6 @@ export function ShipmentListPage() {
             Track and manage the freight you’ve posted.
           </p>
         </div>
-        <Link
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-slate-800"
-          to="/shipper/shipments/new"
-        >
-          Post a shipment
-        </Link>
       </div>
 
       {query.isError && (
@@ -112,16 +100,25 @@ export function ShipmentListPage() {
                 <tr>
                   <th className="px-3 py-3 font-medium">Shipment</th>
                   <th className="px-3 py-3 font-medium">Route</th>
-                  <th className="px-3 py-3 font-medium">Pickup date</th>
                   <th className="px-3 py-3 font-medium">Status</th>
-                  <th className="px-3 py-3 font-medium">
-                    <span className="sr-only">Actions</span>
-                  </th>
                 </tr>
               </thead>
               <tbody>
                 {shipments.map((shipment) => (
-                  <tr className="border-t border-slate-100" key={shipment.id}>
+                  <tr
+                    className="cursor-pointer border-t border-slate-100 hover:bg-slate-50"
+                    key={shipment.id}
+                    onClick={() => navigate(`/shipper/shipments/${shipment.id}`)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        navigate(`/shipper/shipments/${shipment.id}`);
+                      }
+                    }}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={`Open shipment: ${shipment.goodsDescription}`}
+                  >
                     <td className="max-w-64 px-3 py-2">
                       <Link
                         className="block truncate font-semibold text-slate-800 no-underline hover:text-blue-700"
@@ -129,9 +126,6 @@ export function ShipmentListPage() {
                       >
                         {shipment.goodsDescription}
                       </Link>
-                      <span className="mt-0.5 block text-xs text-slate-500">
-                        {shipment.goodsType} · {shipment.weightKg} kg
-                      </span>
                     </td>
                     <td className="px-3 py-2 text-slate-600">
                       <span className="block max-w-64 truncate">
@@ -140,21 +134,10 @@ export function ShipmentListPage() {
                         {shipment.deliveryLocation}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-slate-600">
-                      {formatDate(shipment.pickupDate)}
-                    </td>
                     <td className="px-3 py-2">
                       <Badge tone={tones[shipment.status]}>
                         {shipment.status.replace("_", " ")}
                       </Badge>
-                    </td>
-                    <td className="px-3 py-2">
-                      <Link
-                        className="whitespace-nowrap font-semibold text-blue-700 no-underline hover:text-blue-800"
-                        to={`/shipper/shipments/${shipment.id}`}
-                      >
-                        View&nbsp;→
-                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -174,14 +157,6 @@ export function ShipmentListPage() {
                 ? "Choose another status filter to see more shipments."
                 : "Create a shipment to begin receiving transporter bids."}
             </p>
-            {!status && (
-              <Link
-                className="mt-2 inline-flex min-h-10 items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-blue-800"
-                to="/shipper/shipments/new"
-              >
-                Post a shipment
-              </Link>
-            )}
           </div>
         )}
 

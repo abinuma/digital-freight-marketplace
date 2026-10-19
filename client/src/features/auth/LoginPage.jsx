@@ -56,7 +56,11 @@ export function LoginPage() {
         replace: true,
       });
     } catch (error) {
-      setFormError(error.message);
+      setFormError(
+        error.status === 401 || error.status === 404
+          ? "Invalid credentials."
+          : error.message,
+      );
     } finally {
       setIsSubmitting(false);
     }
