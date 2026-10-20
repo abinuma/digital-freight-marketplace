@@ -9,6 +9,24 @@ export async function createJourneyPlan(req, res, next) {
   }
 }
 
+export async function updateJourneyPlan(req, res, next) {
+  try {
+    const plan = await journeyPlanService.updateJourneyPlan(req.user, req.params.id, req.body);
+    return res.json({ data: plan });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function deleteJourneyPlan(req, res, next) {
+  try {
+    const plan = await journeyPlanService.deleteJourneyPlan(req.user, req.params.id);
+    return res.json({ data: plan });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function listMyJourneyPlans(req, res, next) {
   try {
     const plans = await journeyPlanService.listMyJourneyPlans(req.user, req.query);

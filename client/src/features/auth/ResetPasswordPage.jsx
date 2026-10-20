@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../../shared/components/index.js';
-import { resetPassword } from './auth.api.js';
+import { resetPassword, verifyResetToken } from './auth.api.js';
 import { AuthField } from './AuthField.jsx';
 import { AuthPageLayout } from './AuthPageLayout.jsx';
 import { errorsFromIssues, passwordResetSchema } from './auth.schemas.js';
@@ -12,11 +12,48 @@ export function ResetPasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
+  const errorParam = searchParams.get('error') || '';
+
   const [form, setForm] = useState({ password: '', confirmPassword: '' });
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState('');
   const [isComplete, setIsComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isValidating, setIsValidating] = useState(Boolean(token && !errorParam));
+  const [isExpired, setIsExpired] = useState(Boolean(errorParam || !token));
+
+  useEffect(() => {
+    if (errorParam) {
+      setIsExpired(true);
+      setIsValidating(false);
+      return;
+    }
+
+    if (!token) {
+      setIsExpired(true);
+      setIsValidating(false);
+      return;
+    }
+
+    let isMounted = true;
+    verifyResetToken(token)
+      .then((data) => {
+        if (!isMounted) return;
+        if (!data?.valid) {
+          setIsExpired(true);
+        }
+      })
+      .catch(() => {
+        // If checking encounters a temporary network issue, do not falsely lock out; allow form submit
+      })
+      .finally(() => {
+        if (isMounted) setIsValidating(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token, errorParam]);
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -27,8 +64,8 @@ export function ResetPasswordPage() {
   async function handleSubmit(event) {
     event.preventDefault();
     setFormError('');
-    if (!token) {
-      setFormError('This reset link is missing its token. Request a new password reset link.');
+    if (!token || isExpired) {
+      setIsExpired(true);
       return;
     }
     const parsed = passwordResetSchema.safeParse(form);
@@ -43,10 +80,47 @@ export function ResetPasswordPage() {
       await resetPassword({ token, newPassword: parsed.data.password });
       setIsComplete(true);
     } catch (error) {
-      setFormError(error.message);
+      const message = error.message || '';
+      if (
+        message.toLowerCase().includes('expired') ||
+        message.toLowerCase().includes('already been used') ||
+        message.toLowerCase().includes('invalid token')
+      ) {
+        setIsExpired(true);
+      } else {
+        setFormError(message);
+      }
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (isValidating) {
+    return (
+      <AuthPageLayout
+        title="Verifying link…"
+        subtitle="Please wait while we verify your password reset link."
+      >
+        <div className="flex justify-center items-center py-6 text-slate-500 text-sm" role="status">
+          Verifying link…
+        </div>
+      </AuthPageLayout>
+    );
+  }
+
+  if (isExpired) {
+    return (
+      <AuthPageLayout
+        title="Link expired"
+        subtitle="This password reset link has expired or has already been used."
+      >
+        <div className="grid gap-4 auth-expired" role="status">
+          <Button className="w-full text-sm" onClick={() => navigate('/forgot-password')}>
+            Request a new reset link
+          </Button>
+        </div>
+      </AuthPageLayout>
+    );
   }
 
   return (
@@ -61,7 +135,7 @@ export function ResetPasswordPage() {
           </Button>
         </div>
       ) : (
-        <form className={`grid gap-4      auth-form`} onSubmit={handleSubmit} noValidate>
+        <form className="grid gap-4 auth-form" onSubmit={handleSubmit} noValidate>
           <AuthField id="password" label="New Password" error={fieldErrors.password}>
             <PasswordInput id="password" name="password" value={form.password} onChange={updateField} autoComplete="new-password" error={fieldErrors.password} />
           </AuthField>
@@ -69,8 +143,10 @@ export function ResetPasswordPage() {
             <PasswordInput id="confirmPassword" name="confirmPassword" value={form.confirmPassword} onChange={updateField} autoComplete="new-password" error={fieldErrors.confirmPassword} />
           </AuthField>
           <PasswordRulesList password={form.password} />
-          {formError && <p className={`m-0 text-slate-500 text-sm auth-form__error`} role="alert">{formError}</p>}
-          <Button type="submit" className={`w-full min-h-10 rounded-lg text-sm auth-submit`} disabled={isSubmitting}>{isSubmitting ? 'Updating…' : 'Update Password'}</Button>
+          {formError && <p className="m-0 text-slate-500 text-sm auth-form__error" role="alert">{formError}</p>}
+          <Button type="submit" className="w-full min-h-10 rounded-lg text-sm auth-submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Updating…' : 'Update Password'}
+          </Button>
         </form>
       )}
     </AuthPageLayout>

@@ -36,8 +36,12 @@ export const upsertVehicleSchema = {
   params: z.object({ id: userId }),
   body: z.object({
     type: z.string().trim().min(1).max(50),
-    capacityTons: z.number().positive().max(99_999_999.99),
-    volumeM3: z.number().positive().max(99_999_999.99).nullable().optional(),
+    loadSize: z.preprocess(
+      (val) => (typeof val === 'string' ? val.trim().toUpperCase().replace(/\s+/g, '_') : val),
+      z.enum(['FULL_LOAD', 'HALF_LOAD', 'QUARTER_LOAD', 'SMALL_LOAD'])
+    ).optional().default('FULL_LOAD'),
+    capacityTons: z.number().positive().max(99_999_999.99).optional(),
+    capacityKg: z.number().positive().max(99_999_999.99).optional(),
     plateNumber: z.string().trim().min(1).max(20),
     photo: z.string().url().max(500).nullable().optional(),
   }),

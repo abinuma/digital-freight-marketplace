@@ -207,7 +207,7 @@ Implement the `auth` module — user registration, login, logout, password reset
 
    | Layer | File | Endpoints |
    |-------|------|-----------|
-   | Route | `auth.routes.js` | POST `/auth/register`, POST `/auth/login`, POST `/auth/logout`, POST `/auth/forgot-password`, POST `/auth/reset-password`, GET `/auth/me`, POST `/auth/complete-profile` |
+   | Route | `auth.routes.js` | POST `/auth/send-verification-code`, POST `/auth/register`, POST `/auth/login`, POST `/auth/logout`, POST `/auth/forgot-password`, POST `/auth/reset-password`, GET `/auth/verify-reset-token`, GET `/auth/me`, POST `/auth/complete-profile` |
    | Controller | `auth.controller.js` | |
    | Service | `auth.service.js` | |
    | Repository | `auth.repository.js` | |
@@ -228,13 +228,14 @@ Better Auth's credential account is the sole password-hash store. Do not add a d
    | GET | `/users/:id/reviews` | Reviews received |
 
 6. **Write Zod validation schemas**
-   - Registration: name (required), email (valid format, unique), phone (required for manual signup), password (min 8, uppercase, lowercase, digit per [security.md § 2](./architecture/security.md)); enforce password rules on signup and reset. Use Better Auth's built-in scrypt hashing. Role must be SHIPPER or TRANSPORTER. The authenticated profile-completion endpoint requires phone and role for Google OAuth users.
+   - Registration: name (required), email (valid format, unique), phone (required for manual signup), password (min 8, uppercase, lowercase, digit per [security.md § 2](./architecture/security.md)), verification code (6 digits, required). A verification code must be dispatched to the email via `POST /auth/send-verification-code` and validated before the user account is created. Enforce password rules on signup and reset. Use Better Auth's built-in scrypt hashing. Role must be SHIPPER or TRANSPORTER. The authenticated profile-completion endpoint requires phone and role for Google OAuth users.
    - Profile update: name, phone, location, profilePhoto (all optional).
    - Vehicle: type, capacityTons, plateNumber (all required).
 
 7. **Rate-limit auth endpoints**
    - `/auth/login`, `/auth/register`: 10 req / 15 min per IP per [security.md § 8](./architecture/security.md).
    - `/auth/forgot-password`: 3 req / 15 min per IP.
+   - `/auth/send-verification-code`: 5 req / 15 min per IP.
 
 8. **Write tests**
    - Unit tests: auth service (registration validation, password hashing, duplicate email rejection).
@@ -313,7 +314,7 @@ Implement shipment CRUD, status lifecycle, image upload, and the search/browse/f
 
 3. **Implement search and filtering**
    Per FR-200 through FR-205:
-   - Filter by: `pickupLocation`, `deliveryLocation`, `goodsType`, date range.
+   - Filter by: `pickupLocation`, `deliveryLocation`, `goodsType`, date range. Standardized load categories: Agriculture, Construction, Food Products, Beverage, Other.
    - Text search across `goodsDescription` and `specialRequirements` (FR-204).
    - Sort by: `createdAt` desc (default), `pickupDate`. Defer distance sorting: the current Transporter profile stores location as free text, not coordinates, so calculating reliable distance requires a separate location data/design decision.
    - Pagination per [api.md § 7](./architecture/api.md): `?page=1&limit=20`, response includes `meta.pagination`.
@@ -632,7 +633,7 @@ Build the complete React frontend — all pages, components, API integration, an
 #### 7C. Shipper Pages
 
 1. **Shipper dashboard** — Overview of own shipments (by status), received bids count, messages per FR-107. The authenticated dashboard summary endpoint provides these totals and the latest five shipments; message totals are cumulative, not unread counts.
-2. **Create/Edit shipment form** — All fields from FR-101, map picker (Leaflet) for locations, date picker, image upload (drag-and-drop or file input), save as draft or publish.
+2. **Create/Edit shipment form** — All fields from FR-101, pickup and delivery city selectors backed by the shared Ethiopia city list (excluding pickup from delivery choices), date picker, image upload (drag-and-drop or file input), save as draft or publish.
 3. **Shipment detail page** — Full info, images, status badge, action buttons (publish, cancel, complete), list of received bids with Transporter profile/rating, accept/decline bid buttons.
 4. **My shipments list** — Paginated, filterable by status through the shipper-scoped `status` query on `GET /shipments`.
 

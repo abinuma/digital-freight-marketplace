@@ -5,6 +5,11 @@ export async function getPublicProfile(userId) {
   return data.data;
 }
 
+export async function listUserReviews(userId) {
+  const { data } = await apiClient.get(`/users/${userId}/reviews`, { params: { limit: 5 } });
+  return { reviews: data.data, pagination: data.meta.pagination };
+}
+
 export async function updateProfile(userId, profile) {
   const { data } = await apiClient.patch(`/users/${userId}`, profile);
   return data.data;

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -15,6 +15,7 @@ import {
 } from "../../../shared/components/index.js";
 import { getShipment, listMyBids, withdrawBid } from "../transporter.api.js";
 import { assignBidToJourneyPlan, listMyJourneyPlans } from "../journeyPlan.api.js";
+import { formatLoadSize, formatShipmentLoad, getLoadFraction } from "../../../shared/constants/loadSizes.js";
 
 const statuses = ["PENDING", "ACCEPTED", "DECLINED", "WITHDRAWN"];
 const tones = {
@@ -38,6 +39,8 @@ const dateLabel = (date) =>
   }).format(new Date(date));
 
 export function MyBidsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const assignShipmentId = searchParams.get("assignShipmentId");
   const showSuccess = useSuccessToast();
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
@@ -52,11 +55,26 @@ export function MyBidsPage() {
 
   const cache = useQueryClient();
   const query = useQuery({
-    queryKey: ["transporter", "myBids", status, page],
-    queryFn: () => listMyBids({ status: status || undefined, page, limit: 10 }),
+    queryKey: ["transporter", "myBids", status, page, assignShipmentId],
+    queryFn: () => listMyBids({
+      status: assignShipmentId ? "ACCEPTED" : status || undefined,
+      shipmentId: assignShipmentId || undefined,
+      page,
+      limit: 10,
+    }),
     refetchInterval: 15_000,
   });
   const bids = query.data?.bids || [];
+  useEffect(() => {
+    if (!assignShipmentId || query.isPending || query.isError) return;
+    const acceptedBid = bids.find((bid) => bid.status === "ACCEPTED");
+    if (acceptedBid && !acceptedBid.journeyPlanAssignment) {
+      setAssigningBid(acceptedBid);
+      setSelectedPlanId("");
+      setAssignError("");
+    }
+    setSearchParams({}, { replace: true });
+  }, [assignShipmentId, bids, query.isError, query.isPending, setSearchParams]);
   const shipmentQueries = useQueries({
     queries: bids.map((bid) => ({
       queryKey: ["transporter", "bidShipment", bid.shipmentId],
@@ -224,7 +242,7 @@ export function MyBidsPage() {
                   ) : (
                     <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs">
                       <div className="text-amber-800">
-                        <strong>Bid Accepted:</strong> Assign this load to a Journey Plan to reserve truckload capacity.
+                        Assign this load to a Journey Plan to reserve truckload capacity.
                       </div>
                       <Button
                         size="sm"
@@ -359,7 +377,8 @@ export function MyBidsPage() {
         open={Boolean(assigningBid)}
         onClose={() => !assignWorking && setAssigningBid(null)}
         title="Assign load to journey plan"
-        className="max-w-2xl rounded-2xl"
+        className="flex max-h-[calc(100dvh-1.5rem)] max-w-2xl flex-col rounded-2xl"
+        contentClassName="flex min-h-0 flex-1 flex-col"
       >
         {(() => {
           const assigningShipment = shipmentQueries.find(
@@ -367,15 +386,12 @@ export function MyBidsPage() {
           )?.data;
 
           return (
-            <div className="grid gap-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4">
               <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
                 <span className="block text-[10px] font-bold tracking-[0.16em] text-blue-700">SHIPMENT</span>
                 <strong className="mt-1 block text-sm text-slate-900">{assigningShipment?.goodsDescription || "Shipment load"}</strong>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                  <span className="rounded-full border border-blue-100 bg-white px-3 py-1.5 text-slate-600">Weight <strong className="text-slate-900">{assigningShipment?.weightKg?.toLocaleString()} kg</strong></span>
-                  {assigningShipment?.volumeM3 != null && (
-                    <span className="rounded-full border border-blue-100 bg-white px-3 py-1.5 text-slate-600">Volume <strong className="text-slate-900">{assigningShipment.volumeM3} m³</strong></span>
-                  )}
+                  <span className="rounded-full border border-blue-100 bg-white px-3 py-1.5 text-slate-600">Load size <strong className="text-slate-900">{formatShipmentLoad(assigningShipment) || "Full load"}</strong></span>
                   <span className="rounded-full border border-blue-100 bg-white px-3 py-1.5 text-slate-600">Route <strong className="text-slate-900">{assigningShipment?.pickupLocation} <span className="px-1 text-blue-600">→</span> {assigningShipment?.deliveryLocation}</strong></span>
                 </div>
               </div>
@@ -405,24 +421,31 @@ export function MyBidsPage() {
                   </Link>
                 </div>
               ) : (
-                <div className="grid max-h-[min(50vh,400px)] gap-3 overflow-y-auto pr-1">
+                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
                   <p className="m-0 text-sm font-semibold text-slate-700">
                     Select a suitable journey plan for this delivery:
                   </p>
                   {activePlans.map((plan) => {
-                    const fitsWeight = plan.remainingWeightKg >= (assigningShipment?.weightKg || 0);
-                    const fitsVolume =
-                      !assigningShipment?.volumeM3 ||
-                      !plan.maxVolumeM3 ||
-                      plan.remainingVolumeM3 >= assigningShipment.volumeM3;
+                    const isSmallLoad = assigningShipment?.loadSize === 'SMALL_LOAD';
+                    const maxWeight = Number(plan.maxWeightKg || 10000);
+                    const allocatedWeight = Number(plan.allocatedWeightKg || 0);
+                    const requiredWeightKg = isSmallLoad
+                      ? Number(assigningShipment?.weightKg || 0)
+                      : maxWeight * getLoadFraction(assigningShipment?.loadSize);
+                    const capacityPercent = maxWeight > 0
+                      ? Math.min(100, Math.round((allocatedWeight / maxWeight) * 100))
+                      : plan.allocatedLoadFraction != null
+                        ? Math.min(100, Math.round(Number(plan.allocatedLoadFraction) * 100))
+                        : 0;
+                    const remainingPercent = Math.max(0, 100 - capacityPercent);
+                    const remainingWeight = Math.max(0, maxWeight - allocatedWeight);
+
+                    // Capacity remaining is strictly calculated for mass
+                    const fitsWeight = Number.isFinite(requiredWeightKg)
+                      && requiredWeightKg > 0
+                      && remainingWeight + 0.01 >= requiredWeightKg;
                     const fitsPlanStatus = plan.status === "ACTIVE";
-                    const isEligible = fitsWeight && fitsVolume && fitsPlanStatus;
-                    const weightPercent = plan.maxWeightKg > 0
-                      ? Math.min(100, Math.round((plan.allocatedWeightKg / plan.maxWeightKg) * 100))
-                      : 0;
-                    const volumePercent = plan.maxVolumeM3 > 0
-                      ? Math.min(100, Math.round((plan.allocatedVolumeM3 / plan.maxVolumeM3) * 100))
-                      : 0;
+                    const isEligible = fitsWeight && fitsPlanStatus;
 
                     return (
                       <label
@@ -454,32 +477,27 @@ export function MyBidsPage() {
                               <strong className="block text-slate-900">
                               {plan.originCity} → {plan.destinationCity}
                               </strong>
-                              <span className="block text-xs text-slate-500">{dateLabel(plan.departureDate)}</span>
                             </div>
                             <div className="text-right">
-                              <span className="block text-[10px] text-slate-500">Full load</span>
+                              <span className="block text-[10px] text-slate-500">Full load price</span>
                               <strong className="text-base text-slate-900">{money(plan.fullLoadPrice)}</strong>
                             </div>
                           </div>
-                          <div className={`grid gap-3 ${plan.maxVolumeM3 != null ? "sm:grid-cols-2" : ""}`}>
-                            <div>
-                              <div className="mb-1 flex justify-between gap-2 text-[10px] text-slate-500"><span>Weight</span><strong className="text-slate-700">{plan.allocatedWeightKg?.toLocaleString()} / {plan.maxWeightKg?.toLocaleString()} kg</strong></div>
-                              <div className="h-1.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-blue-500" style={{ width: `${weightPercent}%` }} /></div>
+                          <div>
+                            <div className="mb-1 flex justify-between gap-2 text-[10px] text-slate-500">
+                              <span>Load Capacity</span>
                             </div>
-                            {plan.maxVolumeM3 != null && (
-                              <div>
-                                <div className="mb-1 flex justify-between gap-2 text-[10px] text-slate-500"><span>Volume</span><strong className="text-slate-700">{plan.allocatedVolumeM3?.toLocaleString()} / {plan.maxVolumeM3?.toLocaleString()} m³</strong></div>
-                                <div className="h-1.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-blue-500" style={{ width: `${volumePercent}%` }} /></div>
-                              </div>
-                            )}
+                            <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                              <div className="h-full rounded-full bg-blue-500" style={{ width: `${capacityPercent}%` }} />
+                            </div>
                           </div>
                           <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-500">
-                            <span>Remaining: <strong className="text-slate-700">{plan.remainingWeightKg?.toLocaleString()} kg</strong>{plan.maxVolumeM3 != null && <> · <strong className="text-slate-700">{plan.remainingVolumeM3?.toLocaleString()} m³</strong></>}</span>
+                            <span>Remaining: <strong className="text-slate-700">{Math.max(0, 100 - capacityPercent)}% capacity</strong></span>
                             <span>{plan.assignments?.length ?? plan._count?.assignments ?? 0} assigned loads</span>
                           </div>
                           {!isEligible && (
                             <span className="w-fit rounded-full bg-red-100 px-2.5 py-1 text-[10px] font-semibold text-red-800">
-                              {!fitsPlanStatus ? "Plan is inactive" : !fitsWeight ? "Not enough weight capacity" : "Not enough volume capacity"}
+                              {!fitsPlanStatus ? "Plan is inactive" : "Not enough load capacity on this plan"}
                             </span>
                           )}
                         </div>
@@ -489,7 +507,7 @@ export function MyBidsPage() {
                 </div>
               )}
 
-              <div className="-mx-5 -mb-5 mt-1 flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 max-sm:flex-col-reverse">
+              <div className="-mx-5 -mb-5 mt-1 flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 max-sm:flex-col-reverse">
                 <Button
                   variant="secondary"
                   onClick={() => setAssigningBid(null)}

@@ -3,12 +3,22 @@ import { apiClient } from '../../shared/api/client.js';
 const unwrap = (response) => response.data.data;
 
 export async function createJourneyPlan(values) {
-  const body = {
-    ...values,
-    departureDate: new Date(values.departureDate).toISOString(),
-    fullLoadPrice: Number(values.fullLoadPrice),
-  };
+  const body = toPlanBody(values);
   return unwrap(await apiClient.post('/journey-plans', body));
+}
+
+const toPlanBody = (values) => ({
+  ...values,
+  departureDate: new Date(values.departureDate).toISOString(),
+  fullLoadPrice: Number(values.fullLoadPrice),
+});
+
+export async function updateJourneyPlan(id, values) {
+  return unwrap(await apiClient.put(`/journey-plans/${id}`, toPlanBody(values)));
+}
+
+export async function deleteJourneyPlan(id) {
+  return unwrap(await apiClient.delete(`/journey-plans/${id}`));
 }
 
 export async function listMyJourneyPlans(params = {}) {

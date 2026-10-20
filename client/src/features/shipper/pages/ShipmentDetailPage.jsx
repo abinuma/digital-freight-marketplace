@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -29,6 +29,15 @@ export function ShipmentDetailPage() {
   const showSuccess = useSuccessToast();
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleBack = () => {
+    if (location.key !== "default") {
+      navigate(-1);
+    } else {
+      navigate("/shipper/shipments");
+    }
+  };
   const cache = useQueryClient();
   const [confirmation, setConfirmation] = useState(null);
   const [declineReason, setDeclineReason] = useState("");
@@ -120,7 +129,7 @@ export function ShipmentDetailPage() {
         </Alert>
         <Link
           className="group inline-flex w-fit min-h-9 items-center gap-1.5 rounded-full border border-blue-200 bg-white px-3 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white"
-          to="/shipper/shipments"
+          to="/shipper/shipments" onClick={(e) => { e.preventDefault(); handleBack(); }}
         >
           <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-3.5 w-3.5 group-hover:brightness-0 group-hover:invert" />
           Back
@@ -128,8 +137,20 @@ export function ShipmentDetailPage() {
       </div>
     );
 
-  const canEdit =
+  const canEditStatus =
     shipment.status === "DRAFT" || shipment.status === "PUBLISHED";
+  const hasActiveBid = bids.some((bid) => ["PENDING", "ACCEPTED"].includes(bid.status));
+  const hasAcceptedBid = bids.some((bid) => bid.status === "ACCEPTED");
+  const canCancel = !["CANCELLED", "COMPLETED"].includes(shipment.status)
+    && !bidsQuery.isPending
+    && !bidsQuery.isError
+    && !hasAcceptedBid;
+  const canEdit = shipment.status === "DRAFT" || (
+    shipment.status === "PUBLISHED" &&
+    !bidsQuery.isPending &&
+    !bidsQuery.isError &&
+    !hasActiveBid
+  );
   const dialogTitle =
     confirmation?.type === "bid"
       ? `${confirmation.action === "accept" ? "Accept" : "Decline"} this bid?`
@@ -141,10 +162,12 @@ export function ShipmentDetailPage() {
       <header className="grid gap-4">
         <div className="flex items-end justify-between gap-4 max-lg:flex-col max-lg:items-start">
           <ShipmentHeading shipment={shipment} eyebrow="SHIPMENT OVERVIEW" hideCargoSummary />
-          <div className="flex flex-wrap gap-2">
-            {canEdit && (
+          <div className="flex shrink-0 flex-nowrap gap-2">
+            {canEditStatus && (
               <Button
                 variant="secondary"
+                disabled={!canEdit}
+                title={hasActiveBid ? "A driver has already sent a bid" : undefined}
                 onClick={() => navigate(`/shipper/shipments/${id}/edit`)}
               >
                 Edit shipment
@@ -171,6 +194,12 @@ export function ShipmentDetailPage() {
             {!["CANCELLED", "COMPLETED"].includes(shipment.status) && (
               <Button
                 variant="danger"
+                disabled={!canCancel}
+                title={hasAcceptedBid
+                  ? "A shipment cannot be cancelled after a bid has been accepted"
+                  : bidsQuery.isPending || bidsQuery.isError
+                    ? "Bid status must be checked before cancellation"
+                    : undefined}
                 onClick={() =>
                   setConfirmation({ action: "cancel", type: "shipment" })
                 }
@@ -228,7 +257,7 @@ export function ShipmentDetailPage() {
 
       <Link
         className="group inline-flex w-fit min-h-9 items-center gap-1.5 rounded-full border border-blue-200 bg-white px-3 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white"
-        to="/shipper/shipments"
+        to="/shipper/shipments" onClick={(e) => { e.preventDefault(); handleBack(); }}
       >
         <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-3.5 w-3.5 group-hover:brightness-0 group-hover:invert" />
         Back
@@ -269,7 +298,7 @@ export function ShipmentDetailPage() {
             disabled={working}
             onClick={() => setConfirmation(null)}
           >
-            Keep as is
+            Cancel
           </Button>
           <Button
             variant={

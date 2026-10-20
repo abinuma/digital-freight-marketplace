@@ -1,14 +1,15 @@
 import { Badge, Card } from "../../../shared/components/index.js";
 import { PreviewableImage } from "../../../shared/components/PreviewableImage.jsx";
 import { dateLabel, shipmentTones } from "../shipmentFormatters.js";
+import { formatLoadSize, formatShipmentLoad } from "../../../shared/constants/loadSizes.js";
 
 export function ShipmentHeading({ shipment, eyebrow = "SHIPMENT DETAILS", hidePublishedStatus = false, hideCargoSummary = false }) {
   return (
-    <div className="grid justify-items-start gap-2">
+    <div className="grid min-w-0 max-w-full justify-items-start gap-2">
       <p className="m-0 text-xs font-bold tracking-widest text-blue-700">
         {eyebrow}
       </p>
-      <h1 className="m-0 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+      <h1 className="m-0 max-w-full break-words [overflow-wrap:anywhere] text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
         {shipment.goodsDescription}
       </h1>
       <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
@@ -21,7 +22,7 @@ export function ShipmentHeading({ shipment, eyebrow = "SHIPMENT DETAILS", hidePu
           <>
             <span>{shipment.goodsType}</span>
             <span aria-hidden="true">·</span>
-            <span>{shipment.weightKg} kg</span>
+            <span>{formatShipmentLoad(shipment) || (shipment.weightKg ? `${shipment.weightKg} kg` : "")}</span>
           </>
         )}
       </div>
@@ -33,7 +34,7 @@ export function ShipmentInformation({
   shipment,
   pickupLabel = "Preferred pickup",
   categoryLabel = "Category",
-  weightLabel = "Estimated weight",
+  weightLabel = "Load size",
   postedLabel = "Listing posted",
   description = "Pickup schedule and shipment information.",
   photoDescription = "Photos provided with this listing.",
@@ -53,14 +54,14 @@ export function ShipmentInformation({
         </div>
 
         <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-          <Location label="PICKUP" tone="blue" location={shipment.pickupLocation} lat={shipment.pickupLat} lng={shipment.pickupLng} />
-          <Location label="DELIVERY" tone="amber" location={shipment.deliveryLocation} lat={shipment.deliveryLat} lng={shipment.deliveryLng} />
+          <Location label="PICKUP" tone="blue" location={shipment.pickupLocation} />
+          <Location label="DELIVERY" tone="amber" location={shipment.deliveryLocation} />
         </div>
 
         <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 max-sm:grid-cols-1">
           <Detail label={pickupLabel} value={dateLabel(shipment.pickupDate)} />
           <Detail label={categoryLabel} value={shipment.goodsType} />
-          <Detail label={weightLabel} value={`${shipment.weightKg} kg`} />
+          <Detail label={weightLabel} value={formatShipmentLoad(shipment) || (shipment.weightKg ? `${shipment.weightKg} kg` : "—")} />
           <Detail label={postedLabel} value={dateLabel(shipment.createdAt)} />
         </div>
 
@@ -118,7 +119,7 @@ export function ShipmentInformation({
   );
 }
 
-function Location({ label, tone, location, lat, lng }) {
+function Location({ label, tone, location }) {
   const labelColor = tone === "blue" ? "text-blue-700" : "text-amber-700";
   return (
     <div className="grid content-start gap-2 rounded-lg bg-slate-50 p-4">
@@ -126,11 +127,6 @@ function Location({ label, tone, location, lat, lng }) {
         {label}
       </span>
       <strong className="text-sm text-slate-800">{location}</strong>
-      {lat != null && (
-        <span className="text-xs text-slate-500">
-          {Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}
-        </span>
-      )}
     </div>
   );
 }

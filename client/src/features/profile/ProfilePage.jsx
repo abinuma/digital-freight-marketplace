@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Alert, useSuccessToast } from '../../shared/components/index.js';
+import { Alert, Card, useSuccessToast } from '../../shared/components/index.js';
+import { LOAD_CATEGORY_KEYS } from '../../shared/constants/loadCategories.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { getVehicle, updateProfile, updateVehicle, uploadProfilePhoto, uploadVehiclePhoto } from './profile.api.js';
 import { PersonalInformationCard } from './components/PersonalInformationCard.jsx';
 import { ProfilePhotoCard } from './components/ProfilePhotoCard.jsx';
 import { VehicleDetailsCard } from './components/VehicleDetailsCard.jsx';
 import { TransporterPreferencesCard } from './components/TransporterPreferencesCard.jsx';
+import { UserReviews } from './components/UserReviews.jsx';
 import { ethiopianPhoneSchema } from '../../shared/utils/ethiopianPhone.js';
 
 const profileSchema = z.object({
@@ -21,8 +23,10 @@ const profileSchema = z.object({
 
 const vehicleSchema = z.object({
   type: z.string().trim().min(1, 'Select your vehicle type').max(50),
-  capacityTons: z.coerce.number().positive('Enter a maximum load greater than zero').max(99_999_999.99),
-  volumeM3: z.coerce.number().positive('Enter a volume greater than zero').max(99_999_999.99).nullable().optional(),
+  capacityKg: z
+    .union([z.string(), z.number()])
+    .refine((val) => val !== '' && !Number.isNaN(Number(val)) && Number(val) > 0, 'Enter your vehicle capacity in kg')
+    .transform((val) => Number(val)),
   plateNumber: z.string().trim().min(1, 'Enter your plate number').max(20),
 });
 
@@ -42,7 +46,12 @@ export function ProfilePage() {
     zone: user.zone || '',
     city: user.city || '',
   });
-  const [vehicle, setVehicle] = useState({ type: '', capacityTons: '', volumeM3: '', plateNumber: '', photo: '' });
+  const [vehicle, setVehicle] = useState({
+    type: '',
+    capacityKg: '',
+    plateNumber: '',
+    photo: '',
+  });
   const [availableDays, setAvailableDays] = useState(user.availableDays || []);
   const [preferredLoadTypes, setPreferredLoadTypes] = useState(user.preferredLoadTypes || []);
   const [hasVehicle, setHasVehicle] = useState(false);
@@ -69,8 +78,11 @@ export function ProfilePage() {
         if (!isCurrent) return;
         setVehicle({
           type: result.type,
-          capacityTons: String(result.capacityTons),
-          volumeM3: result.volumeM3 != null ? String(result.volumeM3) : '',
+          capacityKg: result.capacityKg != null
+            ? String(result.capacityKg)
+            : result.capacityTons != null
+              ? String(Math.round(Number(result.capacityTons) * 1000))
+              : '',
           plateNumber: result.plateNumber,
           photo: result.photo || '',
         });
@@ -259,10 +271,7 @@ export function ProfilePage() {
   async function saveVehicle(event) {
     event.preventDefault();
     setStatus(null);
-    const parsed = vehicleSchema.safeParse({
-      ...vehicle,
-      volumeM3: vehicle.volumeM3 ? vehicle.volumeM3 : null,
-    });
+    const parsed = vehicleSchema.safeParse(vehicle);
     if (!parsed.success) {
       setVehicleErrors(Object.fromEntries(parsed.error.issues.map((issue) => [issue.path[0], issue.message])));
       return;
@@ -278,15 +287,23 @@ export function ProfilePage() {
         setVehiclePhotoPreview('');
         setVehiclePhotoFile(null);
       }
+      const capacityKg = Number(parsed.data.capacityKg);
+      const capacityTons = capacityKg / 1000;
       const updated = await updateVehicle(user.id, {
-        ...parsed.data,
+        type: parsed.data.type,
+        capacityKg,
+        capacityTons,
+        plateNumber: parsed.data.plateNumber,
         photo: currentPhoto || undefined,
       });
       setVehicle((curr) => ({
         ...curr,
         type: updated.type,
-        capacityTons: String(updated.capacityTons),
-        volumeM3: updated.volumeM3 != null ? String(updated.volumeM3) : '',
+        capacityKg: updated.capacityKg != null
+          ? String(updated.capacityKg)
+          : updated.capacityTons != null
+            ? String(Math.round(Number(updated.capacityTons) * 1000))
+            : String(capacityKg),
         plateNumber: updated.plateNumber,
         photo: updated.photo || curr.photo,
       }));
@@ -398,6 +415,10 @@ export function ProfilePage() {
         </div>
       </section>
 
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        <UserReviews userId={user.id} />
+      </section>
+
       {/* Card 2 & 3: Transporter specific cards */}
       {user.role === 'TRANSPORTER' && (
         <>
@@ -426,6 +447,53 @@ export function ProfilePage() {
             onSave={savePreferences}
           />
         </>
+      )}
+
+      {/* Shipper usual load preferences */}
+      {user.role === 'SHIPPER' && (
+        <Card className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h2 className="m-0 text-base font-bold text-slate-900">Freight Preferences</h2>
+              <p className="m-0 text-xs text-slate-500 mt-0.5">Select your usual load categories for quicker transport recommendations</p>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {LOAD_CATEGORY_KEYS.map((type) => {
+              const checked = preferredLoadTypes.includes(type);
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => {
+                    const next = checked
+                      ? preferredLoadTypes.filter((t) => t !== type)
+                      : [...preferredLoadTypes, type];
+                    setPreferredLoadTypes(next);
+                  }}
+                  className={`cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                    checked
+                      ? "border-blue-600 bg-blue-50 text-blue-800 shadow-xs"
+                      : "border-slate-300 bg-white text-slate-600 hover:border-slate-400"
+                  }`}
+                  aria-pressed={checked}
+                >
+                  {type}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex justify-end pt-4 mt-2 border-t border-slate-100">
+            <button
+              type="button"
+              disabled={prefBusy}
+              onClick={savePreferences}
+              className="inline-flex min-h-10 items-center justify-center rounded-lg bg-blue-700 px-5 text-sm font-semibold text-white shadow-xs hover:bg-blue-800 disabled:opacity-50 cursor-pointer"
+            >
+              {prefBusy ? "Saving…" : "Save Preferences"}
+            </button>
+          </div>
+        </Card>
       )}
 
       <div className="flex justify-start pt-2">

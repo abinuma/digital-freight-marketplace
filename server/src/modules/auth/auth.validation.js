@@ -12,6 +12,12 @@ const passwordSchema = z
   .regex(/[a-z]/, 'Password must include a lowercase letter')
   .regex(/[0-9]/, 'Password must include a digit');
 
+export const sendVerificationCodeSchema = {
+  body: z.object({
+    email: emailSchema,
+  }),
+};
+
 export const registerSchema = {
   body: z.object({
     name: z.string().trim().min(1).max(100),
@@ -19,6 +25,7 @@ export const registerSchema = {
     phone: phoneSchema,
     password: passwordSchema,
     role: z.enum(['SHIPPER', 'TRANSPORTER']),
+    code: z.string().trim().length(6, 'Verification code must be 6 digits').regex(/^\d{6}$/, 'Verification code must be 6 digits'),
   }),
 };
 

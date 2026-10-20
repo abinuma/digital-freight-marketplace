@@ -48,8 +48,13 @@ apiClient.interceptors.response.use(
     const response = axiosError.response;
     if (!response && axiosError.code !== 'ERR_CANCELED' && typeof window !== 'undefined') window.dispatchEvent(new Event('app:network-error'));
     const requestPath = axiosError.config?.url || '';
-    if (response?.status === 401 && !/\/auth\/(me|login|register)$/.test(requestPath) && typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('app:unauthorized'));
+    const isAuthSubmission = /\/auth\/(login|register)$/.test(requestPath);
+    if (response?.status === 401 && !isAuthSubmission && typeof window !== 'undefined') {
+      const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
+      const isPublicPath = publicPaths.includes(window.location.pathname);
+      if (!isPublicPath || !/\/auth\/me$/.test(requestPath)) {
+        window.dispatchEvent(new Event('app:unauthorized'));
+      }
     }
     const payload = response?.data;
     const error = new Error(friendlyErrorMessage({

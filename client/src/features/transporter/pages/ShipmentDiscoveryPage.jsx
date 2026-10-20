@@ -8,13 +8,15 @@ import {
 } from "../../../shared/components/index.js";
 import { PreviewableImage } from "../../../shared/components/PreviewableImage.jsx";
 import { listAvailableShipments } from "../transporter.api.js";
-import { ShipmentMap } from "../components/ShipmentMap.jsx";
+import { LOAD_CATEGORY_KEYS } from "../../../shared/constants/loadCategories.js";
+import { LOAD_SIZE_OPTIONS, formatLoadSize, formatShipmentLoad } from "../../../shared/constants/loadSizes.js";
 
 const initialFilters = {
   q: "",
   pickupLocation: "",
   deliveryLocation: "",
   goodsType: "",
+  loadSize: "",
   pickupDateFrom: "",
   pickupDateTo: "",
 };
@@ -30,7 +32,6 @@ export function ShipmentDiscoveryPage() {
   const [filters, setFilters] = useState(initialFilters);
   const [draft, setDraft] = useState(initialFilters);
   const [page, setPage] = useState(1);
-  const [view, setView] = useState("list");
   const [filterError, setFilterError] = useState("");
 
   const query = useQuery({
@@ -200,6 +201,30 @@ export function ShipmentDiscoveryPage() {
               </div>
             </div>
 
+            {/* Load size */}
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-1.5">Load size</label>
+              <div className="relative flex items-center">
+                <select
+                  value={draft.loadSize || ""}
+                  onChange={(e) => updateDraft("loadSize", e.target.value)}
+                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                >
+                  <option value="">All load sizes</option>
+                  {LOAD_SIZE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
             {/* Delivery location */}
             <div>
               <label className="block text-xs font-bold text-slate-800 mb-1.5">Delivery location</label>
@@ -225,6 +250,30 @@ export function ShipmentDiscoveryPage() {
               </div>
             </div>
 
+            {/* Load size */}
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-1.5">Load size</label>
+              <div className="relative flex items-center">
+                <select
+                  value={draft.loadSize || ""}
+                  onChange={(e) => updateDraft("loadSize", e.target.value)}
+                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                >
+                  <option value="">All load sizes</option>
+                  {LOAD_SIZE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
             {/* Goods type */}
             <div>
               <label className="block text-xs font-bold text-slate-800 mb-1.5">Goods type</label>
@@ -236,13 +285,42 @@ export function ShipmentDiscoveryPage() {
                     <line x1="12" y1="22.08" x2="12" y2="12" />
                   </svg>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Select goods type"
+                <select
                   value={draft.goodsType}
                   onChange={(e) => updateDraft("goodsType", e.target.value)}
-                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-9 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                />
+                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-9 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                >
+                  <option value="">All goods categories</option>
+                  {LOAD_CATEGORY_KEYS.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Load size */}
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-1.5">Load size</label>
+              <div className="relative flex items-center">
+                <select
+                  value={draft.loadSize || ""}
+                  onChange={(e) => updateDraft("loadSize", e.target.value)}
+                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                >
+                  <option value="">All load sizes</option>
+                  {LOAD_SIZE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
                   <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
                     <polyline points="6 9 12 15 18 9" />
@@ -335,44 +413,6 @@ export function ShipmentDiscoveryPage() {
             </div>
           </div>
 
-          {/* View toggle */}
-          <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setView("list")}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                view === "list"
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
-                <line x1="8" y1="6" x2="21" y2="6" />
-                <line x1="8" y1="12" x2="21" y2="12" />
-                <line x1="8" y1="18" x2="21" y2="18" />
-                <line x1="3" y1="6" x2="3.01" y2="6" />
-                <line x1="3" y1="12" x2="3.01" y2="12" />
-                <line x1="3" y1="18" x2="3.01" y2="18" />
-              </svg>
-              List
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("map")}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                view === "map"
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
-                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-                <line x1="8" y1="2" x2="8" y2="18" />
-                <line x1="16" y1="6" x2="16" y2="22" />
-              </svg>
-              Map
-            </button>
-          </div>
         </div>
 
         {query.isError && (
@@ -381,18 +421,7 @@ export function ShipmentDiscoveryPage() {
           </Alert>
         )}
 
-        {view === "map" && !query.isPending && !query.isError ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xs relative overflow-hidden">
-            <ShipmentMap shipments={shipments} />
-            {!shipments.some(
-              (shipment) => shipment.pickupLat != null || shipment.deliveryLat != null
-            ) && (
-              <p className="mb-1 mt-2 px-2 text-sm text-slate-500">
-                Map pins appear when shippers provide location coordinates.
-              </p>
-            )}
-          </div>
-        ) : query.isPending ? (
+        {query.isPending ? (
           <div className="grid gap-3">
             <Skeleton className="h-40 rounded-2xl" />
             <Skeleton className="h-40 rounded-2xl" />
@@ -462,7 +491,7 @@ export function ShipmentDiscoveryPage() {
                     <svg className="w-4 h-4 text-slate-400 shrink-0 fill-current" viewBox="0 0 24 24">
                       <path d="M12 3a4 4 0 0 0-4 4v1H6a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3h-2V7a4 4 0 0 0-4-4zm-2 4a2 2 0 1 1 4 0v1h-4V7z" />
                     </svg>
-                    <span>{shipment.weightKg} kg</span>
+                    <span>{formatShipmentLoad(shipment) || (shipment.weightKg ? `${shipment.weightKg} kg` : "")}</span>
                   </div>
 
                   <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600">
@@ -521,13 +550,11 @@ export function ShipmentDiscoveryPage() {
           </div>
         )}
 
-        {view === "list" && (
-          <Pagination
-            page={query.data?.pagination?.page || page}
-            pageCount={query.data?.pagination?.totalPages || 1}
-            onPageChange={setPage}
-          />
-        )}
+        <Pagination
+          page={query.data?.pagination?.page || page}
+          pageCount={query.data?.pagination?.totalPages || 1}
+          onPageChange={setPage}
+        />
       </section>
     </main>
   );

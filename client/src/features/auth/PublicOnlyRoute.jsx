@@ -19,7 +19,10 @@ export function PublicOnlyRoute() {
         <p>Checking your sign-in…</p>
       </main>
     );
-  if (isError) return <Navigate to="/" replace />;
+  // Network/server error — we can't confirm auth status, but these are
+  // public pages so let the user continue (e.g. fill in the login form).
+  // If the user IS logged in, refetchOnReconnect will pick it up later.
+  if (isError) return <Outlet />;
   if (user)
     return (
       <Navigate

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
+import { SORTED_CITIES } from "../../../shared/constants/locations.js";
 import {
   Alert,
   Button,
@@ -21,50 +22,63 @@ import { ShipmentFormSection } from "../components/ShipmentFormSection.jsx";
 import { ShipmentPhotoUploader } from "../components/ShipmentPhotoUploader.jsx";
 import { ShipmentRouteFields } from "../components/ShipmentRouteFields.jsx";
 import { fieldClass } from "../shipmentForm.utils.js";
+import { formatLoadSize } from "../../../shared/constants/loadSizes.js";
 
-const formSchema = z.object({
-  goodsDescription: z
-    .string()
-    .trim()
-    .min(10, "Describe the goods in at least 10 characters")
-    .max(1000),
-  goodsType: z.string().trim().min(1, "Choose a goods category").max(50),
-  weightKg: z.coerce
-    .number()
-    .positive("Weight must be greater than zero")
-    .max(99_999_999.99),
-  volumeM3: z.coerce
-    .number()
-    .positive("Volume must be greater than zero")
-    .max(99_999_999.99)
-    .nullable()
-    .optional(),
-  pickupLocation: z.string().trim().min(1, "Enter a pickup location").max(255),
-  deliveryLocation: z
-    .string()
-    .trim()
-    .min(1, "Enter a delivery location")
-    .max(255),
-  pickupDate: z.iso
-    .date("Choose a pickup date")
-    .refine(
-      (date) => date >= new Date().toISOString().slice(0, 10),
-      "Pickup date must be today or later",
-    ),
-  specialRequirements: z.string().max(2000),
-});
+const formSchema = z
+  .object({
+    goodsDescription: z
+      .string()
+      .trim()
+      .min(10, "Describe the goods in at least 10 characters")
+      .max(1000),
+    goodsType: z.string().trim().min(1, "Choose a goods category").max(50),
+    loadSize: z.string().trim().min(1, "Choose a load size"),
+    weightKg: z
+      .union([z.string(), z.number()])
+      .optional()
+      .transform((val) => (val === "" || val === undefined || val === null ? null : Number(val))),
+    pickupLocation: z
+      .string()
+      .min(1, "Choose a pickup city")
+      .refine(
+        (city) => SORTED_CITIES.some((item) => item.city === city),
+        "Choose a city from the list",
+      ),
+    deliveryLocation: z
+      .string()
+      .min(1, "Choose a delivery city")
+      .refine(
+        (city) => SORTED_CITIES.some((item) => item.city === city),
+        "Choose a city from the list",
+      )
+      .refine((city) => city !== empty.pickupLocation, "Pickup and delivery cities must differ"),
+    pickupDate: z.iso
+      .date("Choose a pickup date")
+      .refine(
+        (date) => date >= new Date().toISOString().slice(0, 10),
+        "Pickup date must be today or later",
+      ),
+    specialRequirements: z.string().max(2000),
+  })
+  .superRefine((data, ctx) => {
+    if (data.loadSize === "SMALL_LOAD") {
+      if (data.weightKg == null || Number.isNaN(data.weightKg) || data.weightKg <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["weightKg"],
+          message: "Specify the mass (kg) for a small load",
+        });
+      }
+    }
+  });
 
 const empty = {
   goodsDescription: "",
   goodsType: "",
+  loadSize: "FULL_LOAD",
   weightKg: "",
-  volumeM3: "",
   pickupLocation: "",
-  pickupLat: null,
-  pickupLng: null,
   deliveryLocation: "",
-  deliveryLat: null,
-  deliveryLng: null,
   pickupDate: "",
   specialRequirements: "",
 };
@@ -144,8 +158,8 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
       return {
         ...empty,
         ...initialShipment,
-        weightKg: String(initialShipment.weightKg),
-        volumeM3: initialShipment.volumeM3 != null ? String(initialShipment.volumeM3) : "",
+        loadSize: initialShipment.loadSize || "FULL_LOAD",
+        weightKg: initialShipment.weightKg != null ? String(initialShipment.weightKg) : "",
         pickupDate: initialShipment.pickupDate?.slice(0, 10),
         specialRequirements: initialShipment.specialRequirements || "",
       };
@@ -154,8 +168,8 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
       return {
         ...empty,
         ...prefillShipment,
-        weightKg: String(prefillShipment.weightKg || ""),
-        volumeM3: prefillShipment.volumeM3 != null ? String(prefillShipment.volumeM3) : "",
+        loadSize: prefillShipment.loadSize || "FULL_LOAD",
+        weightKg: prefillShipment.weightKg != null ? String(prefillShipment.weightKg) : "",
         pickupDate: prefillShipment.pickupDate ? prefillShipment.pickupDate.slice(0, 10) : "",
         specialRequirements: prefillShipment.specialRequirements || "",
       };
@@ -192,18 +206,8 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
     try {
       const payload = {
         ...parsed.data,
-        weightKg: Number(parsed.data.weightKg),
+        weightKg: parsed.data.loadSize === "SMALL_LOAD" ? parsed.data.weightKg : null,
       };
-      for (const field of [
-        "pickupLat",
-        "pickupLng",
-        "deliveryLat",
-        "deliveryLng",
-      ]) {
-        if (values[field] == null && shipmentId) payload[field] = null;
-        else if (values[field] == null) delete payload[field];
-        else payload[field] = Number(values[field]);
-      }
       let specialReq = (payload.specialRequirements || "").trim();
       if (invitedDriver?.id) {
         const cleanReq = specialReq.replace(/\[INVITED_DRIVER:[a-f0-9-]+\]\s*/g, '').trim();
@@ -228,7 +232,7 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
           const inviteMsg =
             `Hello ${invitedDriver.name}, I would like to invite you to take this load:\n` +
             `• Cargo: ${saved.goodsDescription} (${saved.goodsType})\n` +
-            `• Weight: ${saved.weightKg} kg${saved.volumeM3 ? ` · Volume: ${saved.volumeM3} m³` : ""}\n` +
+            `• Load size: ${formatLoadSize(saved.loadSize)}\n` +
             `• Route: ${saved.pickupLocation} → ${saved.deliveryLocation}\n` +
             `• Pickup date: ${dateLabel(saved.pickupDate)}\n` +
             `Please check the details and submit your bid here: /transporter/shipments/${saved.id}`;
@@ -391,7 +395,7 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
             ) : invitedDriver?.id ? (
               "Send load invite"
             ) : (
-              "Publish shipment"
+              "Publish"
             )}
           </Button>
         </div>

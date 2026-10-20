@@ -13,10 +13,11 @@ function toApiShipment(shipment) {
 
   return {
     ...shipment,
+    loadSize: shipment.loadSize || 'FULL_LOAD',
     specialRequirements: cleanSpecialRequirements,
     invitedDriverId,
     isDirectInvite: Boolean(invitedDriverId),
-    weightKg: Number(shipment.weightKg),
+    weightKg: shipment.weightKg != null ? Number(shipment.weightKg) : null,
     volumeM3: shipment.volumeM3 === null || shipment.volumeM3 === undefined ? null : Number(shipment.volumeM3),
     pickupLat: shipment.pickupLat === null ? null : Number(shipment.pickupLat),
     pickupLng: shipment.pickupLng === null ? null : Number(shipment.pickupLng),
@@ -42,6 +43,10 @@ export async function listShipments(user, query) {
   if (query.pickupLocation) filters.push({ pickupLocation: { contains: query.pickupLocation, mode: 'insensitive' } });
   if (query.deliveryLocation) filters.push({ deliveryLocation: { contains: query.deliveryLocation, mode: 'insensitive' } });
   if (query.goodsType) filters.push({ goodsType: { equals: query.goodsType, mode: 'insensitive' } });
+  if (query.loadSize) {
+    const norm = query.loadSize.trim().toUpperCase().replace(/\s+/g, '_');
+    filters.push({ loadSize: { equals: norm, mode: 'insensitive' } });
+  }
   if (query.status && user.role === 'SHIPPER') filters.push({ status: query.status });
 
   if (query.pickupDateFrom || query.pickupDateTo) {
@@ -130,6 +135,21 @@ export async function getShipperDashboardSummary(user) {
     recentShipments: summary.recentShipments.map((shipment) => ({
       ...toApiShipment(shipment),
       bidCount: summary.recentBidCounts[shipment.id] || 0,
+    })),
+    recentBids: (summary.recentBids || []).map((bid) => ({
+      ...bid,
+      price: Number(bid.price),
+      transporter: bid.transporter
+        ? {
+            ...bid.transporter,
+            vehicle: bid.transporter.vehicle
+              ? {
+                  ...bid.transporter.vehicle,
+                  capacityTons: bid.transporter.vehicle.capacityTons != null ? Number(bid.transporter.vehicle.capacityTons) : null,
+                }
+              : null,
+          }
+        : null,
     })),
   };
 }
@@ -254,8 +274,11 @@ export async function cancelShipment(user, id) {
     throw new AppError('Completed shipments cannot be cancelled', 422);
   }
 
-  const cancelled = await shipmentRepository.cancelShipmentAndDeclinePendingBids(id);
-  if (!cancelled) {
+  const result = await shipmentRepository.cancelShipmentAndDeclinePendingBids(id);
+  if (result.blockedByAcceptedBid) {
+    throw new AppError('A shipment cannot be cancelled after a bid has been accepted', 409);
+  }
+  if (!result.cancelled) {
     throw new AppError('Shipment status changed before the requested action could be applied', 409);
   }
 

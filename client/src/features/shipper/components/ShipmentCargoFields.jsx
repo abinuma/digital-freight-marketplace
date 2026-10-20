@@ -1,5 +1,7 @@
-import { Input, Textarea } from "../../../shared/components/index.js";
+import { Input, Select, Textarea } from "../../../shared/components/index.js";
 import { fieldClass, fieldError } from "../shipmentForm.utils.js";
+import { LOAD_CATEGORY_KEYS } from "../../../shared/constants/loadCategories.js";
+import { LOAD_SIZE_OPTIONS } from "../../../shared/constants/loadSizes.js";
 
 export function ShipmentCargoFields({ values, errors, setField }) {
   return (
@@ -23,46 +25,66 @@ export function ShipmentCargoFields({ values, errors, setField }) {
         <span>
           Goods category <i className="ml-1 not-italic text-red-600">*</i>
         </span>
-        <Input
+        <Select
           required
-          maxLength={50}
           value={values.goodsType}
           onChange={(event) => setField("goodsType", event.target.value)}
           aria-invalid={Boolean(errors.goodsType)}
-          placeholder="e.g. agricultural, industrial, household"
-        />
+        >
+          <option value="">Select goods category</option>
+          {LOAD_CATEGORY_KEYS.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+          {values.goodsType && !LOAD_CATEGORY_KEYS.includes(values.goodsType) && (
+            <option value={values.goodsType}>{values.goodsType}</option>
+          )}
+        </Select>
         {fieldError(errors, "goodsType")}
       </label>
       <label className={fieldClass}>
         <span>
-          Weight (kg) <i className="ml-1 not-italic text-red-600">*</i>
+          Load Size <i className="ml-1 not-italic text-red-600">*</i>
         </span>
-        <Input
+        <Select
           required
-          type="number"
-          min="0.01"
-          step="0.01"
-          value={values.weightKg}
-          onChange={(event) => setField("weightKg", event.target.value)}
-          aria-invalid={Boolean(errors.weightKg)}
-          placeholder="e.g. 1200"
-        />
-        {fieldError(errors, "weightKg")}
+          value={values.loadSize || "FULL_LOAD"}
+          onChange={(event) => {
+            const newSize = event.target.value;
+            setField("loadSize", newSize);
+          }}
+          aria-invalid={Boolean(errors.loadSize)}
+        >
+          <option value="">Select load size</option>
+          {LOAD_SIZE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </Select>
+        {fieldError(errors, "loadSize")}
       </label>
-      <label className={fieldClass}>
-        <span>
-          Volume (m³) <small className="font-normal text-slate-500">(optional)</small>
-        </span>
-        <Input
-          type="number"
-          min="0.01"
-          step="0.01"
-          value={values.volumeM3 || ""}
-          onChange={(event) => setField("volumeM3", event.target.value)}
-          placeholder="e.g. 15.5"
-        />
-        {fieldError(errors, "volumeM3")}
-      </label>
+
+      {values.loadSize === "SMALL_LOAD" && (
+        <label className={fieldClass}>
+          <span>
+            Mass (kg) <i className="ml-1 not-italic text-red-600">*</i>
+          </span>
+          <Input
+            type="number"
+            min="0.1"
+            step="any"
+            required
+            value={values.weightKg ?? ""}
+            onChange={(event) => setField("weightKg", event.target.value)}
+            aria-invalid={Boolean(errors.weightKg)}
+            placeholder="e.g. 50"
+          />
+          {fieldError(errors, "weightKg")}
+          <small className="font-normal text-slate-500">Specify cargo mass in kilograms</small>
+        </label>
+      )}
     </div>
   );
 }

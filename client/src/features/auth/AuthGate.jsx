@@ -9,8 +9,6 @@ export function AuthGate() {
   const {
     user,
     isLoading,
-    isError,
-    error,
     refreshUser,
     startGoogleSignIn,
     logout,
@@ -51,9 +49,9 @@ export function AuthGate() {
     );
   }
 
-  if (location.pathname === "/" && (!user || isError)) return <LandingPage />;
+  if (location.pathname === "/" && !user) return <LandingPage />;
 
-  if (isError) return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/" replace />;
 
   if (location.pathname === "/") {
     if (!user.profileComplete)

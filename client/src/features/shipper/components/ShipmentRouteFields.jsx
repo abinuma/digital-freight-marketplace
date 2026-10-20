@@ -1,5 +1,5 @@
 import { Input } from "../../../shared/components/index.js";
-import { LocationPicker } from "./LocationPicker.jsx";
+import { ShipmentCityPicker } from "./ShipmentCityPicker.jsx";
 import { fieldClass, fieldError, todayDate } from "../shipmentForm.utils.js";
 
 export function ShipmentRouteFields({ values, errors, setField, setErrors }) {
@@ -14,19 +14,23 @@ export function ShipmentRouteFields({ values, errors, setField, setErrors }) {
     }));
   }
 
+  function updatePickupLocation(value) {
+    setField("pickupLocation", value);
+    if (value === values.deliveryLocation) setField("deliveryLocation", "");
+  }
+
   return (
     <div className="grid grid-cols-2 items-start gap-4 max-md:grid-cols-1">
       <label className={fieldClass}>
         <span>
           Pickup location <i className="ml-1 not-italic text-red-600">*</i>
         </span>
-        <Input
-          required
-          maxLength={255}
+        <ShipmentCityPicker
+          id="pickup-city"
+          label="Pickup"
           value={values.pickupLocation}
-          onChange={(event) => setField("pickupLocation", event.target.value)}
-          aria-invalid={Boolean(errors.pickupLocation)}
-          placeholder="City, area, or address"
+          onChange={updatePickupLocation}
+          error={errors.pickupLocation}
         />
         {fieldError(errors, "pickupLocation")}
       </label>
@@ -34,32 +38,17 @@ export function ShipmentRouteFields({ values, errors, setField, setErrors }) {
         <span>
           Delivery location <i className="ml-1 not-italic text-red-600">*</i>
         </span>
-        <Input
-          required
-          maxLength={255}
+        <ShipmentCityPicker
+          id="delivery-city"
+          label="Delivery"
           value={values.deliveryLocation}
-          onChange={(event) => setField("deliveryLocation", event.target.value)}
-          aria-invalid={Boolean(errors.deliveryLocation)}
-          placeholder="City, area, or address"
+          excludeCity={values.pickupLocation}
+          disabled={!values.pickupLocation}
+          onChange={(city) => setField("deliveryLocation", city)}
+          error={errors.deliveryLocation}
         />
         {fieldError(errors, "deliveryLocation")}
       </label>
-      <LocationPicker
-        label="Pickup pin"
-        value={{ lat: values.pickupLat, lng: values.pickupLng }}
-        onChange={({ lat, lng }) => {
-          setField("pickupLat", lat);
-          setField("pickupLng", lng);
-        }}
-      />
-      <LocationPicker
-        label="Delivery pin"
-        value={{ lat: values.deliveryLat, lng: values.deliveryLng }}
-        onChange={({ lat, lng }) => {
-          setField("deliveryLat", lat);
-          setField("deliveryLng", lng);
-        }}
-      />
       <label className={fieldClass}>
         <span>
           Pickup date <i className="ml-1 not-italic text-red-600">*</i>

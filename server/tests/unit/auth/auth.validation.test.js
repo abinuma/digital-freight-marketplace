@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema } from '../../../src/modules/auth/auth.validation.js';
+import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema, sendVerificationCodeSchema } from '../../../src/modules/auth/auth.validation.js';
 
 const registration = {
   name: 'Amina Hassan',
@@ -7,6 +7,7 @@ const registration = {
   phone: '+251911234567',
   password: 'SecurePass1',
   role: 'SHIPPER',
+  code: '123456',
 };
 
 describe('auth request validation', () => {
@@ -18,6 +19,17 @@ describe('auth request validation', () => {
     expect(registerSchema.body.safeParse({ ...registration, role: 'ADMIN' }).success).toBe(false);
     expect(registerSchema.body.safeParse({ ...registration, password: 'securepass1' }).success).toBe(false);
     expect(registerSchema.body.safeParse({ ...registration, password: 'SecurePass' }).success).toBe(false);
+  });
+
+  it('validates verification code format on registration', () => {
+    expect(registerSchema.body.safeParse({ ...registration, code: '12345' }).success).toBe(false);
+    expect(registerSchema.body.safeParse({ ...registration, code: 'abcdef' }).success).toBe(false);
+    expect(registerSchema.body.safeParse({ ...registration, code: '' }).success).toBe(false);
+  });
+
+  it('validates sendVerificationCode input', () => {
+    expect(sendVerificationCodeSchema.body.safeParse({ email: 'user@example.com' }).success).toBe(true);
+    expect(sendVerificationCodeSchema.body.safeParse({ email: 'invalid' }).success).toBe(false);
   });
 
   it('requires a valid email and non-empty password for login', () => {

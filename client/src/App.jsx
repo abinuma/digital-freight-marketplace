@@ -1,4 +1,3 @@
-import 'leaflet/dist/leaflet.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './features/auth/AuthContext.jsx';
@@ -36,7 +35,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: true,
-      retry: 1,
+      retry: (failureCount, error) => {
+        if (error?.status === 401 || error?.response?.status === 401) return false;
+        return failureCount < 1;
+      },
     },
   },
 });
@@ -51,11 +53,11 @@ function App() {
             <FormValidationScroll />
             <Routes>
             <Route path="/" element={<AuthGate />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route element={<PublicOnlyRoute />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegistrationPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
             </Route>
             <Route element={<RequireAuth />}>
               <Route path="/complete-profile" element={<AuthGate />} />

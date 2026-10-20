@@ -81,7 +81,7 @@ export function ShipperBidsPanel({
                             </strong>
                             {profile?.averageRating > 0 && (
                               <small className="text-xs text-slate-500">
-                                ★ {Number(profile.averageRating).toFixed(1)} ({profile.reviewCount || 0} reviews)
+                                <span className="text-amber-500" aria-hidden="true">★</span> {Number(profile.averageRating).toFixed(1)} ({profile.reviewCount || 0} {(profile.reviewCount || 0) === 1 ? 'review' : 'reviews'})
                               </small>
                             )}
                           </div>

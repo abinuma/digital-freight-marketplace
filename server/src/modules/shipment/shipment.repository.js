@@ -5,8 +5,8 @@ const shipmentListSelect = {
   shipperId: true,
   goodsDescription: true,
   goodsType: true,
+  loadSize: true,
   weightKg: true,
-  volumeM3: true,
   pickupLocation: true,
   pickupLat: true,
   pickupLng: true,
@@ -63,7 +63,7 @@ export async function countActiveBidsByShipment(shipmentIds) {
 
 export async function getShipperDashboardSummary(shipperId) {
   const where = { shipperId, removedAt: null };
-  const [statusGroups, bidsReceived, messages, recentShipments] = await Promise.all([
+  const [statusGroups, bidsReceived, messages, recentShipments, recentBids] = await Promise.all([
     prisma.shipment.groupBy({ by: ['status'], where, _count: { _all: true } }),
     prisma.bid.count({ where: { shipment: where, status: { not: 'WITHDRAWN' } } }),
     prisma.message.count({ where: { conversation: { shipperId } } }),
@@ -71,6 +71,48 @@ export async function getShipperDashboardSummary(shipperId) {
       where,
       select: shipmentListSelect,
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      take: 5,
+    }),
+    prisma.bid.findMany({
+      where: {
+        shipment: where,
+        status: { not: 'WITHDRAWN' },
+      },
+      select: {
+        id: true,
+        shipmentId: true,
+        transporterId: true,
+        price: true,
+        pickupDate: true,
+        message: true,
+        status: true,
+        createdAt: true,
+        transporter: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            city: true,
+            vehicle: {
+              select: {
+                type: true,
+                capacityTons: true,
+              },
+            },
+          },
+        },
+        shipment: {
+          select: {
+            id: true,
+            goodsDescription: true,
+            goodsType: true,
+            pickupLocation: true,
+            deliveryLocation: true,
+            status: true,
+          },
+        },
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 5,
     }),
   ]);
@@ -88,6 +130,7 @@ export async function getShipperDashboardSummary(shipperId) {
     bidsReceived,
     messages,
     recentShipments,
+    recentBids,
     recentBidCounts: Object.fromEntries(recentBidGroups.map(({ shipmentId, _count }) => [shipmentId, _count._all])),
   };
 }
@@ -183,7 +226,7 @@ export function findShipmentForUpdate(id) {
       shipperId: true,
       status: true,
       removedAt: true,
-      bids: { where: { status: 'ACCEPTED' }, select: { id: true }, take: 1 },
+      bids: { where: { status: { in: ['PENDING', 'ACCEPTED'] } }, select: { id: true }, take: 1 },
     },
   });
 }
@@ -201,19 +244,25 @@ export function transitionShipment(id, fromStatuses, status) {
 
 export function cancelShipmentAndDeclinePendingBids(id) {
   return prisma.$transaction(async (transaction) => {
+    const acceptedBid = await transaction.bid.findFirst({
+      where: { shipmentId: id, status: 'ACCEPTED' },
+      select: { id: true },
+    });
+    if (acceptedBid) return { blockedByAcceptedBid: true };
+
     const updated = await transaction.shipment.updateMany({
-      where: { id, status: { not: 'COMPLETED' } },
+      where: { id, status: { in: ['DRAFT', 'PUBLISHED'] } },
       data: { status: 'CANCELLED' },
     });
 
-    if (updated.count === 0) return false;
+    if (updated.count === 0) return { cancelled: false };
 
     await transaction.bid.updateMany({
       where: { shipmentId: id, status: 'PENDING' },
       data: { status: 'DECLINED' },
     });
 
-    return true;
+    return { cancelled: true };
   });
 }
 

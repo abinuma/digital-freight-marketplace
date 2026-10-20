@@ -1,5 +1,6 @@
 import { Badge, Button, Card } from '../../../shared/components/index.js';
 import { dateLabel, timeLabel } from '../messaging.formatters.js';
+import { formatLoadSize, formatShipmentLoad } from '../../../shared/constants/loadSizes.js';
 
 const statusTones = {
   PENDING: 'warning',
@@ -22,7 +23,7 @@ export function ConversationBidCard({
   const tone = statusTones[bid?.status] || 'neutral';
   const bidTime = bid.createdAt ? timeLabel(bid.createdAt) : '';
   const vehicleLabel = vehicle
-    ? `${vehicle.type}${vehicle.capacityTons ? ` (${vehicle.capacityTons}t)` : ''}`
+    ? `${vehicle.type}${vehicle.capacityKg ? ` (${vehicle.capacityKg.toLocaleString()} kg)` : vehicle.capacityTons ? ` (${vehicle.capacityTons}t)` : vehicle.loadSize ? ` (${formatLoadSize(vehicle.loadSize)})` : ''}`
     : '—';
 
   return (
@@ -30,8 +31,8 @@ export function ConversationBidCard({
       <div className="flex flex-col gap-2.5 bg-blue-50 px-3.5 pb-3 pt-3">
         <h3 className="m-0 text-xs font-bold text-slate-900">
           {shipment?.goodsDescription || 'Shipment details'}
-          {shipment?.weightKg != null && (
-            <span> · {Number(shipment.weightKg).toLocaleString()} kg</span>
+          {(shipment?.loadSize || shipment?.weightKg != null) && (
+            <span> · {formatShipmentLoad(shipment) || `${Number(shipment.weightKg).toLocaleString()} kg`}</span>
           )}
         </h3>
         <div className="flex min-w-0 items-end gap-2 text-xs font-semibold text-blue-900">
@@ -45,17 +46,10 @@ export function ConversationBidCard({
             <span className="block truncate">{shipment?.deliveryLocation || 'Delivery location'}</span>
           </span>
         </div>
-        <div className="flex items-center justify-between gap-2 border-t border-blue-200/70 pt-2 text-[11px] text-blue-700">
-          <span>Pickup wanted</span>
-          <strong className="text-slate-800">
-            {shipment?.pickupDate ? dateLabel(shipment.pickupDate) : '—'}
-          </strong>
-        </div>
       </div>
 
       <div className="flex flex-col gap-2.5 border-t border-blue-100 px-3.5 py-3">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Current offer</span>
+        <div className="flex items-center justify-end gap-2">
           <Badge tone={tone}>{bid.status.toLowerCase()}</Badge>
         </div>
         <strong className="text-2xl font-extrabold leading-none text-blue-950">
@@ -67,16 +61,11 @@ export function ConversationBidCard({
             <span>Bid pickup</span>
             <strong className="text-right text-slate-900">
               {bid.pickupDate ? dateLabel(bid.pickupDate) : '—'}
-              {bid.pickupDate && <span className="block text-[10px] font-normal text-slate-500">Matches your date</span>}
             </strong>
           </div>
           <div className="flex items-center justify-between gap-2 text-slate-600">
             <span>Vehicle</span>
             <strong className="text-right text-slate-900">{vehicleLabel}</strong>
-          </div>
-          <div className="flex items-center justify-between gap-2 text-slate-600">
-            <span>Terms</span>
-            <strong className="max-w-[65%] text-right text-slate-900">{bid.message || '—'}</strong>
           </div>
         </div>
 

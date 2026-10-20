@@ -10,11 +10,16 @@ function forwardAuthResponse(response, res, { created = false } = {}) {
   return response.json().then((payload) => {
     if (!response.ok) {
       const duplicateEmail = payload.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL';
+      const isInvalidToken = payload.code === 'INVALID_TOKEN' || payload.message === 'Invalid token';
       const statusCode = duplicateEmail ? 409 : response.status;
       return res.status(statusCode).json({
         error: {
           ...(payload.code ? { code: payload.code } : {}),
-          message: duplicateEmail ? 'An account with this email already exists' : payload.message || 'Authentication request failed',
+          message: duplicateEmail
+            ? 'An account with this email already exists'
+            : isInvalidToken
+              ? 'This password reset link has expired or has already been used. Please request a new one.'
+              : payload.message || 'Authentication request failed',
         },
       });
     }
@@ -36,11 +41,30 @@ function handleAuthRequest(action, { created = false } = {}) {
   };
 }
 
+export async function sendVerificationCode(req, res, next) {
+  try {
+    const result = await authService.sendVerificationCode(req.body.email);
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export const register = handleAuthRequest((req) => authService.register(req.body, req.headers), { created: true });
 export const login = handleAuthRequest((req) => authService.login(req.body, req.headers));
 export const logout = handleAuthRequest((req) => authService.logout(req.headers));
 export const forgotPassword = handleAuthRequest((req) => authService.requestPasswordReset(req.body.email, req.headers));
 export const resetPassword = handleAuthRequest((req) => authService.resetPassword(req.body, req.headers));
+
+export async function verifyResetToken(req, res, next) {
+  try {
+    const result = await authService.verifyResetToken(req.query.token);
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 
 export async function me(req, res, next) {
   try {

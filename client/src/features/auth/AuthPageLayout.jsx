@@ -32,7 +32,7 @@ export function AuthPageLayout({ title, subtitle, children, footer, icon }) {
           >
             {title}
           </h1>
-          <p className="mb-0 mt-2 text-sm text-slate-500">{subtitle}</p>
+          {subtitle && <p className="mb-0 mt-2 text-sm text-slate-500">{subtitle}</p>}
         </header>
         {children}
         {footer && (

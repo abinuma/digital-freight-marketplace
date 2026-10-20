@@ -108,8 +108,9 @@ Owned by: `auth` module (Transporter profile extension)
 | id | UUID | PK | Unique vehicle identifier |
 | userId | UUID | FK → User.id, UNIQUE | One vehicle per Transporter |
 | type | VARCHAR(50) | NOT NULL | Vehicle type (`Isuzu`, `FSR`, `Sinotruk`, `Other`) |
-| capacityTons | DECIMAL(10,2) | NOT NULL | Maximum load capacity in metric tons |
-| volumeM3 | DECIMAL(10,2) | NULL | Cargo volume capacity in cubic meters (m³) |
+| loadSize | VARCHAR(50) | NULL, default `FULL_LOAD` | Vehicle load capacity category (`FULL_LOAD`, `HALF_LOAD`, `QUARTER_LOAD`, `SMALL_LOAD`) |
+| capacityTons | DECIMAL(10,2) | NULL | Legacy/fallback load capacity in metric tons |
+| volumeM3 | DECIMAL(10,2) | NULL | Legacy/fallback cargo volume capacity in cubic meters (m³) |
 | plateNumber | VARCHAR(20) | NOT NULL | License plate number |
 | createdAt | TIMESTAMP | NOT NULL | Record creation |
 | updatedAt | TIMESTAMP | NOT NULL | Last update |
@@ -136,7 +137,9 @@ Owned by: `shipment` module
 | shipperId | UUID | FK → User.id, NOT NULL | Shipper who created the listing |
 | goodsDescription | TEXT | NOT NULL | Description of goods to transport |
 | goodsType | VARCHAR(50) | NOT NULL | Category of goods |
-| weightKg | DECIMAL(10,2) | NOT NULL | Estimated weight in kilograms |
+| loadSize | VARCHAR(50) | NOT NULL, default `FULL_LOAD` | Cargo load size (`FULL_LOAD`, `HALF_LOAD`, `QUARTER_LOAD`, `SMALL_LOAD`) |
+| weightKg | DECIMAL(10,2) | NULL | Legacy/optional weight in kilograms |
+| volumeM3 | DECIMAL(10,2) | NULL | Legacy/optional volume in cubic meters |
 | pickupLocation | VARCHAR(255) | NOT NULL | Pickup address/area name |
 | pickupLat | DECIMAL(10,7) | NULL | Pickup latitude |
 | pickupLng | DECIMAL(10,7) | NULL | Pickup longitude |
@@ -250,6 +253,7 @@ Owned by: `journey-plan` module
 | destinationCity | VARCHAR(100) | NOT NULL | Scheduled destination city |
 | departureDate | TIMESTAMP | NOT NULL | Scheduled departure time |
 | fullLoadPrice | DECIMAL(12,2) | NOT NULL | Price for a full load trip |
+| allocatedLoadFraction | DECIMAL(5,4) | NOT NULL, default 0 | Allocated mass as a fraction of plan mass capacity (0.0000 to 1.0000); volume is tracked separately |
 | status | ENUM | NOT NULL, default ACTIVE | `ACTIVE`, `FULL`, `COMPLETED`, `CANCELLED` |
 | createdAt | TIMESTAMP | NOT NULL | Created timestamp |
 | updatedAt | TIMESTAMP | NOT NULL | Updated timestamp |
@@ -264,9 +268,12 @@ Owned by: `journey-plan` module
 | journeyPlanId | UUID | FK → JourneyPlan.id, NOT NULL, onDelete Cascade | Assigned journey plan |
 | shipmentId | UUID | FK → Shipment.id, NOT NULL, onDelete Cascade | Shipment cargo |
 | bidId | UUID | FK → Bid.id, UNIQUE, NOT NULL, onDelete Cascade | Accepted bid |
+| loadSize | VARCHAR(50) | NULL | Assigned load size (`FULL_LOAD`, `HALF_LOAD`, `QUARTER_LOAD`, `SMALL_LOAD`) |
 | assignedAt | TIMESTAMP | NOT NULL | Assignment timestamp |
 
 **Unique constraint:** `bidId` ensures an accepted bid is assigned to at most one journey plan.
+
+Assignment `weightKg` and `volumeM3` store the portion of vehicle capacity consumed by that load: full, half, and quarter loads use the matching fraction of the plan limits, while small loads store the shipper-provided mass and volume.
 
 ---
 

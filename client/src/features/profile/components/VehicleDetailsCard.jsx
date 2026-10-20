@@ -218,69 +218,27 @@ export function VehicleDetailsCard({
                   </label>
                   <input
                     id="vehicle-capacity"
-                    name="capacityTons"
+                    name="capacityKg"
                     type="number"
                     required
-                    min="10"
-                    step="10"
-                    placeholder="20000"
-                    value={vehicle.capacityTons === '' ? '' : String(Number(vehicle.capacityTons) * 1000)}
-                    onChange={(event) => onChange({
-                      target: {
-                        name: 'capacityTons',
-                        value: event.target.value ? String(Number(event.target.value) / 1000) : '',
-                      },
-                    })}
+                    min="1"
+                    step="any"
+                    placeholder="e.g. 5000"
+                    value={vehicle.capacityKg ?? ""}
+                    onChange={onChange}
                     className="flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                    aria-invalid={Boolean(errors.capacityTons)}
-                    aria-describedby={
-                      errors.capacityTons ? 'vehicle-capacity-error' : undefined
-                    }
+                    aria-invalid={Boolean(errors.capacityKg)}
+                    aria-describedby={errors.capacityKg ? 'vehicle-capacity-error' : undefined}
                   />
                   <span className="text-xs text-slate-400 mt-1 block">
-                    Cargo capacity in kilograms
+                    Cargo mass capacity in kilograms
                   </span>
-                  {errors.capacityTons && (
+                  {errors.capacityKg && (
                     <small
                       className="text-xs text-red-600 mt-1 block"
                       id="vehicle-capacity-error"
                     >
-                      {errors.capacityTons}
-                    </small>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="vehicle-volume"
-                    className="block text-xs font-bold text-slate-800 mb-1.5"
-                  >
-                    Volume (m³)
-                  </label>
-                  <input
-                    id="vehicle-volume"
-                    name="volumeM3"
-                    type="number"
-                    min="0.1"
-                    step="0.1"
-                    placeholder="60"
-                    value={vehicle.volumeM3}
-                    onChange={onChange}
-                    className="flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                    aria-invalid={Boolean(errors.volumeM3)}
-                    aria-describedby={
-                      errors.volumeM3 ? 'vehicle-volume-error' : undefined
-                    }
-                  />
-                  <span className="text-xs text-slate-400 mt-1 block">
-                    Cargo capacity in cubic meters
-                  </span>
-                  {errors.volumeM3 && (
-                    <small
-                      className="text-xs text-red-600 mt-1 block"
-                      id="vehicle-volume-error"
-                    >
-                      {errors.volumeM3}
+                      {errors.capacityKg}
                     </small>
                   )}
                 </div>

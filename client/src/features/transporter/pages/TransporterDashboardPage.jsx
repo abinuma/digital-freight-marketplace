@@ -9,6 +9,7 @@ import {
 import { listAvailableShipments, listMyBids } from "../transporter.api.js";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import { setLoadAvailability } from "../../profile/profile.api.js";
+import { formatLoadSize, formatShipmentLoad } from "../../../shared/constants/loadSizes.js";
 
 const metrics = [
   {
@@ -67,7 +68,13 @@ export function TransporterDashboardPage() {
     queryFn: () => listAvailableShipments({ invitedOnly: "true", limit: 5 }),
     refetchInterval: 15_000,
   });
+  const latestShipmentsQuery = useQuery({
+    queryKey: ["transporter", "latestShipments"],
+    queryFn: () => listAvailableShipments({ limit: 2 }),
+    refetchInterval: 15_000,
+  });
   const invites = invitesQuery.data?.shipments ?? [];
+  const latestShipments = latestShipmentsQuery.data?.shipments ?? [];
   const invitesCount = invitesQuery.data?.pagination?.total ?? invites.length;
   const error = results.find((query) => query.isError) || (invitesQuery.isError ? invitesQuery : null);
 
@@ -96,6 +103,15 @@ export function TransporterDashboardPage() {
       </div>
 
       {availabilityMutation.isError && <Alert tone="danger">{availabilityMutation.error.message}</Alert>}
+
+      {user.lookingForLoads && !user.city && (
+        <Alert tone="warning" title="Set your city to get discovered">
+          You are marked as available, but your city is not set in your profile. Shippers look for drivers by city.{" "}
+          <Link to="/profile" className="font-semibold underline">
+            Set your city in profile
+          </Link>
+        </Alert>
+      )}
 
       {error && (
         <Alert tone="danger" title="Some dashboard information is unavailable">
@@ -135,7 +151,7 @@ export function TransporterDashboardPage() {
         </Link>
       </section>
 
-      <section aria-labelledby="direct-invites-heading" className="space-y-3">
+      {(invitesQuery.isPending || invites.length > 0) && <section aria-labelledby="direct-invites-heading" className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -148,14 +164,6 @@ export function TransporterDashboardPage() {
             </div>
             <p className="m-0 mt-1 text-xs text-slate-500">Exclusive loads sent directly to you by shippers.</p>
           </div>
-          {invitesCount > 0 && (
-            <Link
-              to="/transporter/shipments"
-              className="text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline"
-            >
-              Browse all loads &rarr;
-            </Link>
-          )}
         </div>
 
         {invitesQuery.isPending ? (
@@ -163,7 +171,7 @@ export function TransporterDashboardPage() {
             <Skeleton className="h-40 rounded-xl" />
             <Skeleton className="h-40 rounded-xl" />
           </div>
-        ) : invites.length > 0 ? (
+        ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {invites.map((shipment) => (
               <div
@@ -188,69 +196,43 @@ export function TransporterDashboardPage() {
                   )}
                 </div>
                 <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                  <span className="text-sm font-semibold text-slate-900">{Number(shipment.weightKg)?.toLocaleString()} <span className="text-xs font-normal text-slate-500">kg</span></span>
+                  <span className="text-sm font-semibold text-slate-900">{formatShipmentLoad(shipment) || (shipment.weightKg ? `${Number(shipment.weightKg)?.toLocaleString()} kg` : "")}</span>
                   <Link
                     to={`/transporter/shipments/${shipment.id}`}
                     className="inline-flex min-h-9 items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white no-underline transition-colors hover:bg-blue-700"
                   >
-                    Review & place bid
+                    View invitation
                   </Link>
                 </div>
               </div>
             ))}
           </div>
-        ) : (
-          <Card className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-dashed border-slate-200 bg-slate-50/60 p-4 rounded-xl">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
-                <svg className="h-5 w-5 fill-none stroke-current" strokeWidth="1.75" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-                </svg>
-              </div>
-              <div>
-                <p className="m-0 text-sm font-semibold text-slate-800">
-                  No pending direct invitations
-                </p>
-                <p className="m-0 mt-0.5 text-xs text-slate-500">
-                  When shippers select your profile from the directory and send you loads, they'll appear here for quick review.
-                </p>
-              </div>
-            </div>
-            <div className="shrink-0 text-xs font-medium text-slate-500">
-              {user.lookingForLoads ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700 border border-emerald-200">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Availability is ON
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
-                  Availability is OFF
-                </span>
-              )}
-            </div>
-          </Card>
         )}
-      </section>
+      </section>}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Card className="relative flex min-h-48 flex-col items-start justify-between gap-4 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900 p-6 text-white">
-          <div className="relative z-10">
-            <p className="mb-2 text-[10px] font-bold tracking-[0.16em] text-blue-200">
-              ETHIOFREIGHT MARKETPLACE
-            </p>
-            <h2 className="m-0 text-lg font-semibold text-white">
-              Find a load that fits your route.
-            </h2>
-            <p className="mb-0 mt-2 max-w-xs text-xs leading-5 text-blue-100">
-              Browse current postings and send a clear offer to the shipper.
-            </p>
+        <Card className="grid min-h-48 content-start gap-3 rounded-2xl border border-slate-200 bg-white p-5">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="m-0 text-lg font-semibold text-slate-900">Latest shipments</h2>
+            <Link className="text-xs font-semibold text-blue-700 no-underline hover:text-blue-900 hover:underline" to="/transporter/shipments">View all</Link>
           </div>
-          <Link
-            className="relative z-10 inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-blue-900 no-underline transition-colors hover:bg-blue-50"
-            to="/transporter/shipments"
-          >
-            Explore shipments&nbsp;↗
-          </Link>
-          <div className="pointer-events-none absolute -bottom-8 right-0 h-20 w-40 rounded-[50%] border-2 border-dashed border-blue-300/40" aria-hidden="true" />
+          {latestShipmentsQuery.isPending ? (
+            <div className="grid gap-2"><Skeleton className="h-14" /><Skeleton className="h-14" /></div>
+          ) : latestShipmentsQuery.isError ? (
+            <Alert tone="danger" title="Could not load latest shipments">{latestShipmentsQuery.error.message}</Alert>
+          ) : latestShipments.length ? (
+            <div className="grid gap-2">
+              {latestShipments.map((shipment) => (
+                <Link key={shipment.id} to={`/transporter/shipments/${shipment.id}`} className="grid gap-1 rounded-lg border border-slate-200 p-3 text-inherit no-underline transition-colors hover:border-blue-300 hover:bg-blue-50/40">
+                  <strong className="truncate text-sm text-slate-900">{shipment.goodsDescription}</strong>
+                  <span className="truncate text-xs text-slate-600">{shipment.pickupLocation} to {shipment.deliveryLocation}</span>
+                  <span className="text-xs text-slate-500">{shipment.goodsType} · {formatShipmentLoad(shipment) || (shipment.weightKg ? `${Number(shipment.weightKg)?.toLocaleString()} kg` : "")}</span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="m-0 rounded-lg bg-slate-50 p-3 text-sm text-slate-500">No open shipments are available right now.</p>
+          )}
         </Card>
 
         <Card className="flex min-h-48 items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6">

@@ -24,7 +24,7 @@ app.use('/api', generalRateLimiter);
 app.use('/api/docs', apiDocsRouter);
 
 // Better Auth must receive the request before Express body parsers consume it.
-app.all('/api/auth/*splat', toNodeHandler(auth));
+app.all(['/api/auth/*splat', '/reset-password/:token'], toNodeHandler(auth));
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));

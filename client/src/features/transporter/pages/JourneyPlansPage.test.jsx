@@ -68,9 +68,9 @@ describe('JourneyPlansPage', () => {
     expect(markup).toContain('FULL');
     expect(markup).toContain('35,000');
 
-    // Capacity numbers
-    expect(markup).toContain('10,000 / 10,000 kg (100%)');
-    expect(markup).toContain('40 / 40 m³ (100%)');
+    // Capacity
+    expect(markup).toContain('Load Capacity');
+    expect(markup).toContain('100% allocated');
 
     // Assigned loads
     expect(markup).toContain('Factory Equipment');
@@ -78,6 +78,60 @@ describe('JourneyPlansPage', () => {
 
     // Full banner
     expect(markup).toContain('You are ready to collect the loads and go');
+  });
+
+  it('calculates remaining percentage based purely on mass for small loads', () => {
+    const data = {
+      journeyPlans: [
+        {
+          id: 'plan-small-half',
+          originCity: 'Addis Ababa',
+          destinationCity: 'Hawassa',
+          departureDate: '2026-10-25T08:00:00.000Z',
+          fullLoadPrice: 20000,
+          status: 'ACTIVE',
+          maxWeightKg: 5000,
+          maxVolumeM3: 30,
+          allocatedWeightKg: 2500,
+          allocatedVolumeM3: 15,
+          remainingWeightKg: 2500,
+          remainingVolumeM3: 15,
+          assignments: [
+            {
+              id: 'assign-small',
+              loadSize: 'SMALL_LOAD',
+              weightKg: 2500,
+              volumeM3: 15,
+              shipment: {
+                id: 'ship-small',
+                goodsDescription: 'Electronics Parts',
+                loadSize: 'SMALL_LOAD',
+                weightKg: 2500,
+                volumeM3: 15,
+              },
+            },
+          ],
+        },
+      ],
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+    };
+    journeyPlanApi.listMyJourneyPlans.mockReturnValue(data);
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    queryClient.setQueryData(['transporter', 'journeyPlans', '', 1], data);
+
+    const markup = renderToStaticMarkup(
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(MemoryRouter, null, createElement(JourneyPlansPage))
+      )
+    );
+
+    expect(markup).toContain('50% allocated');
+    expect(markup).toContain('50% capacity remaining');
   });
 
   it('renders empty state when no journey plans are listed', () => {

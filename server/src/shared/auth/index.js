@@ -115,7 +115,7 @@ export const auth = betterAuth({
           const role = roleSchema.safeParse(user.role);
           if (!phone.success || !role.success || !allowedRoles.has(user.role)) return false;
 
-          return { data: { ...user, phone: phone.data, role: role.data } };
+          return { data: { ...user, phone: phone.data, role: role.data, emailVerified: true } };
         },
         after: async (user) => notificationService.welcome(user),
       },

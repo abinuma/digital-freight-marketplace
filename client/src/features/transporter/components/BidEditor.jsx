@@ -7,11 +7,11 @@ import {
   Card,
   Input,
   Spinner,
-  Textarea,
   useSuccessToast,
 } from "../../../shared/components/index.js";
 import { getShipment, submitBid } from "../transporter.api.js";
 import { listMyJourneyPlans } from "../journeyPlan.api.js";
+import { getLoadFraction } from "../../../shared/constants/loadSizes.js";
 
 const toLocalDateTime = (date) => {
   if (!date) return "";
@@ -31,7 +31,6 @@ const bidSchema = z.object({
       (value) => new Date(value).getTime() > Date.now(),
       "Pickup time must be in the future",
     ),
-  message: z.string().max(5000),
 });
 const fieldClass =
   "grid content-start gap-1.5 text-sm font-medium text-slate-700";
@@ -42,7 +41,6 @@ export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
   const [values, setValues] = useState({
     price: initialBid ? String(initialBid.price) : "",
     pickupDate: toLocalDateTime(initialBid?.pickupDate),
-    message: initialBid?.message || "",
   });
   const [errors, setErrors] = useState({});
   const [requestError, setRequestError] = useState("");
@@ -62,7 +60,7 @@ export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
     queryFn: () => listMyJourneyPlans({ limit: 50 }),
   });
   const allPlans = plansQuery.data?.journeyPlans || [];
-  const shipmentWeight = Number(shipment?.weightKg || 0);
+  const isSmallLoad = shipment?.loadSize === "SMALL_LOAD";
 
   const matchingRoutePlans = allPlans.filter(
     (p) =>
@@ -73,9 +71,16 @@ export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
   );
   const allMatchingRoutePlansFull =
     matchingRoutePlans.length > 0 &&
-    matchingRoutePlans.every(
-      (p) => p.status === "FULL" || p.remainingWeightKg < shipmentWeight
-    );
+    matchingRoutePlans.every((p) => {
+      if (p.status === "FULL") return true;
+      const maxWeight = Number(p.maxWeightKg || 10000);
+      const allocatedWeight = Number(p.allocatedWeightKg || 0);
+      const requiredWeight = isSmallLoad
+        ? Number(shipment?.weightKg || 0)
+        : maxWeight * getLoadFraction(shipment?.loadSize);
+      const remainingWeight = Math.max(0, maxWeight - allocatedWeight);
+      return remainingWeight < requiredWeight - 0.01;
+    });
 
   const isCapacityBlocked = allMatchingRoutePlansFull;
 
@@ -191,22 +196,9 @@ export function BidEditor({ shipmentId, initialBid, shipment: propShipment }) {
             <small className="text-sm text-red-700">{errors.pickupDate}</small>
           )}
         </label>
-        <label className={fieldClass}>
-          <span>Message to shipper</span>
-          <Textarea
-            maxLength={5000}
-            value={values.message}
-            onChange={(event) => update("message", event.target.value)}
-            placeholder="Introduce your service or ask a question"
-          />
-          {errors.message && (
-            <small className="text-sm text-red-700">{errors.message}</small>
-          )}
-        </label>
-
         {isCapacityBlocked && (
           <Alert tone="danger" title="Limit reached">
-            Your maximum volume and/or weight limit is reached
+            Your journey plan capacity limit is reached for this route
           </Alert>
         )}
 

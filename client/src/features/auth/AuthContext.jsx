@@ -32,14 +32,20 @@ export function AuthProvider({ children }) {
   } = useQuery({
     queryKey: currentUserQueryKey,
     queryFn: loadCurrentUser,
-    retry: false,
-    staleTime: 60_000,
+    // 401 (session expired) returns null instead of throwing, so only
+    // network / 5xx errors reach the retry logic.  Retry those a couple
+    // of times before surfacing the error.
+    retry: 2,
+    staleTime: 0,
   });
 
   useEffect(() => {
     function handleUnauthorized() {
-      queryClient.clear();
       queryClient.setQueryData(currentUserQueryKey, null);
+      queryClient.clear();
+      if (typeof window !== "undefined" && window.location.pathname !== "/") {
+        window.location.replace("/");
+      }
     }
 
     window.addEventListener("app:unauthorized", handleUnauthorized);
@@ -72,8 +78,11 @@ export function AuthProvider({ children }) {
     try {
       await logoutCurrentUser();
     } finally {
-      queryClient.clear();
       queryClient.setQueryData(currentUserQueryKey, null);
+      queryClient.clear();
+      if (typeof window !== "undefined" && window.location.pathname !== "/") {
+        window.location.replace("/");
+      }
     }
   }, [queryClient]);
 

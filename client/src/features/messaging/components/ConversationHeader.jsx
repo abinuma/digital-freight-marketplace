@@ -16,6 +16,8 @@ export function ConversationHeader({
   const name = profile?.name || counterpart?.name || 'User';
   const city = profile?.city || profile?.location || counterpart?.city || counterpart?.location;
   const phone = profile?.phone || counterpart?.phone;
+  const averageRating = profile?.averageRating;
+  const reviewCount = profile?.reviewCount;
 
   return (
     <header className="flex min-h-14 items-center justify-between gap-2 border-b border-slate-200 py-2 sm:min-h-16">
@@ -43,6 +45,13 @@ export function ConversationHeader({
           <strong className="truncate text-sm font-semibold text-slate-900 sm:text-base">
             {name}
           </strong>
+          {averageRating != null && reviewCount > 0 && (
+            <span className="flex items-center gap-1 text-xs text-slate-600" aria-label={`${Number(averageRating).toFixed(1)} out of 5, ${reviewCount} ratings`}>
+              <span className="text-amber-500" aria-hidden="true">★</span>
+              <strong className="text-slate-800">{Number(averageRating).toFixed(1)}</strong>
+              <span>({reviewCount} {reviewCount === 1 ? 'rating' : 'ratings'})</span>
+            </span>
+          )}
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -19,12 +19,23 @@ import {
 } from "../transporter.api.js";
 import { BidEditor } from "../components/BidEditor.jsx";
 import { ShipmentReviews } from "../../shipper/components/ShipmentReviews.jsx";
+import { listConversations } from "../../messaging/messaging.api.js";
 import { ShipmentHeading, ShipmentInformation } from "../../shipments/components/ShipmentSummary.jsx";
 import { dateLabel, money, shipmentTones } from "../../shipments/shipmentFormatters.js";
 
 const tones = { ...shipmentTones, PENDING: "warning", ACCEPTED: "success", DECLINED: "danger", WITHDRAWN: "neutral" };
 export function ShipmentDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleBack = () => {
+    if (location.key !== "default") {
+      navigate(-1);
+    } else {
+      navigate("/transporter/shipments");
+    }
+  };
   const cache = useQueryClient();
   const showSuccess = useSuccessToast();
   const [withdrawOpen, setWithdrawOpen] = useState(false);
@@ -47,6 +58,11 @@ export function ShipmentDetailPage() {
     enabled: Boolean(id),
     refetchInterval: 15_000,
   });
+  const conversationsQuery = useQuery({
+    queryKey: ["messages", "conversations"],
+    queryFn: listConversations,
+    enabled: Boolean(ownBidQuery.data?.bids?.[0]?.status === "ACCEPTED" && shipmentQuery.data?.shipperId),
+  });
   const shipment = shipmentQuery.data;
   const inviterName = inviterQuery.data?.name || "The shipper";
   const latestBid = ownBidQuery.data?.bids?.[0] || null;
@@ -54,6 +70,9 @@ export function ShipmentDetailPage() {
     latestBid && ["PENDING", "ACCEPTED"].includes(latestBid.status)
       ? latestBid
       : null;
+  const shipperConversation = conversationsQuery.data?.find(
+    (conversation) => conversation.counterpart?.id === shipment?.shipperId,
+  );
   const canBid =
     !ownBidQuery.isPending &&
     !ownBidQuery.isError &&
@@ -101,7 +120,7 @@ export function ShipmentDetailPage() {
         )}
         <Link
           className="group inline-flex w-fit min-h-10 items-center gap-2 rounded-full border border-blue-200 bg-white px-5 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white"
-          to="/transporter/shipments"
+          to="/transporter/shipments" onClick={(e) => { e.preventDefault(); handleBack(); }}
         >
           <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-4 w-4 group-hover:brightness-0 group-hover:invert" />
           Back
@@ -113,9 +132,11 @@ export function ShipmentDetailPage() {
   return (
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
       <header className="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
-        <ShipmentHeading shipment={shipment} hidePublishedStatus hideCargoSummary />
+        <div className="min-w-0 max-w-3xl">
+          <ShipmentHeading shipment={shipment} hidePublishedStatus hideCargoSummary />
+        </div>
         <Link
-          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50"
           to="/transporter/bids"
         >
           My bids
@@ -203,9 +224,22 @@ export function ShipmentDetailPage() {
                   </Button>
                 )}
                 {activeBid.status === "ACCEPTED" && (
-                  <Alert tone="success" title="Offer accepted">
-                    You can now message the shipper about this shipment.
-                  </Alert>
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                    <Link
+                      className="font-semibold text-blue-700 underline hover:text-blue-900"
+                      to={shipperConversation ? `/transporter/messages?conversationId=${shipperConversation.id}` : "/transporter/messages"}
+                    >
+                      chat
+                    </Link>
+                    {!latestBid?.journeyPlanAssignment && (
+                      <Link
+                        className="inline-flex min-h-8 items-center justify-center rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white no-underline hover:bg-blue-800"
+                        to={`/transporter/bids?assignShipmentId=${id}`}
+                      >
+                        Assign to journey plan
+                      </Link>
+                    )}
+                  </div>
                 )}
               </Card>
               {activeBid.status === "PENDING" && (
@@ -268,7 +302,7 @@ export function ShipmentDetailPage() {
 
       <Link
         className="group inline-flex w-fit min-h-10 items-center gap-2 rounded-full border border-blue-200 bg-white px-5 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white"
-        to="/transporter/shipments"
+        to="/transporter/shipments" onClick={(e) => { e.preventDefault(); handleBack(); }}
       >
         <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-4 w-4 group-hover:brightness-0 group-hover:invert" />
         Back

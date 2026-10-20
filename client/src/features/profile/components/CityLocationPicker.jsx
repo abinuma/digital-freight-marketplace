@@ -11,6 +11,7 @@ export function CityLocationPicker({
   region,
   error,
   required = false,
+  disabled = false,
   onChange,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -107,8 +108,9 @@ export function CityLocationPicker({
           type="text"
           autoComplete="off"
           required={required}
+          disabled={disabled}
           placeholder={placeholder}
-          className={`flex h-10 w-full rounded-lg border bg-white px-3 py-2 pr-14 text-sm text-slate-800 focus:outline-none focus:ring-1 ${error ? 'border-red-600 focus:border-red-600 focus:ring-red-100' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500'}`}
+          className={`flex h-10 w-full rounded-lg border bg-white px-3 py-2 pr-14 text-sm text-slate-800 focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 ${error ? 'border-red-600 focus:border-red-600 focus:ring-red-100' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500'}`}
           value={query}
           onChange={handleInputChange}
           onFocus={() => setIsOpen(true)}
@@ -122,8 +124,9 @@ export function CityLocationPicker({
           {query && (
             <button
               type="button"
+              disabled={disabled}
               onClick={handleClear}
-              className="text-slate-400 hover:text-slate-600 p-0.5 border-0 bg-transparent cursor-pointer text-xs"
+              className="text-slate-400 hover:text-slate-600 p-0.5 border-0 bg-transparent cursor-pointer text-xs disabled:cursor-not-allowed"
               aria-label="Clear city"
             >
               ✕
@@ -131,8 +134,9 @@ export function CityLocationPicker({
           )}
           <button
             type="button"
+            disabled={disabled}
             onClick={() => setIsOpen((prev) => !prev)}
-            className="text-slate-400 hover:text-slate-600 p-0.5 border-0 bg-transparent cursor-pointer text-xs"
+            className="text-slate-400 hover:text-slate-600 p-0.5 border-0 bg-transparent cursor-pointer text-xs disabled:cursor-not-allowed"
             aria-label="Toggle city list"
           >
             ▼
@@ -140,7 +144,7 @@ export function CityLocationPicker({
         </div>
       </div>
 
-      {isOpen && (
+      {isOpen && !disabled && (
         <ul
           className="absolute z-50 left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg list-none p-0 m-0 text-sm text-slate-800"
           role="listbox"

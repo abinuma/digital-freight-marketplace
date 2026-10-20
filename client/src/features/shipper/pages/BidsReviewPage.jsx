@@ -10,6 +10,7 @@ import {
 } from "../../../shared/components/index.js";
 import { getUserProfile, listShipmentBids, listShipments } from "../shipper.api.js";
 import { dateLabel, money, shipmentTones } from "../../shipments/shipmentFormatters.js";
+import { formatLoadSize, formatShipmentLoad } from "../../../shared/constants/loadSizes.js";
 
 const bidTones = { PENDING: "warning", ACCEPTED: "success", DECLINED: "danger" };
 
@@ -85,7 +86,7 @@ export function BidsReviewPage() {
                       {shipment.pickupLocation} <span className="px-1 text-blue-700">→</span> {shipment.deliveryLocation}
                     </p>
                     <p className="m-0 text-xs text-slate-500">
-                      {shipment.goodsType} · {Number(shipment.weightKg).toLocaleString()} kg · Pickup {dateLabel(shipment.pickupDate)}
+                      {shipment.goodsType} · {formatShipmentLoad(shipment) || (shipment.weightKg ? `${Number(shipment.weightKg).toLocaleString()} kg` : "")} · Pickup {dateLabel(shipment.pickupDate)}
                     </p>
                   </div>
                   <Link
@@ -117,9 +118,12 @@ export function BidsReviewPage() {
                             <div>
                               <strong className="text-sm text-slate-900">{profile?.name || "Transporter"}</strong>
                               <p className="mb-0 mt-1 text-xs text-slate-500">
-                                {profile?.averageRating
-                                  ? `★ ${Number(profile.averageRating).toFixed(1)} (${profile.reviewCount} reviews)`
-                                  : profile ? "No ratings yet" : "Loading transporter profile…"}
+                                {profile?.averageRating ? (
+                                  <>
+                                    <span className="text-amber-500" aria-hidden="true">★</span>{' '}
+                                    {Number(profile.averageRating).toFixed(1)} ({profile.reviewCount} {profile.reviewCount === 1 ? 'review' : 'reviews'})
+                                  </>
+                                ) : profile ? "No ratings yet" : "Loading transporter profile…"}
                               </p>
                             </div>
                             <Badge tone={bidTones[bid.status] || "neutral"}>{bid.status}</Badge>

@@ -27,7 +27,7 @@ export function PasswordInput({
         aria-describedby={error ? `${id}-error` : undefined}
       />
       <button
-        className="password-input__toggle absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-1.5 border-0 bg-transparent text-slate-500 cursor-pointer hover:text-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-100 rounded"
+        className="password-input__toggle absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-1.5 border-0 bg-transparent text-slate-500 cursor-pointer hover:text-blue-700 transition-colors focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 rounded"
         type="button"
         onClick={() => setVisible((current) => !current)}
         aria-label={visible ? "Hide password" : "Show password"}

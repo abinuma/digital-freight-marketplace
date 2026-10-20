@@ -5,6 +5,8 @@ import { validate } from '../../shared/middleware/validate.js';
 import {
   assignBidSchema,
   createJourneyPlanSchema,
+  updateJourneyPlanSchema,
+  deleteJourneyPlanSchema,
   journeyPlanIdParamsSchema,
   listJourneyPlansQuerySchema,
 } from './journey-plan.validation.js';
@@ -23,6 +25,20 @@ router.get(
   authorize('TRANSPORTER'),
   validate(listJourneyPlansQuerySchema),
   journeyPlanController.listMyJourneyPlans
+);
+
+router.put(
+  '/journey-plans/:id',
+  authorize('TRANSPORTER'),
+  validate(updateJourneyPlanSchema),
+  journeyPlanController.updateJourneyPlan
+);
+
+router.delete(
+  '/journey-plans/:id',
+  authorize('TRANSPORTER'),
+  validate(deleteJourneyPlanSchema),
+  journeyPlanController.deleteJourneyPlan
 );
 
 router.get(

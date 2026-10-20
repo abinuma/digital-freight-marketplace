@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Alert, Input, Skeleton } from '../../../shared/components/index.js';
 import { dateLabel, initials, timeLabel } from '../messaging.formatters.js';
 
@@ -19,6 +19,16 @@ export function ConversationList({
   onFilterChange,
   unreadCountByConversation,
 }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleBack = () => {
+    if (location.key !== 'default') {
+      navigate(-1);
+    } else {
+      navigate(dashboardPath);
+    }
+  };
   return (
     <aside
       className={`flex min-h-0 shrink-0 flex-col border-b border-slate-200 bg-white md:border-b-0 md:border-r ${
@@ -29,6 +39,10 @@ export function ConversationList({
       <div className="grid gap-3 border-b border-slate-200 p-4">
         <Link
           to={dashboardPath}
+          onClick={(e) => {
+            e.preventDefault();
+            handleBack();
+          }}
           className="group inline-flex min-h-10 w-fit items-center gap-2 rounded-full border border-blue-200 bg-white px-5 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white"
         >
           <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-4 w-4 group-hover:brightness-0 group-hover:invert" />

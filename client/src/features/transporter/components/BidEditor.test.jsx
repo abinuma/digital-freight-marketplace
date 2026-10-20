@@ -61,7 +61,7 @@ describe('BidEditor', () => {
     expect(markup).toContain('Make an offer');
     expect(markup).toContain('Your price (ETB)');
     expect(markup).toContain('Submit bid');
-    expect(markup).not.toContain('Your maximum volume and/or weight limit is reached');
+    expect(markup).not.toContain('Your journey plan capacity limit is reached for this route');
   });
 
   it('displays warning and disables bidding when all matching route plans are FULL', () => {
@@ -107,7 +107,7 @@ describe('BidEditor', () => {
     );
 
     // Warning message appears
-    expect(markup).toContain('Your maximum volume and/or weight limit is reached');
+    expect(markup).toContain('Your journey plan capacity limit is reached for this route');
     // Button is disabled
     expect(markup).toContain('disabled=""');
   });

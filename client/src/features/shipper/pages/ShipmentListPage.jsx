@@ -95,7 +95,7 @@ export function ShipmentListPage() {
           </div>
         ) : shipments.length ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-max border-collapse text-left text-xs">
+            <table className="w-full min-w-max border-separate border-spacing-y-1 text-left text-xs">
               <thead className="bg-slate-50 font-medium text-slate-500">
                 <tr>
                   <th className="px-3 py-3 font-medium">Shipment</th>

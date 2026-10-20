@@ -21,6 +21,18 @@ export const createJourneyPlanSchema = {
   }),
 };
 
+export const updateJourneyPlanSchema = {
+  params: z.object({ id: planId }),
+  body: z.object({
+    originCity: z.string().trim().min(1, 'Origin city is required').max(100),
+    destinationCity: z.string().trim().min(1, 'Destination city is required').max(100),
+    departureDate,
+    fullLoadPrice: z.coerce.number().positive('Full load price must be greater than zero').max(999_999_999_999.99),
+  }),
+};
+
+export const deleteJourneyPlanSchema = { params: z.object({ id: planId }) };
+
 export const assignBidSchema = {
   params: z.object({ id: planId }),
   body: z.object({

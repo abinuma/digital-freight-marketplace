@@ -2,11 +2,59 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { config } from '../../shared/config/index.js';
 import { auth } from '../../shared/auth/index.js';
 import { AppError } from '../../shared/utils/AppError.js';
-import { completeUserProfile as completeUserProfileRecord, findAuthUserByEmail, findAuthUserById } from './auth.repository.js';
-import { takePasswordResetDelivery } from '../notification/notification.service.js';
+import { logger } from '../../shared/utils/logger.js';
+import {
+  completeUserProfile as completeUserProfileRecord,
+  deleteEmailVerificationRecord,
+  findAuthUserByEmail,
+  findAuthUserById,
+  findPasswordResetToken,
+  getEmailVerificationRecord,
+  saveEmailVerificationCode,
+} from './auth.repository.js';
+import { sendVerificationCodeEmail, takePasswordResetDelivery } from '../notification/notification.service.js';
 
-export function register(input, headers) {
-  return auth.api.signUpEmail({ body: input, headers: fromNodeHeaders(headers), asResponse: true });
+export async function sendVerificationCode(email) {
+  const existingUser = await findAuthUserByEmail(email);
+  if (existingUser) {
+    throw new AppError('An account with this email already exists', 409);
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  await saveEmailVerificationCode(email, code, expiresAt);
+  logger.info({ email, code }, 'Registration verification code generated');
+
+  const delivery = await sendVerificationCodeEmail(email, code);
+  if (!delivery?.sent && delivery?.reason === 'delivery_failed') {
+    throw new AppError('We couldn’t send the verification email right now. Please try again later.', 503);
+  }
+
+  return { message: 'Verification code sent to your email' };
+}
+
+export async function register(input, headers) {
+  const { code, ...userData } = input;
+
+  const existingUser = await findAuthUserByEmail(userData.email);
+  if (existingUser) {
+    throw new AppError('An account with this email already exists', 409);
+  }
+
+  const record = await getEmailVerificationRecord(userData.email);
+  if (!record || record.value !== code) {
+    throw new AppError('Invalid verification code. Please check your email and try again.', 400);
+  }
+
+  if (new Date() > new Date(record.expiresAt)) {
+    await deleteEmailVerificationRecord(userData.email);
+    throw new AppError('Verification code has expired. Please request a new code.', 400);
+  }
+
+  await deleteEmailVerificationRecord(userData.email);
+
+  return auth.api.signUpEmail({ body: userData, headers: fromNodeHeaders(headers), asResponse: true });
 }
 
 export async function login(input, headers) {
@@ -39,6 +87,24 @@ export async function requestPasswordReset(email, headers) {
 export function resetPassword(input, headers) {
   return auth.api.resetPassword({ body: input, headers: fromNodeHeaders(headers), asResponse: true });
 }
+
+export async function verifyResetToken(token) {
+  if (!token) {
+    return {
+      valid: false,
+      message: 'This reset link is missing its token. Request a new password reset link.',
+    };
+  }
+  const record = await findPasswordResetToken(token);
+  if (!record) {
+    return {
+      valid: false,
+      message: 'This password reset link has expired or has already been used. Please request a new one.',
+    };
+  }
+  return { valid: true };
+}
+
 
 export async function completeProfile(userId, input) {
   const result = await completeUserProfileRecord(userId, input);

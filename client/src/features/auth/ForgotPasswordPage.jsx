@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { z } from "zod";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button, Input } from "../../shared/components/index.js";
 import { requestPasswordReset } from "./auth.api.js";
 import { AuthField } from "./AuthField.jsx";
@@ -13,6 +13,16 @@ const emailSchema = z
   .max(255);
 
 export function ForgotPasswordPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleBack = () => {
+    if (location.key !== "default") {
+      navigate(-1);
+    } else {
+      navigate("/login");
+    }
+  };
   const [email, setEmail] = useState("");
   const [fieldError, setFieldError] = useState("");
   const [formError, setFormError] = useState("");
@@ -50,10 +60,10 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthPageLayout
-      title={isSubmitted ? "Check your email" : "Forgot Password?"}
+      title={isSubmitted ? "We have sent reset link" : "Forgot Password?"}
       subtitle={
         isSubmitted
-          ? "If an account matches that email, we’ll send a reset link."
+          ? ""
           : "Enter your email and we’ll send you a link to reset your password."
       }
       icon={
@@ -72,17 +82,13 @@ export function ForgotPasswordPage() {
           <path d="m10.85 12.15 8.15-8.15 2 2-2 2 2 2-2 2-2-2-5.3 5.3" />
         </svg>
       }
-      footer={<Link className="group inline-flex min-h-9 items-center gap-1.5 rounded-full border border-blue-200 bg-white px-4 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white" to="/login"><img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-3.5 w-3.5 group-hover:brightness-0 group-hover:invert" />Back</Link>}
+      footer={<Link className="group inline-flex min-h-9 items-center gap-1.5 rounded-full border border-blue-200 bg-white px-4 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white" to="/login" onClick={(e) => { e.preventDefault(); handleBack(); }}><img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-3.5 w-3.5 group-hover:brightness-0 group-hover:invert" />Back</Link>}
     >
       {isSubmitted ? (
         <div
           className={`     grid gap-4 text-slate-500 text-base text-center   auth-success`}
           role="status"
         >
-          <p>
-            Check your inbox for instructions to reset your password. The link
-            may take a few minutes to arrive.
-          </p>
           <Button variant="secondary" onClick={() => setIsSubmitted(false)}>
             Try another email
           </Button>

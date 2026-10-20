@@ -15,6 +15,12 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Enter your password').max(128),
 });
 
+export const verificationCodeSchema = z
+  .string()
+  .trim()
+  .length(6, 'Enter the 6-digit verification code')
+  .regex(/^\d{6}$/, 'Code must contain only digits');
+
 export const registrationSchema = z.object({
   firstName: z.string().trim().min(1, 'Enter your first name').max(50),
   lastName: z.string().trim().min(1, 'Enter your last name').max(50),

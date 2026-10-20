@@ -3,11 +3,13 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../src/modules/auth/auth.service.js', () => ({
+  sendVerificationCode: vi.fn(),
   register: vi.fn(),
   login: vi.fn(),
   logout: vi.fn(),
   requestPasswordReset: vi.fn(),
   resetPassword: vi.fn(),
+  verifyResetToken: vi.fn(),
   getCurrentUser: vi.fn(),
   completeProfile: vi.fn(),
 }));
@@ -34,6 +36,7 @@ const validRegistration = {
   phone: '+251911234567',
   password: 'SecurePass1',
   role: 'SHIPPER',
+  code: '123456',
 };
 
 function authResponse(payload, status = 200, headers = {}) {
@@ -56,6 +59,18 @@ beforeEach(() => {
 });
 
 describe('auth endpoints', () => {
+  it('sends a verification code for valid email', async () => {
+    authService.sendVerificationCode.mockResolvedValue({ message: 'Verification code sent to your email' });
+
+    const response = await request(createApp())
+      .post('/auth/send-verification-code')
+      .send({ email: 'amina@example.com' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ message: 'Verification code sent to your email' });
+    expect(authService.sendVerificationCode).toHaveBeenCalledWith('amina@example.com');
+  });
+
   it('registers a user, returns 201, and keeps the session token in the cookie', async () => {
     authService.register.mockResolvedValue(authResponse(
       { token: 'private-session-token', user: { id: validRegistration.email, email: validRegistration.email } },
@@ -140,6 +155,34 @@ describe('auth endpoints', () => {
     expect(resetResponse.status).toBe(200);
     expect(authService.resetPassword).toHaveBeenCalledWith({ token: 'reset-token', newPassword: 'NewSecurePass1' }, expect.any(Object));
   });
+
+  it('verifies a reset token and maps invalid/expired token error cleanly', async () => {
+    authService.verifyResetToken
+      .mockResolvedValueOnce({ valid: true })
+      .mockResolvedValueOnce({ valid: false, message: 'This password reset link has expired or has already been used. Please request a new one.' });
+
+    const app = createApp();
+    const validRes = await request(app).get('/auth/verify-reset-token?token=valid-token');
+    expect(validRes.status).toBe(200);
+    expect(validRes.body).toEqual({ valid: true });
+
+    const expiredRes = await request(app).get('/auth/verify-reset-token?token=used-token');
+    expect(expiredRes.status).toBe(200);
+    expect(expiredRes.body.valid).toBe(false);
+    expect(expiredRes.body.message).toContain('expired or has already been used');
+  });
+
+  it('maps Better Auth INVALID_TOKEN error to a friendly expired link message', async () => {
+    authService.resetPassword.mockResolvedValue(authResponse({ code: 'INVALID_TOKEN', message: 'Invalid token' }, 400));
+
+    const response = await request(createApp())
+      .post('/auth/reset-password')
+      .send({ token: 'expired-token', newPassword: 'NewSecurePass1' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toBe('This password reset link has expired or has already been used. Please request a new one.');
+  });
+
 
   it('returns the current authenticated user', async () => {
     authService.getCurrentUser.mockResolvedValue({

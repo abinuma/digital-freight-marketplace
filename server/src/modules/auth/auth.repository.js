@@ -47,3 +47,40 @@ export async function completeUserProfile(id, input) {
 
   return { alreadyComplete: false, user: await findAuthUserById(id) };
 }
+
+export async function saveEmailVerificationCode(email, code, expiresAt) {
+  const identifier = `registration-code:${email.toLowerCase()}`;
+  await prisma.verification.deleteMany({ where: { identifier } });
+  return prisma.verification.create({
+    data: {
+      identifier,
+      value: code,
+      expiresAt,
+    },
+  });
+}
+
+export async function getEmailVerificationRecord(email) {
+  const identifier = `registration-code:${email.toLowerCase()}`;
+  return prisma.verification.findFirst({
+    where: { identifier },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function deleteEmailVerificationRecord(email) {
+  const identifier = `registration-code:${email.toLowerCase()}`;
+  return prisma.verification.deleteMany({ where: { identifier } });
+}
+
+export async function findPasswordResetToken(token) {
+  if (!token) return null;
+  const identifier = `reset-password:${token}`;
+  return prisma.verification.findFirst({
+    where: {
+      identifier,
+      expiresAt: { gt: new Date() },
+    },
+  });
+}
+

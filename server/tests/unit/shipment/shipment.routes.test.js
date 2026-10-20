@@ -44,6 +44,7 @@ describe('shipment routes', () => {
       goodsDescription: 'Household furniture shipment',
       goodsType: 'Furniture',
       weightKg: 125.5,
+      volumeM3: 15.5,
       pickupLocation: 'Addis Ababa',
       deliveryLocation: 'Hawassa',
       pickupDate: '2099-10-10',
@@ -53,7 +54,10 @@ describe('shipment routes', () => {
 
     expect(response.status).toBe(201);
     expect(response.body.data).toMatchObject({ status: 'DRAFT' });
-    expect(shipmentService.createShipment).toHaveBeenCalledWith(shipper.id, payload);
+    expect(shipmentService.createShipment).toHaveBeenCalledWith(shipper.id, {
+      ...payload,
+      loadSize: 'FULL_LOAD',
+    });
   });
 
   it('rejects shipment creation by a transporter', async () => {

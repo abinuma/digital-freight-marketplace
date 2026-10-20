@@ -161,6 +161,14 @@ export function welcome(user) {
   return safely('WELCOME', () => notify(user, { type: 'WELCOME' }));
 }
 
+export async function sendVerificationCodeEmail(email, code) {
+  return sendEmail({
+    to: email,
+    type: 'EMAIL_VERIFICATION_CODE',
+    content: code,
+  });
+}
+
 export async function passwordReset(user, url) {
   const result = user?.email
     ? await sendEmail({ to: user.email, recipientName: user.name, type: 'PASSWORD_RESET', content: url })

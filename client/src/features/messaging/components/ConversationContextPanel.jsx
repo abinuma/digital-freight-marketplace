@@ -41,13 +41,6 @@ export function ConversationContextPanel({
               {bids.length}
             </span>
           </div>
-          {role === 'SHIPPER' && profile?.averageRating > 0 && (
-            <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] text-amber-800">
-              <span className="tracking-wide text-amber-500" aria-hidden="true">★★★★★</span>
-              <strong>{Number(profile.averageRating).toFixed(1)}</strong>
-              <span>· {profile.reviewCount || 0} reviews</span>
-            </div>
-          )}
         </div>
         {onClose && (
           <button

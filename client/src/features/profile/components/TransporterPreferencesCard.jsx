@@ -10,9 +10,9 @@ const DAYS_OF_WEEK = [
 
 const LOAD_TYPES = [
   {
-    key: 'Agricultural Products',
-    legacyKeys: ['Agriculture'],
-    label: 'Agricultural Products',
+    key: 'Agriculture',
+    legacyKeys: ['Agricultural Products', 'agriculture'],
+    label: 'Agriculture',
     testText: 'Agriculture',
     icon: (
       <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -21,9 +21,9 @@ const LOAD_TYPES = [
     ),
   },
   {
-    key: 'Construction Materials',
-    legacyKeys: ['Construction'],
-    label: 'Construction Materials',
+    key: 'Construction',
+    legacyKeys: ['Construction Materials', 'construction'],
+    label: 'Construction',
     testText: 'Construction',
     icon: (
       <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -32,21 +32,9 @@ const LOAD_TYPES = [
     ),
   },
   {
-    key: 'Machinery & Equipment',
-    legacyKeys: ['Machinery'],
-    label: 'Machinery & Equipment',
-    testText: '',
-    icon: (
-      <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-  },
-  {
-    key: 'Consumer Goods',
-    legacyKeys: ['Consumer Goods'],
-    label: 'Consumer Goods',
+    key: 'Food Products',
+    legacyKeys: ['Food & Beverages', 'food products'],
+    label: 'Food Products',
     testText: '',
     icon: (
       <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -55,9 +43,9 @@ const LOAD_TYPES = [
     ),
   },
   {
-    key: 'Food & Beverages',
-    legacyKeys: ['Beverage', 'Bottled water'],
-    label: 'Food & Beverages',
+    key: 'Beverage',
+    legacyKeys: ['Bottled water', 'Food & Beverages', 'beverage', 'beveregae'],
+    label: 'Beverage',
     testText: 'Beverage, Bottled water',
     icon: (
       <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -66,13 +54,13 @@ const LOAD_TYPES = [
     ),
   },
   {
-    key: 'Others',
-    legacyKeys: ['Timber', 'Other'],
-    label: 'Others',
+    key: 'Other',
+    legacyKeys: ['Others', 'Timber', 'Machinery & Equipment', 'Consumer Goods', 'other'],
+    label: 'Other',
     testText: 'Timber',
     icon: (
       <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9ZM4 7.5l8 4.5m8-4.5-8 4.5m0 0V21" />
       </svg>
     ),
   },
@@ -138,9 +126,6 @@ export function TransporterPreferencesCard({
           <h2 className="m-0 text-xl font-bold text-slate-900">
             Availability & Load Preferences
           </h2>
-          <p className="m-0 mt-0.5 text-xs text-slate-500">
-            Set the days of the week you want to work and the cargo types you prefer to haul.
-          </p>
         </div>
       </div>
 
@@ -150,7 +135,7 @@ export function TransporterPreferencesCard({
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 flex flex-col justify-between">
             <div>
               <span className="block text-xs font-bold text-slate-800">
-                Working Days Availability (Mon–Sun)
+                Working Days Availability
               </span>
 
               {/* Quick Select Buttons */}
@@ -217,7 +202,7 @@ export function TransporterPreferencesCard({
               Preferred Cargo & Load Types
             </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
+            <div className="flex flex-wrap gap-2.5 list-none">
               {LOAD_TYPES.map((item) => {
                 const keysToCheck = [item.key, ...(item.legacyKeys || [])];
                 const selected = keysToCheck.some((k) => preferredLoadTypes.includes(k));
@@ -227,7 +212,7 @@ export function TransporterPreferencesCard({
                     key={item.key}
                     type="button"
                     onClick={() => toggleLoadType(item.key)}
-                    className={`flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs transition-all text-left select-none cursor-pointer ${
+                    className={`inline-flex w-fit max-w-full items-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs transition-all text-left select-none cursor-pointer ${
                       selected
                         ? 'border-blue-600 bg-blue-50/90 text-blue-900 font-semibold shadow-xs'
                         : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
@@ -235,7 +220,7 @@ export function TransporterPreferencesCard({
                     aria-pressed={selected}
                   >
                     {item.icon}
-                    <span className="truncate">{item.label}</span>
+                    <span className="whitespace-normal">{item.label}</span>
                     {item.testText && <span className="sr-only">{item.testText}</span>}
                   </button>
                 );

@@ -17,6 +17,7 @@ vi.mock('../../../src/modules/shipment/shipment.repository.js', () => ({
   findShipmentImage: vi.fn(),
   deleteShipmentImage: vi.fn(),
   hasTransporterBid: vi.fn(),
+  countActiveBidsByShipment: vi.fn().mockResolvedValue({}),
 }));
 
 vi.mock('../../../src/modules/notification/notification.service.js', () => ({
@@ -47,6 +48,8 @@ describe('shipment update service', () => {
   it('creates a draft shipment and converts the date and decimal fields', async () => {
     shipmentRepository.createShipment.mockResolvedValue({
       ...draft,
+      status: 'PUBLISHED',
+      loadSize: 'FULL_LOAD',
       pickupDate: new Date('2026-10-10T00:00:00.000Z'),
       weightKg: '125.50',
       pickupLat: '9.0100000',
@@ -57,7 +60,9 @@ describe('shipment update service', () => {
     const input = {
       goodsDescription: 'Household furniture shipment',
       goodsType: 'Furniture',
+      loadSize: 'FULL_LOAD',
       weightKg: 125.5,
+      volumeM3: 15.5,
       pickupLocation: 'Addis Ababa',
       deliveryLocation: 'Hawassa',
       pickupDate: '2026-10-10',
@@ -67,9 +72,10 @@ describe('shipment update service', () => {
 
     expect(shipmentRepository.createShipment).toHaveBeenCalledWith(draft.shipperId, {
       ...input,
+      status: 'PUBLISHED',
       pickupDate: new Date('2026-10-10T00:00:00.000Z'),
     });
-    expect(result).toMatchObject({ status: 'DRAFT', weightKg: 125.5, pickupLat: 9.01 });
+    expect(result).toMatchObject({ status: 'PUBLISHED', loadSize: 'FULL_LOAD', weightKg: 125.5, pickupLat: 9.01 });
   });
 
   it('lists a shipper’s own shipments with pagination metadata', async () => {
@@ -78,6 +84,7 @@ describe('shipment update service', () => {
     const result = await shipmentService.listShipments({ id: draft.shipperId, role: 'SHIPPER' }, { page: '2', limit: '10' });
 
     expect(shipmentRepository.findShipments).toHaveBeenCalledWith({
+      includeImages: false,
       where: { shipperId: draft.shipperId, removedAt: null },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       skip: 10,
@@ -103,6 +110,7 @@ describe('shipment update service', () => {
     );
 
     expect(shipmentRepository.findShipments).toHaveBeenCalledWith({
+      includeImages: true,
       where: {
         AND: [
           {
@@ -143,6 +151,7 @@ describe('shipment update service', () => {
     await shipmentService.listShipments({ id: 'transporter-id', role: 'TRANSPORTER' }, {});
 
     expect(shipmentRepository.findShipments).toHaveBeenCalledWith({
+      includeImages: true,
       where: {
         status: 'PUBLISHED',
         removedAt: null,
@@ -164,6 +173,7 @@ describe('shipment update service', () => {
     await shipmentService.listShipments({ id: 'transporter-id', role: 'TRANSPORTER' }, { invitedOnly: 'true' });
 
     expect(shipmentRepository.findShipments).toHaveBeenCalledWith({
+      includeImages: true,
       where: {
         status: 'PUBLISHED',
         removedAt: null,
@@ -324,7 +334,7 @@ describe('shipment update service', () => {
 
   it('cancels an in-progress shipment and declines pending bids', async () => {
     shipmentRepository.findShipmentStatusById.mockResolvedValue({ ...draft, status: 'IN_PROGRESS' });
-    shipmentRepository.cancelShipmentAndDeclinePendingBids.mockResolvedValue(true);
+    shipmentRepository.cancelShipmentAndDeclinePendingBids.mockResolvedValue({ cancelled: true });
     shipmentRepository.findShipmentAfterTransition.mockResolvedValue({ ...draft, status: 'CANCELLED' });
 
     const result = await shipmentService.cancelShipment({ id: draft.shipperId }, draft.id);
@@ -336,7 +346,7 @@ describe('shipment update service', () => {
   it('allows cancellation of any non-completed shipment', async () => {
     for (const status of ['DRAFT', 'PUBLISHED']) {
       shipmentRepository.findShipmentStatusById.mockResolvedValueOnce({ ...draft, status });
-      shipmentRepository.cancelShipmentAndDeclinePendingBids.mockResolvedValueOnce(true);
+      shipmentRepository.cancelShipmentAndDeclinePendingBids.mockResolvedValueOnce({ cancelled: true });
       shipmentRepository.findShipmentAfterTransition.mockResolvedValueOnce({ ...draft, status: 'CANCELLED' });
       await expect(shipmentService.cancelShipment({ id: draft.shipperId }, draft.id)).resolves.toMatchObject({ status: 'CANCELLED' });
     }
@@ -366,30 +376,27 @@ describe('shipment update service', () => {
   });
 
   it('uploads images for an owned shipment and persists their URLs', async () => {
-    const files = [{ buffer: Buffer.from('first') }, { buffer: Buffer.from('second') }];
+    const files = [{ buffer: Buffer.from('first') }];
     shipmentRepository.findShipmentStatusById.mockResolvedValue(draft);
-    shipmentRepository.countShipmentImages.mockResolvedValue(1);
+    shipmentRepository.countShipmentImages.mockResolvedValue(0);
     shipmentStorage.uploadShipmentImage
-      .mockResolvedValueOnce({ url: 'https://res.cloudinary.com/demo/image/upload/first.png', publicId: 'first' })
-      .mockResolvedValueOnce({ url: 'https://res.cloudinary.com/demo/image/upload/second.png', publicId: 'second' });
+      .mockResolvedValueOnce({ url: 'https://res.cloudinary.com/demo/image/upload/first.png', publicId: 'first' });
     shipmentRepository.createShipmentImages.mockResolvedValue([
       { id: 'image-1', shipmentId: draft.id, url: 'https://res.cloudinary.com/demo/image/upload/first.png', order: 1 },
-      { id: 'image-2', shipmentId: draft.id, url: 'https://res.cloudinary.com/demo/image/upload/second.png', order: 2 },
     ]);
 
-    await expect(shipmentService.uploadShipmentImages({ id: draft.shipperId }, draft.id, files)).resolves.toHaveLength(2);
+    await expect(shipmentService.uploadShipmentImages({ id: draft.shipperId }, draft.id, files)).resolves.toHaveLength(1);
     expect(shipmentRepository.createShipmentImages).toHaveBeenCalledWith(draft.id, [
       { url: 'https://res.cloudinary.com/demo/image/upload/first.png', publicId: 'first' },
-      { url: 'https://res.cloudinary.com/demo/image/upload/second.png', publicId: 'second' },
     ]);
   });
 
-  it('enforces the five-image limit before contacting Cloudinary', async () => {
+  it('enforces the single-image limit before contacting Cloudinary', async () => {
     shipmentRepository.findShipmentStatusById.mockResolvedValue(draft);
-    shipmentRepository.countShipmentImages.mockResolvedValue(4);
+    shipmentRepository.countShipmentImages.mockResolvedValue(1);
 
     await expect(
-      shipmentService.uploadShipmentImages({ id: draft.shipperId }, draft.id, [{ buffer: Buffer.from('image') }, { buffer: Buffer.from('image') }]),
+      shipmentService.uploadShipmentImages({ id: draft.shipperId }, draft.id, [{ buffer: Buffer.from('image') }]),
     ).rejects.toMatchObject({ statusCode: 409 });
     expect(shipmentStorage.uploadShipmentImage).not.toHaveBeenCalled();
   });

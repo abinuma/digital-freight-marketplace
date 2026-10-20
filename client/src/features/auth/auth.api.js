@@ -10,6 +10,11 @@ export async function loginWithEmail(credentials) {
   return data;
 }
 
+export async function sendRegistrationVerificationCode(email) {
+  const { data } = await apiClient.post('/auth/send-verification-code', { email });
+  return data;
+}
+
 export async function registerWithEmail(details) {
   const { data } = await apiClient.post('/auth/register', details);
   return data;
@@ -24,6 +29,12 @@ export async function resetPassword({ token, newPassword }) {
   const { data } = await apiClient.post('/auth/reset-password', { token, newPassword });
   return data;
 }
+
+export async function verifyResetToken(token) {
+  const { data } = await apiClient.get('/auth/verify-reset-token', { params: { token } });
+  return data;
+}
+
 
 export async function logoutCurrentUser() {
   const { data } = await apiClient.post('/auth/logout');

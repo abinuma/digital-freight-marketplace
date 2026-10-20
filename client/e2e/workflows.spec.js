@@ -113,7 +113,6 @@ async function installApiMocks(page, initialRole = null) {
     return json(200, { data: {} })
   })
 
-  await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort())
   return state
 }
 

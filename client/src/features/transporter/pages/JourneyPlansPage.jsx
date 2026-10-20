@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import {
@@ -15,7 +16,8 @@ import {
   useSuccessToast,
 } from '../../../shared/components/index.js';
 import { CityLocationPicker } from '../../profile/components/CityLocationPicker.jsx';
-import { createJourneyPlan, listMyJourneyPlans } from '../journeyPlan.api.js';
+import { createJourneyPlan, deleteJourneyPlan, listMyJourneyPlans, updateJourneyPlan } from '../journeyPlan.api.js';
+import { formatLoadSize } from '../../../shared/constants/loadSizes.js';
 
 const planStatuses = ['ACTIVE', 'FULL', 'COMPLETED', 'CANCELLED'];
 const statusTones = {
@@ -66,6 +68,8 @@ export function JourneyPlansPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPlanId, setEditingPlanId] = useState(null);
+  const [planToDelete, setPlanToDelete] = useState(null);
   const [formValues, setFormValues] = useState({
     originCity: '',
     destinationCity: '',
@@ -75,6 +79,8 @@ export function JourneyPlansPage() {
   const [formErrors, setFormErrors] = useState({});
   const [requestError, setRequestError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const departureTimeSelection = useRef(null);
 
   const cache = useQueryClient();
@@ -85,6 +91,9 @@ export function JourneyPlansPage() {
   });
 
   const plans = query.data?.journeyPlans || [];
+  const editingPlan = plans.find((plan) => plan.id === editingPlanId);
+  const isEditingLocked = Boolean(editingPlan?.assignments?.length)
+    || ['COMPLETED', 'CANCELLED'].includes(editingPlan?.status);
 
   function updateDepartureDate(event) {
     const input = event.currentTarget;
@@ -110,6 +119,7 @@ export function JourneyPlansPage() {
   }
 
   function resetForm() {
+    setEditingPlanId(null);
     setFormValues({
       originCity: '',
       destinationCity: '',
@@ -118,6 +128,37 @@ export function JourneyPlansPage() {
     });
     setFormErrors({});
     setRequestError('');
+  }
+
+  function openEditForm(plan) {
+    setEditingPlanId(plan.id);
+    setFormValues({
+      originCity: plan.originCity,
+      destinationCity: plan.destinationCity,
+      departureDate: toLocalDateTime(plan.departureDate),
+      fullLoadPrice: String(plan.fullLoadPrice),
+    });
+    setFormErrors({});
+    setRequestError('');
+    setIsModalOpen(true);
+  }
+
+  async function handleDeletePlan() {
+    if (!planToDelete) return;
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteJourneyPlan(planToDelete.id);
+      await cache.invalidateQueries({ queryKey: ['transporter', 'journeyPlans'] });
+      setPlanToDelete(null);
+      resetForm();
+      setIsModalOpen(false);
+      showSuccess('Plan deleted');
+    } catch (err) {
+      setDeleteError(err.message || 'Could not delete journey plan');
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   async function handleSubmit(event) {
@@ -141,13 +182,15 @@ export function JourneyPlansPage() {
     setFormErrors({});
     setRequestError('');
     setIsSubmitting(true);
+    const wasEditing = Boolean(editingPlanId);
 
     try {
-      await createJourneyPlan(parsed.data);
+      if (editingPlanId) await updateJourneyPlan(editingPlanId, parsed.data);
+      else await createJourneyPlan(parsed.data);
       await cache.invalidateQueries({ queryKey: ['transporter', 'journeyPlans'] });
       resetForm();
       setIsModalOpen(false);
-      showSuccess('Plan created');
+      showSuccess(wasEditing ? 'Plan updated' : 'Plan created');
     } catch (err) {
       if (err.details && Array.isArray(err.details) && err.details.length > 0) {
         const fieldErrors = {};
@@ -163,9 +206,9 @@ export function JourneyPlansPage() {
         if (Object.keys(fieldErrors).length > 0) {
           setFormErrors(fieldErrors);
         }
-        setRequestError(globalErrors.join(', ') || err.message || 'Could not create journey plan');
+        setRequestError(globalErrors.join(', ') || err.message || `Could not ${editingPlanId ? 'update' : 'create'} journey plan`);
       } else {
-        setRequestError(err.message || 'Could not create journey plan');
+        setRequestError(err.message || `Could not ${editingPlanId ? 'update' : 'create'} journey plan`);
       }
     } finally {
       setIsSubmitting(false);
@@ -223,13 +266,15 @@ export function JourneyPlansPage() {
       ) : plans.length > 0 ? (
         <div className="grid gap-5">
           {plans.map((plan) => {
-            const weightPercent = plan.maxWeightKg
-              ? Math.min(100, Math.round((plan.allocatedWeightKg / plan.maxWeightKg) * 100))
-              : 0;
-            const volumePercent = plan.maxVolumeM3
-              ? Math.min(100, Math.round((plan.allocatedVolumeM3 / plan.maxVolumeM3) * 100))
-              : 0;
-            const isFull = plan.status === 'FULL' || weightPercent >= 100 || (plan.maxVolumeM3 && volumePercent >= 100);
+            const maxWeight = Number(plan.maxWeightKg || 10000);
+            const allocatedWeight = Number(plan.allocatedWeightKg || 0);
+            const allocatedPercent = maxWeight > 0
+              ? Math.min(100, Math.round((allocatedWeight / maxWeight) * 100))
+              : plan.allocatedLoadFraction != null
+                ? Math.min(100, Math.round(Number(plan.allocatedLoadFraction) * 100))
+                : 0;
+            const remainingPercent = Math.max(0, 100 - allocatedPercent);
+            const isFull = plan.status === 'FULL' || allocatedPercent >= 100;
 
             return (
               <Card className="grid gap-4 p-5" key={plan.id}>
@@ -251,63 +296,41 @@ export function JourneyPlansPage() {
                   </div>
                 </div>
 
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    className="min-h-8 px-3 py-1 text-xs"
+                    onClick={() => openEditForm(plan)}
+                  >
+                    Review
+                  </Button>
+                </div>
                 {isFull && (
                   <Alert tone="success" title="Capacity Reached">
                     <strong>You are ready to collect the loads and go</strong>
                   </Alert>
                 )}
 
-                <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4">
                   <div className="grid gap-1.5">
                     <div className="flex justify-between text-xs font-semibold text-slate-700">
-                      <span>Weight Capacity</span>
-                      <span>
-                        {plan.allocatedWeightKg.toLocaleString()} / {plan.maxWeightKg.toLocaleString()} kg ({weightPercent}%)
-                      </span>
+                      <span>Load Capacity</span>
+                      <span>{allocatedWeight.toLocaleString()} kg</span>
                     </div>
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
                       <div
                         className={`h-full transition-all ${
-                          weightPercent >= 100 ? 'bg-amber-600' : 'bg-blue-600'
+                          allocatedPercent >= 100 ? 'bg-amber-600' : 'bg-blue-600'
                         }`}
-                        style={{ width: `${weightPercent}%` }}
+                        style={{ width: `${allocatedPercent}%` }}
                       />
                     </div>
                     <span className="text-xs text-slate-500">
-                      {plan.remainingWeightKg <= 0
+                      {allocatedPercent >= 100
                         ? 'Full'
-                        : `${plan.remainingWeightKg.toLocaleString()} kg remaining`}
+                        : `${remainingPercent}% capacity remaining`}
                     </span>
-                  </div>
-
-                  <div className="grid gap-1.5">
-                    <div className="flex justify-between text-xs font-semibold text-slate-700">
-                      <span>Volume Capacity</span>
-                      <span>
-                        {plan.maxVolumeM3
-                          ? `${plan.allocatedVolumeM3.toLocaleString()} / ${plan.maxVolumeM3.toLocaleString()} m³ (${volumePercent}%)`
-                          : 'Vehicle volume unconstrained'}
-                      </span>
-                    </div>
-                    {plan.maxVolumeM3 ? (
-                      <>
-                        <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
-                          <div
-                            className={`h-full transition-all ${
-                              volumePercent >= 100 ? 'bg-amber-600' : 'bg-emerald-600'
-                            }`}
-                            style={{ width: `${volumePercent}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-slate-500">
-                          {plan.remainingVolumeM3 <= 0
-                            ? 'Full'
-                            : `${plan.remainingVolumeM3?.toLocaleString()} m³ remaining`}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-xs text-slate-400">No volume limit specified</span>
-                    )}
                   </div>
                 </div>
 
@@ -318,9 +341,10 @@ export function JourneyPlansPage() {
                   {plan.assignments?.length ? (
                     <div className="grid gap-2">
                       {plan.assignments.map((assignment) => (
-                        <div
+                        <Link
                           key={assignment.id}
-                          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm"
+                          to={`/transporter/shipments/${assignment.shipmentId}`}
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm text-inherit no-underline transition-colors hover:border-blue-300 hover:bg-blue-50/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
                         >
                           <div>
                             <strong className="text-slate-900">
@@ -331,15 +355,14 @@ export function JourneyPlansPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-4 text-xs font-medium text-slate-600">
-                            <span>{assignment.shipment?.weightKg?.toLocaleString()} kg</span>
-                            {assignment.shipment?.volumeM3 != null && (
-                              <span>{assignment.shipment?.volumeM3} m³</span>
-                            )}
+                            <span className="font-semibold text-blue-900">
+                              {formatLoadSize(assignment.shipment?.loadSize || assignment.loadSize)}
+                            </span>
                             {assignment.bid?.price != null && (
                               <strong className="text-slate-900">{money(assignment.bid.price)}</strong>
                             )}
                           </div>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   ) : (
@@ -384,11 +407,11 @@ export function JourneyPlansPage() {
       <Modal
         open={isModalOpen}
         onClose={() => !isSubmitting && setIsModalOpen(false)}
-        title="List trip availability"
+        title={editingPlanId ? 'Review journey plan' : 'List trip availability'}
       >
         {requestError && (
           <div className="mb-4">
-            <Alert tone="danger" title="Could not create journey plan">
+            <Alert tone="danger" title={`Could not ${editingPlanId ? 'update' : 'create'} journey plan`}>
               {requestError}
             </Alert>
           </div>
@@ -401,6 +424,7 @@ export function JourneyPlansPage() {
             city={formValues.originCity}
             error={formErrors.originCity}
             required
+            disabled={isEditingLocked}
             onChange={(item) =>
               setFormValues((prev) => ({
                 ...prev,
@@ -421,39 +445,44 @@ export function JourneyPlansPage() {
             excludeCity={formValues.originCity}
             error={formErrors.destinationCity}
             required
+            disabled={isEditingLocked}
             onChange={(item) =>
               setFormValues((prev) => ({ ...prev, destinationCity: item.city }))
             }
           />
 
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">
-            <span>
+            <span className="flex items-center gap-1.5">
               Departure schedule <i className="text-red-700">*</i>
             </span>
-            <Input
-              type="datetime-local"
-              min={toLocalDateTime(new Date())}
-              value={formValues.departureDate}
-              onChange={updateDepartureDate}
-              aria-invalid={Boolean(formErrors.departureDate)}
-              onFocus={(event) => {
-                const [date = '', time = ''] = event.currentTarget.value.split('T');
-                departureTimeSelection.current = date && time
-                  ? { date, time, timePartsChanged: 0 }
-                  : null;
-              }}
-              onBlur={() => {
-                departureTimeSelection.current = null;
-              }}
-              required
-            />
+            <div className={isEditingLocked ? 'cursor-not-allowed' : ''}>
+              <Input
+                className={isEditingLocked ? 'pointer-events-none' : ''}
+                type="datetime-local"
+                min={toLocalDateTime(new Date())}
+                value={formValues.departureDate}
+                onChange={updateDepartureDate}
+                aria-invalid={Boolean(formErrors.departureDate)}
+                onFocus={(event) => {
+                  const [date = '', time = ''] = event.currentTarget.value.split('T');
+                  departureTimeSelection.current = date && time
+                    ? { date, time, timePartsChanged: 0 }
+                    : null;
+                }}
+                onBlur={() => {
+                  departureTimeSelection.current = null;
+                }}
+                required
+                disabled={isEditingLocked}
+              />
+            </div>
             {formErrors.departureDate && (
               <small className="text-sm text-red-700">{formErrors.departureDate}</small>
             )}
           </label>
 
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">
-            <span>
+            <span className="flex items-center gap-1.5">
               Full load price (ETB) <i className="text-red-700">*</i>
             </span>
             <Input
@@ -467,6 +496,7 @@ export function JourneyPlansPage() {
                 setFormValues((prev) => ({ ...prev, fullLoadPrice: e.target.value }))
               }
               required
+              disabled={isEditingLocked}
             />
             {formErrors.fullLoadPrice && (
               <small className="text-sm text-red-700">{formErrors.fullLoadPrice}</small>
@@ -474,25 +504,51 @@ export function JourneyPlansPage() {
           </label>
 
           <div className="mt-4 flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setIsModalOpen(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            {editingPlanId && (
+              <Button
+                size="sm"
+                type="button"
+                variant="danger"
+                className="mr-auto"
+                disabled={isSubmitting}
+                onClick={() => {
+                  const plan = plans.find((item) => item.id === editingPlanId);
+                  if (plan) {
+                    setPlanToDelete(plan);
+                    setDeleteError('');
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            )}
+            <Button size="sm" type="submit" disabled={isSubmitting || isEditingLocked}>
               {isSubmitting ? (
                 <>
-                  <Spinner /> Creating...
+                  <Spinner /> {editingPlanId ? 'Saving...' : 'Creating...'}
                 </>
               ) : (
-                'Create Journey Plan'
+                editingPlanId ? 'Save changes' : 'Create Journey Plan'
               )}
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal open={Boolean(planToDelete)} onClose={() => !isDeleting && setPlanToDelete(null)} title="Delete journey plan">
+        {deleteError && <div className="mb-4"><Alert tone="danger" title="Could not delete journey plan">{deleteError}</Alert></div>}
+        <p className="m-0 text-sm text-slate-600">
+          Delete the plan for {planToDelete?.originCity} → {planToDelete?.destinationCity}? This cannot be undone.
+          {planToDelete?.assignments?.length > 0 && (
+            <> This will remove its {planToDelete.assignments.length === 1 ? 'assignment link' : `${planToDelete.assignments.length} assignment links`}; the shipments and accepted bids will remain.</>
+          )}
+        </p>
+        <div className="mt-5 flex justify-end gap-2">
+          <Button size="sm" variant="secondary" onClick={() => setPlanToDelete(null)} disabled={isDeleting}>Cancel</Button>
+          <Button size="sm" variant="danger" onClick={handleDeletePlan} disabled={isDeleting}>
+            {isDeleting ? <><Spinner /> Deleting...</> : 'Delete plan'}
+          </Button>
+        </div>
       </Modal>
     </div>
   );

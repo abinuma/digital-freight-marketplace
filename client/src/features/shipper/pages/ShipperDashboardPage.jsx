@@ -6,7 +6,6 @@ import {
   Badge,
   Card,
   Skeleton,
-  Select,
   Modal,
   useSuccessToast,
 } from "../../../shared/components/index.js";
@@ -14,7 +13,11 @@ import { getDashboardSummary } from "../shipper.api.js";
 import { listAvailableTransporters, getPublicProfile, updateProfile } from "../../profile/profile.api.js";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import { CityLocationPicker } from "../../profile/components/CityLocationPicker.jsx";
+import { UserReviews } from "../../profile/components/UserReviews.jsx";
 import { readLastDriverSearchCity, saveLastDriverSearchCity } from "../driverSearchStorage.js";
+import { LOAD_CATEGORY_KEYS } from "../../../shared/constants/loadCategories.js";
+import { formatLoadSize, formatShipmentLoad } from "../../../shared/constants/loadSizes.js";
+import { money } from "../../shipments/shipmentFormatters.js";
 
 const metricCards = [
   {
@@ -46,7 +49,7 @@ const metricCards = [
     marker: "border-2 border-slate-500 bg-slate-900",
   },
 ];
-const usualLoadTypes = ["Construction", "Timber", "Beverage", "Bottled water", "Agriculture"];
+const usualLoadTypes = LOAD_CATEGORY_KEYS;
 
 const statusTones = {
   DRAFT: "neutral",
@@ -54,6 +57,12 @@ const statusTones = {
   IN_PROGRESS: "warning",
   COMPLETED: "success",
   CANCELLED: "danger",
+};
+
+const bidTones = {
+  PENDING: "warning",
+  ACCEPTED: "success",
+  DECLINED: "danger",
 };
 
 const shortDate = (date) =>
@@ -65,11 +74,6 @@ const shortDate = (date) =>
       }).format(new Date(date))
     : "—";
 
-const availabilityDate = (date) => date
-  ? new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(date))
-  : "—";
-const cityFromLocation = (location) => location?.split(",")[0]?.trim().toLocaleLowerCase();
-const dateWeekday = (date) => new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date(`${date.slice(0, 10)}T12:00:00`));
 
 export function ShipperDashboardPage() {
   const navigate = useNavigate();
@@ -77,7 +81,6 @@ export function ShipperDashboardPage() {
   const { user, refreshUser } = useAuth();
   const showSuccess = useSuccessToast();
   const [city, setCity] = useState(() => user?.city || readLastDriverSearchCity(user?.id));
-  const [shipmentId, setShipmentId] = useState("");
   const [selectedDriver, setSelectedDriver] = useState(null);
   const [usualLoads, setUsualLoads] = useState(user?.preferredLoadTypes || []);
   const query = useQuery({
@@ -86,7 +89,6 @@ export function ShipperDashboardPage() {
     refetchInterval: 15_000,
   });
   const summary = query.data;
-  const selectedShipment = summary?.recentShipments?.find(({ id }) => id === shipmentId);
   const driversQuery = useQuery({
     queryKey: ["shipper", "availableTransporters", city],
     queryFn: () => listAvailableTransporters(city),
@@ -116,10 +118,7 @@ export function ShipperDashboardPage() {
     }
 
     navigate(`/shipper/shipments/new?${params.toString()}`, {
-      state: {
-        invitedDriver: driver,
-        prefillShipment: selectedShipment || null,
-      },
+      state: { invitedDriver: driver },
     });
   }
   const preferencesMutation = useMutation({
@@ -129,28 +128,25 @@ export function ShipperDashboardPage() {
       showSuccess('Preferences saved');
     },
   });
-  const matchingDrivers = (driversQuery.data || []).filter((driver) => {
-    if (!selectedShipment) return true;
-    const pickupCity = cityFromLocation(selectedShipment.pickupLocation);
-    const destinationCity = cityFromLocation(selectedShipment.deliveryLocation);
-    const routeMatches = Boolean(pickupCity) && pickupCity === driver.city?.toLocaleLowerCase() && driver.city?.toLocaleLowerCase() === city.toLocaleLowerCase();
-    const destinationMatches = !driver.intendedDestination || !destinationCity || driver.intendedDestination.toLocaleLowerCase() === destinationCity;
-    const plannedDate = driver.plannedDepartureDate ? new Date(driver.plannedDepartureDate).toISOString().slice(0, 10) : null;
-    const pickupDate = new Date(selectedShipment.pickupDate).toISOString().slice(0, 10);
-    const dayMatches = Boolean(driver.availableDays?.some((day) => day.toLocaleLowerCase() === dateWeekday(pickupDate).toLocaleLowerCase()));
-    const scheduleMatches = plannedDate === pickupDate || dayMatches;
-    const weightMatches = driver.capacityTons * 1000 >= Number(selectedShipment.weightKg);
-    const volumeMatches = selectedShipment.volumeM3 == null || (driver.volumeM3 != null && driver.volumeM3 >= Number(selectedShipment.volumeM3));
-    const vehicle = driver.vehicleType.toLocaleLowerCase();
-    const goods = `${selectedShipment.goodsType} ${selectedShipment.goodsDescription}`.toLocaleLowerCase();
-    const needsRefrigeration = goods.includes("refriger") || goods.includes("perishable") || goods.includes("frozen") || goods.includes("cold chain");
-    const needsTanker = goods.includes("liquid") || goods.includes("fuel") || goods.includes("chemical");
-    const needsLowbed = goods.includes("heavy machinery") || goods.includes("oversized equipment");
-    const vehicleMatches = (!needsRefrigeration || vehicle.includes("refriger") || vehicle.includes("reefer"))
-      && (!needsTanker || vehicle.includes("tanker"))
-      && (!needsLowbed || vehicle.includes("lowbed") || vehicle.includes("low bed"));
-    return routeMatches && destinationMatches && scheduleMatches && weightMatches && volumeMatches && vehicleMatches;
-  });
+  const driversList = driversQuery.data || [];
+  const displayedDrivers = [...driversList]
+    .map((driver) => {
+      const matchesLoads = Boolean(
+        usualLoads.length &&
+        driver.preferredLoadTypes?.some((dl) =>
+          usualLoads.some((ul) => ul.toLowerCase() === dl.toLowerCase())
+        )
+      );
+      return { ...driver, matchesLoads };
+    })
+    .sort((a, b) => {
+      if (a.matchesLoads && !b.matchesLoads) return -1;
+      if (!a.matchesLoads && b.matchesLoads) return 1;
+      return new Date(b.availabilityUpdatedAt || 0) - new Date(a.availabilityUpdatedAt || 0);
+    });
+
+  const displayedShipments = (summary?.recentShipments || []).slice(0, 2);
+  const displayedBids = (summary?.recentBids || []).slice(0, 2);
 
   return (
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
@@ -202,12 +198,8 @@ export function ShipperDashboardPage() {
       </section>
 
       <Card className="overflow-hidden">
-        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 px-5 py-4">
-          <div>
-            <p className="m-0 text-xs font-bold tracking-widest text-emerald-700">AVAILABLE DRIVERS</p>
-            <h2 className="mb-0 mt-1 text-lg font-semibold text-slate-900">Find drivers looking for a load</h2>
-            <p className="mb-0 mt-1 text-sm text-slate-500">Choose a city to see transporters who are available now.</p>
-          </div>
+        <div className="grid gap-3 border-b border-slate-200 px-5 py-4">
+          <h2 className="m-0 text-xs font-bold tracking-widest text-emerald-700">AVAILABLE DRIVERS in {city || "your selected city"}</h2>
           <div className="w-full max-w-xs">
             <CityLocationPicker
               id="driver-city"
@@ -217,17 +209,9 @@ export function ShipperDashboardPage() {
               onChange={({ city: selectedCity }) => {
                 setCity(selectedCity);
                 saveLastDriverSearchCity(user?.id, selectedCity);
-                setShipmentId("");
               }}
             />
           </div>
-          <label className="w-full max-w-xs text-sm font-medium text-slate-700" htmlFor="driver-shipment">
-            Match a shipment (optional)
-            <Select id="driver-shipment" className="mt-1" value={shipmentId} onChange={(event) => setShipmentId(event.target.value)} disabled={!city || !summary?.recentShipments?.length}>
-              <option value="">Show all available drivers</option>
-              {(summary?.recentShipments || []).map((shipment) => <option key={shipment.id} value={shipment.id}>{shipment.goodsDescription} · {shipment.pickupLocation} → {shipment.deliveryLocation}</option>)}
-            </Select>
-          </label>
         </div>
         {!city ? (
           <p className="m-0 px-5 py-6 text-sm text-slate-500">Select a city to see available drivers there.</p>
@@ -235,24 +219,264 @@ export function ShipperDashboardPage() {
           <div className="grid gap-3 p-5"><Skeleton className="h-16" /><Skeleton className="h-16" /></div>
         ) : driversQuery.isError ? (
           <Alert tone="danger" className="m-4" title="Couldn’t load available drivers">{driversQuery.error.message}</Alert>
-        ) : matchingDrivers.length ? (
+        ) : displayedDrivers.length ? (
           <div className="divide-y divide-slate-100">
-            {matchingDrivers.map((driver) => (
+            {displayedDrivers.map((driver) => (
               <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4" key={driver.id}>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2"><strong className="text-sm text-slate-900">{driver.name}</strong><Badge tone="success">Available now</Badge></div>
-                  <p className="mb-0 mt-1 text-sm text-slate-600">{driver.vehicleType} · {driver.capacityTons} t capacity{driver.volumeM3 ? ` · ${driver.volumeM3} m³` : ""}</p>
-                  <p className="mb-0 mt-1 text-xs text-slate-500">{driver.intendedDestination ? `Heading to ${driver.intendedDestination} · ` : "Destination not specified · "}Updated {availabilityDate(driver.availabilityUpdatedAt)}</p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <button type="button" className="min-h-9 rounded-lg bg-blue-700 px-3 text-sm font-semibold text-white hover:bg-blue-800" onClick={() => handleContactInvite(driver)}>Contact / invite</button>
+                  <div className="flex items-center gap-2">
+                    <strong className="text-sm text-slate-900">{driver.name}</strong>
+                    <Badge tone="success">Available now</Badge>
+                  </div>
+                  {driver.reviewCount > 0 && driver.averageRating != null && (
+                    <p className="mb-0 mt-1 text-sm text-slate-600">
+                      <span className="text-amber-500" aria-hidden="true">★</span> {Number(driver.averageRating).toFixed(1)} ({driver.reviewCount} {driver.reviewCount === 1 ? "review" : "reviews"})
+                    </p>
+                  )}
+                  <p className="mb-0 mt-1 text-sm text-slate-600">
+                    {driver.vehicleType} · {driver.capacityTons ? `${driver.capacityTons} t capacity` : "Capacity pending"}
+                  </p>
+                  <p className="mb-0 mt-1 text-xs text-slate-500">
+                    {driver.intendedDestination ? `Heading to ${driver.intendedDestination}` : "Destination not specified"}
+                  </p>
+                  <button type="button" className="mt-2 inline-flex w-fit items-center p-0 text-sm font-bold text-blue-700 hover:text-blue-900 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700" onClick={() => handleContactInvite(driver)}>
+                    Invite driver
+                  </button>
                 </div>
               </div>
             ))}
           </div>
-        ) : <p className="m-0 px-5 py-6 text-sm text-slate-500">{selectedShipment ? "No available drivers match this shipment’s route, timing, capacity, volume, and vehicle needs." : `No drivers are looking for loads in ${city} right now.`}</p>}
-        {city && selectedShipment && <p className="m-0 border-t border-slate-100 px-5 py-3 text-xs text-slate-500">Matching checks include pickup and destination cities, planned date and availability days, weight, volume, and refrigerated vehicle needs.</p>}
+        ) : <p className="m-0 px-5 py-6 text-sm text-slate-500">No drivers are looking for loads in {city} right now.</p>}
       </Card>
+
+      <Modal open={Boolean(selectedDriver)} onClose={() => setSelectedDriver(null)} title="Transporter profile">
+        {selectedDriver ? (
+          <div className="grid gap-3">
+            {driverProfileQuery.isPending ? (
+              <Skeleton className="h-20" />
+            ) : driverProfileQuery.isError ? (
+              <Alert tone="danger">{driverProfileQuery.error.message}</Alert>
+            ) : driverProfileQuery.data ? (
+              <div className="grid gap-3">
+                <div>
+                  <h3 className="m-0 text-base font-semibold text-slate-900">{driverProfileQuery.data.name}</h3>
+                  <p className="mb-0 mt-1 text-sm text-slate-600">{driverProfileQuery.data.city || selectedDriver.city}</p>
+                  {driverProfileQuery.data.phone && <p className="mb-0 mt-1 text-sm text-slate-600">{driverProfileQuery.data.phone}</p>}
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+                  <p className="m-0">Vehicle: {selectedDriver.vehicleType}</p>
+                  <p className="mb-0 mt-1">Capacity: {selectedDriver.capacityTons} tonnes</p>
+                </div>
+                <button type="button" className="inline-flex w-fit items-center p-0 text-sm font-bold text-blue-700 hover:text-blue-900 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700" onClick={() => handleContactInvite(selectedDriver)}>
+                  Invite driver
+                </button>
+                <UserReviews userId={selectedDriver.id} averageRating={driverProfileQuery.data.averageRating} reviewCount={driverProfileQuery.data.reviewCount} />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </Modal>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Recent Shipments Card */}
+        <Card className="flex flex-col justify-between overflow-hidden">
+          <div>
+            <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="m-0 text-base font-semibold text-slate-900">
+                  Recent shipments
+                </h2>
+                <p className="mb-0 mt-0.5 text-xs text-slate-500">
+                  Your latest freight postings
+                </p>
+              </div>
+              <Link
+                to="/shipper/shipments"
+                className="text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline"
+              >
+                View all
+              </Link>
+            </div>
+
+            <div className="p-4 sm:p-5">
+              {query.isPending ? (
+                <div className="grid gap-3">
+                  <Skeleton className="h-24 rounded-lg" />
+                  <Skeleton className="h-24 rounded-lg" />
+                </div>
+              ) : displayedShipments.length > 0 ? (
+                <div className="grid gap-3">
+                  {displayedShipments.map((shipment) => (
+                    <Link
+                      key={shipment.id}
+                      to={`/shipper/shipments/${shipment.id}`}
+                      className="group flex flex-col justify-between gap-2 rounded-lg border border-slate-200/80 bg-slate-50/50 p-3.5 text-inherit no-underline transition-all hover:border-blue-400 hover:bg-blue-50/20 hover:shadow-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span
+                          className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere] text-sm font-semibold text-slate-900 group-hover:text-blue-700"
+                          title={shipment.goodsDescription}
+                        >
+                          {shipment.goodsDescription}
+                        </span>
+                        <Badge tone={statusTones[shipment.status]}>
+                          {shipment.status.replace("_", " ")}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                        <span className="truncate font-medium text-slate-700">
+                          {shipment.pickupLocation}
+                        </span>
+                        <span className="font-bold text-blue-600" aria-hidden="true">
+                          →
+                        </span>
+                        <span className="truncate font-medium text-slate-700">
+                          {shipment.deliveryLocation}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/60 pt-2 text-xs text-slate-500">
+                        <span>
+                          {shipment.goodsType} · {formatShipmentLoad(shipment) || (shipment.weightKg ? `${shipment.weightKg} kg` : "")}
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <span>Pickup: {shortDate(shipment.pickupDate)}</span>
+                          <span
+                            className={`font-semibold ${shipment.bidCount > 0 ? "text-blue-700" : "text-slate-400"}`}
+                          >
+                            {shipment.bidCount} {shipment.bidCount === 1 ? "bid" : "bids"}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+                  <span className="text-2xl text-slate-300" aria-hidden="true">
+                    ▤
+                  </span>
+                  <h3 className="m-0 text-sm font-semibold text-slate-800">
+                    No shipments yet
+                  </h3>
+                  <p className="m-0 text-xs text-slate-500">
+                    Post your first shipment to receive offers from transporters.
+                  </p>
+                  <Link
+                    to="/shipper/shipments/new"
+                    className="mt-2 inline-flex min-h-8 items-center justify-center rounded-md bg-blue-700 px-3 text-xs font-semibold text-white no-underline hover:bg-blue-600"
+                  >
+                    Post a shipment
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* Recent Bids Card */}
+        <Card className="flex flex-col justify-between overflow-hidden">
+          <div>
+            <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="m-0 text-base font-semibold text-slate-900">
+                  Recent bids
+                </h2>
+                <p className="mb-0 mt-0.5 text-xs text-slate-500">
+                  Latest transporter offers on your freight
+                </p>
+              </div>
+              <Link
+                to="/shipper/bids"
+                className="text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline"
+              >
+                Review all
+              </Link>
+            </div>
+
+            <div className="p-4 sm:p-5">
+              {query.isPending ? (
+                <div className="grid gap-3">
+                  <Skeleton className="h-24 rounded-lg" />
+                  <Skeleton className="h-24 rounded-lg" />
+                </div>
+              ) : displayedBids.length > 0 ? (
+                <div className="grid gap-3">
+                  {displayedBids.map((bid) => (
+                    <Link
+                      key={bid.id}
+                      to="/shipper/bids"
+                      className="group flex flex-col justify-between gap-2 rounded-lg border border-slate-200/80 bg-slate-50/50 p-3.5 text-inherit no-underline transition-all hover:border-blue-400 hover:bg-blue-50/20 hover:shadow-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <strong className="block truncate text-sm font-semibold text-slate-900 group-hover:text-blue-700">
+                            {bid.transporter?.name || "Transporter"}
+                          </strong>
+                          {bid.shipment && (
+                            <span
+                            className="block min-w-0 whitespace-normal break-words [overflow-wrap:anywhere] text-xs text-slate-500"
+                              title={bid.shipment.goodsDescription}
+                            >
+                              for {bid.shipment.goodsDescription}
+                            </span>
+                          )}
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <span className="block text-sm font-bold text-slate-900">
+                            {money(bid.price)}
+                          </span>
+                          <Badge tone={bidTones[bid.status] || "neutral"}>
+                            {bid.status}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {bid.shipment && (
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                          <span className="truncate font-medium text-slate-700">
+                            {bid.shipment.pickupLocation}
+                          </span>
+                          <span className="font-bold text-blue-600" aria-hidden="true">
+                            →
+                          </span>
+                          <span className="truncate font-medium text-slate-700">
+                            {bid.shipment.deliveryLocation}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/60 pt-2 text-xs text-slate-500">
+                        <span>Pickup: {shortDate(bid.pickupDate)}</span>
+                        <span className="text-slate-400">Received {shortDate(bid.createdAt)}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+                  <span className="text-2xl text-slate-300" aria-hidden="true">
+                  
+                  </span>
+                  <h3 className="m-0 text-sm font-semibold text-slate-800">
+                    No bids received yet
+                  </h3>
+                  <p className="m-0 text-xs text-slate-500">
+                    Transporter bids for your shipments will appear here.
+                  </p>
+                  <Link
+                    to="/shipper/bids"
+                    className="mt-2 inline-flex min-h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 no-underline hover:bg-slate-50"
+                  >
+                    Check bids overview
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+      </div>
 
       <Card className="flex flex-wrap items-center justify-between gap-3 border border-blue-100 bg-blue-50/50 p-4">
         <div className="min-w-0 flex-1">
@@ -268,98 +492,6 @@ export function ShipperDashboardPage() {
           {preferencesMutation.isError && <p className="mb-0 mt-2 text-xs text-red-700">{preferencesMutation.error.message}</p>}
         </div>
         <button type="button" disabled={preferencesMutation.isPending} onClick={() => preferencesMutation.mutate()} className="min-h-9 shrink-0 rounded-lg bg-blue-700 px-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">{preferencesMutation.isPending ? "Saving…" : "Save loads"}</button>
-      </Card>
-
-      <Modal open={Boolean(selectedDriver)} onClose={() => setSelectedDriver(null)} title="Transporter profile">
-        {selectedDriver && <div className="grid gap-3">
-          {driverProfileQuery.isPending ? <Skeleton className="h-20" /> : driverProfileQuery.isError ? <Alert tone="danger">{driverProfileQuery.error.message}</Alert> : <>
-            <div><h3 className="m-0 text-base font-semibold text-slate-900">{driverProfileQuery.data?.name}</h3><p className="mb-0 mt-1 text-sm text-slate-600">{driverProfileQuery.data?.city || selectedDriver.city}</p>{driverProfileQuery.data?.phone && <p className="mb-0 mt-1 text-sm text-slate-600">{driverProfileQuery.data.phone}</p>}</div>
-            <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700"><p className="m-0">Vehicle: {selectedDriver.vehicleType}</p><p className="mb-0 mt-1">Capacity: {selectedDriver.capacityTons} tonnes{selectedDriver.volumeM3 ? ` · ${selectedDriver.volumeM3} m³` : ""}</p></div>
-          </>}
-          <button type="button" className="min-h-10 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800" onClick={() => handleContactInvite(selectedDriver)}>Contact / invite</button>
-        </div>}
-      </Modal>
-
-      <Card className="overflow-hidden">
-        <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 max-sm:items-start">
-          <div>
-            <h2 className="m-0 text-base font-semibold text-slate-900">
-              Recent shipments
-            </h2>
-            <p className="mb-0 mt-1 text-xs text-slate-500">
-              Your latest freight activity and bids.
-            </p>
-          </div>
-        </div>
-
-        {query.isPending ? (
-          <div className="grid gap-3 p-4">
-            <Skeleton className="h-8" />
-            <Skeleton className="h-8" />
-            <Skeleton className="h-8" />
-          </div>
-        ) : summary?.recentShipments?.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-max border-collapse text-left text-xs">
-              <thead className="bg-slate-50 font-medium text-slate-500">
-                <tr>
-                  <th className="px-3 py-3 font-medium">Shipment</th>
-                  <th className="px-3 py-3 font-medium">Route</th>
-                  <th className="px-3 py-3 font-medium">Pickup date</th>
-                  <th className="px-3 py-3 font-medium">Bids</th>
-                  <th className="px-3 py-3 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summary.recentShipments.map((shipment) => (
-                  <tr className="border-t border-slate-100" key={shipment.id}>
-                    <td className="max-w-64 px-3 py-2">
-                      <Link
-                        className="block truncate font-semibold text-slate-800 no-underline hover:text-blue-700"
-                        to={`/shipper/shipments/${shipment.id}`}
-                      >
-                        {shipment.goodsDescription}
-                      </Link>
-                      <span className="mt-0.5 block text-xs text-slate-500">
-                        {shipment.goodsType} · {shipment.weightKg} kg
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-slate-600">
-                      <span className="block max-w-64 truncate">
-                        {shipment.pickupLocation}{" "}
-                        <span className="px-1 text-blue-700">→</span>{" "}
-                        {shipment.deliveryLocation}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-slate-600">
-                      {shortDate(shipment.pickupDate)}
-                    </td>
-                    <td className="px-3 py-2 text-slate-600">
-                      {shipment.bidCount}
-                    </td>
-                    <td className="px-3 py-2">
-                      <Badge tone={statusTones[shipment.status]}>
-                        {shipment.status.replace("_", " ")}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
-            <span className="text-2xl text-slate-400" aria-hidden="true">
-              ▤
-            </span>
-            <h3 className="m-0 text-base font-semibold text-slate-800">
-              Your shipment activity starts here
-            </h3>
-            <p className="m-0 text-sm text-slate-500">
-              Post your first shipment to receive offers from transporters.
-            </p>
-          </div>
-        )}
       </Card>
 
     </div>

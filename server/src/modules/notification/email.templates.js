@@ -49,6 +49,10 @@ export function buildNotificationEmail({ type, recipientName, shipment, bid, sen
       subject = 'Welcome to Digital Freight Marketplace';
       message = 'Your account has been created successfully.';
       break;
+    case 'EMAIL_VERIFICATION_CODE':
+      subject = 'Your EthioFreight Verification Code';
+      message = `Your verification code is: ${content}. This code will expire in 10 minutes. If you did not request this, please ignore this email.`;
+      break;
     case 'PASSWORD_RESET':
       subject = 'Reset your Digital Freight Marketplace password';
       actionUrl = content;

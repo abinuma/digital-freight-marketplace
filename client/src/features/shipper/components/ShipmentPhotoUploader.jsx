@@ -11,6 +11,7 @@ export function ShipmentPhotoUploader({
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const inputId = "shipment-cargo-photo";
+  const isPhotoPresent = existingImages.length + files.length >= 1;
   const stagedFiles = useMemo(
     () => files.map((file) => ({ file, preview: URL.createObjectURL(file) })),
     [files],
@@ -48,7 +49,7 @@ export function ShipmentPhotoUploader({
   function handleDrop(event) {
     event.preventDefault();
     setIsDragging(false);
-    if (existingImages.length + files.length >= 1) return;
+    if (isPhotoPresent) return;
     addFiles(event.dataTransfer.files);
   }
 
@@ -56,27 +57,30 @@ export function ShipmentPhotoUploader({
     <div className="grid gap-2 text-sm font-medium text-slate-700">
       <label
         htmlFor={inputId}
-        className={`grid min-h-28 cursor-pointer place-items-center gap-3 rounded-lg border-2 border-dashed p-4 text-center transition-colors ${isDragging ? "border-blue-500 bg-blue-50" : "border-slate-300 bg-slate-50 hover:border-blue-400 hover:bg-blue-50"}`}
+        className={`grid min-h-28 place-items-center gap-3 rounded-lg border-2 border-dashed p-4 text-center transition-colors ${isPhotoPresent ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400" : `cursor-pointer ${isDragging ? "border-blue-500 bg-blue-50" : "border-slate-300 bg-slate-50 hover:border-blue-400 hover:bg-blue-50"}`}`}
         onDragEnter={(event) => {
           event.preventDefault();
-          setIsDragging(true);
+          if (!isPhotoPresent) setIsDragging(true);
         }}
-        onDragOver={(event) => event.preventDefault()}
+        onDragOver={(event) => {
+          event.preventDefault();
+          if (isPhotoPresent) setIsDragging(false);
+        }}
         onDragLeave={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) setIsDragging(false);
         }}
         onDrop={handleDrop}
       >
-        <span className="font-semibold text-slate-700">Drop photo here</span>
+        <span className={`font-semibold ${isPhotoPresent ? "text-slate-400" : "text-slate-700"}`}>Drop photo here</span>
         <input
           id={inputId}
           className="sr-only"
           type="file"
           accept="image/jpeg,image/png,image/webp"
           onChange={(event) => addFiles(event.target.files, event.target)}
-          disabled={existingImages.length + files.length >= 1}
+          disabled={isPhotoPresent}
         />
-        <span className="rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-800">
+        <span className={`rounded-md px-4 py-2 text-sm font-semibold text-white transition-colors ${isPhotoPresent ? "bg-slate-400" : "bg-blue-700 hover:bg-blue-800"}`}>
           Choose photo
         </span>
       </label>

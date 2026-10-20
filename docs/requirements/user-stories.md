@@ -50,10 +50,10 @@ Stories include acceptance criteria and trace back to functional requirement IDs
 **As a** Shipper, **I want** to create a shipment listing with details about my freight, **so that** transporters can discover it and submit bids.
 
 **Acceptance Criteria:**
-- I can enter goods description, goods type, estimated weight, pickup location, delivery location, preferred pickup date, and special requirements.
+- I can enter goods description, goods type, load size (Full load, Half load, Quarter load, Small load; selecting Small load prompts to specify cargo mass in kg and volume in m³), pickup location, delivery location, preferred pickup date, and special requirements.
 - I can save the listing as a draft before publishing.
 - I can attach up to 5 images of my goods.
-- I can select pickup and delivery locations using a map.
+- I can select pickup and delivery cities from the predefined Ethiopia city list, with the pickup city excluded from delivery choices.
 - After publishing, the listing is visible to all Transporters.
 
 **Traces to:** FR-100, FR-101, FR-104, FR-105
@@ -185,7 +185,7 @@ Stories include acceptance criteria and trace back to functional requirement IDs
 **As a** Transporter, **I want** to add my vehicle details to my profile, **so that** shippers can see what I can transport.
 
 **Acceptance Criteria:**
-- I can enter vehicle type (e.g., truck, Isuzu, FSR), capacity in tons, and plate number.
+- I can enter vehicle type (e.g., Isuzu, FSR, Sinotruk), cargo mass capacity in kg, cargo volume in m³, and plate number.
 - Vehicle details are displayed on my profile.
 
 **Traces to:** FR-006
@@ -198,7 +198,7 @@ Stories include acceptance criteria and trace back to functional requirement IDs
 
 **Acceptance Criteria:**
 - I see a paginated list of all PUBLISHED shipments.
-- I can view shipment details including goods description, weight, locations, and dates.
+- I can view shipment details including goods description, load size, locations, and dates.
 - I can see shipment locations on a map.
 
 **Traces to:** FR-200, FR-203, FR-205
@@ -210,7 +210,7 @@ Stories include acceptance criteria and trace back to functional requirement IDs
 **As a** Transporter, **I want** to search and filter shipments, **so that** I can quickly find relevant freight opportunities.
 
 **Acceptance Criteria:**
-- I can filter by pickup location, delivery location, goods type, and date range.
+- I can filter by pickup location, delivery location, goods type, load size, and date range.
 - I can sort results by date posted, pickup date, or distance.
 - I can search by keywords in the goods description.
 

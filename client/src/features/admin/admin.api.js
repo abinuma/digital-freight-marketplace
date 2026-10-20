@@ -7,7 +7,10 @@ export async function getAdminMetrics() {
 }
 
 export async function listAdminUsers(params) {
-  const response = await apiClient.get('/admin/users', { params })
+  const query = Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== '' && value != null),
+  )
+  const response = await apiClient.get('/admin/users', { params: query })
   return { users: response.data.data, pagination: response.data.meta.pagination }
 }
 
