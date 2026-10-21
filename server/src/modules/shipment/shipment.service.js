@@ -18,7 +18,6 @@ function toApiShipment(shipment) {
     invitedDriverId,
     isDirectInvite: Boolean(invitedDriverId),
     weightKg: shipment.weightKg != null ? Number(shipment.weightKg) : null,
-    volumeM3: shipment.volumeM3 === null || shipment.volumeM3 === undefined ? null : Number(shipment.volumeM3),
     pickupLat: shipment.pickupLat === null ? null : Number(shipment.pickupLat),
     pickupLng: shipment.pickupLng === null ? null : Number(shipment.pickupLng),
     deliveryLat: shipment.deliveryLat === null ? null : Number(shipment.deliveryLat),

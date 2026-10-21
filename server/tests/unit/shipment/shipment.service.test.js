@@ -62,7 +62,6 @@ describe('shipment update service', () => {
       goodsType: 'Furniture',
       loadSize: 'FULL_LOAD',
       weightKg: 125.5,
-      volumeM3: 15.5,
       pickupLocation: 'Addis Ababa',
       deliveryLocation: 'Hawassa',
       pickupDate: '2026-10-10',

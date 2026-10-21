@@ -26,8 +26,6 @@ describe('BidEditor', () => {
           status: 'ACTIVE',
           maxWeightKg: 10000,
           remainingWeightKg: 8000,
-          maxVolumeM3: 40,
-          remainingVolumeM3: 30,
         },
       ],
     };
@@ -38,7 +36,6 @@ describe('BidEditor', () => {
       pickupLocation: 'Addis Ababa',
       deliveryLocation: 'Hawassa',
       weightKg: 2000,
-      volumeM3: 10,
     };
 
     const queryClient = new QueryClient({
@@ -74,8 +71,6 @@ describe('BidEditor', () => {
           status: 'FULL',
           maxWeightKg: 10000,
           remainingWeightKg: 0,
-          maxVolumeM3: 40,
-          remainingVolumeM3: 0,
         },
       ],
     };
@@ -86,7 +81,6 @@ describe('BidEditor', () => {
       pickupLocation: 'Addis Ababa, Bole',
       deliveryLocation: 'Hawassa, City Center',
       weightKg: 2000,
-      volumeM3: 10,
     };
 
     const queryClient = new QueryClient({

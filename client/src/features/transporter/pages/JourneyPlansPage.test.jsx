@@ -24,11 +24,8 @@ describe('JourneyPlansPage', () => {
           fullLoadPrice: 35000,
           status: 'FULL',
           maxWeightKg: 10000,
-          maxVolumeM3: 40,
           allocatedWeightKg: 10000,
-          allocatedVolumeM3: 40,
           remainingWeightKg: 0,
-          remainingVolumeM3: 0,
           assignments: [
             {
               id: 'assign-1',
@@ -38,7 +35,6 @@ describe('JourneyPlansPage', () => {
                 pickupLocation: 'Addis Ababa',
                 deliveryLocation: 'Hawassa',
                 weightKg: 10000,
-                volumeM3: 40,
               },
               bid: { price: 35000 },
             },
@@ -70,7 +66,7 @@ describe('JourneyPlansPage', () => {
 
     // Capacity
     expect(markup).toContain('Load Capacity');
-    expect(markup).toContain('100% allocated');
+    expect(markup).toContain('10,000 kg');
 
     // Assigned loads
     expect(markup).toContain('Factory Equipment');
@@ -91,23 +87,18 @@ describe('JourneyPlansPage', () => {
           fullLoadPrice: 20000,
           status: 'ACTIVE',
           maxWeightKg: 5000,
-          maxVolumeM3: 30,
           allocatedWeightKg: 2500,
-          allocatedVolumeM3: 15,
           remainingWeightKg: 2500,
-          remainingVolumeM3: 15,
           assignments: [
             {
               id: 'assign-small',
               loadSize: 'SMALL_LOAD',
               weightKg: 2500,
-              volumeM3: 15,
               shipment: {
                 id: 'ship-small',
                 goodsDescription: 'Electronics Parts',
                 loadSize: 'SMALL_LOAD',
                 weightKg: 2500,
-                volumeM3: 15,
               },
             },
           ],
@@ -130,7 +121,7 @@ describe('JourneyPlansPage', () => {
       )
     );
 
-    expect(markup).toContain('50% allocated');
+    expect(markup).toContain('2,500 kg');
     expect(markup).toContain('50% capacity remaining');
   });
 

@@ -24,7 +24,6 @@ const vehicleSelect = {
   type: true,
   loadSize: true,
   capacityTons: true,
-  volumeM3: true,
   plateNumber: true,
   photo: true,
   createdAt: true,
@@ -92,7 +91,7 @@ export async function findAvailableTransporters(city) {
       availableDays: true,
       preferredLoadTypes: true,
       reviewsReceived: { select: { rating: true } },
-      vehicle: { select: { type: true, loadSize: true, capacityTons: true, volumeM3: true, photo: true } },
+      vehicle: { select: { type: true, loadSize: true, capacityTons: true, photo: true } },
       journeyPlans: {
         where: { status: 'ACTIVE', departureDate: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
         select: { destinationCity: true, departureDate: true },
@@ -118,7 +117,6 @@ export async function findAvailableTransporters(city) {
       vehicleType: user.vehicle?.type || 'Truck (details pending)',
       loadSize: user.vehicle?.loadSize || 'FULL_LOAD',
       capacityTons: user.vehicle && user.vehicle.capacityTons != null ? Number(user.vehicle.capacityTons) : 0,
-      volumeM3: user.vehicle?.volumeM3 == null ? null : Number(user.vehicle.volumeM3),
       vehiclePhoto: user.vehicle?.photo || null,
       intendedDestination: user.journeyPlans[0]?.destinationCity || null,
       plannedDepartureDate: user.journeyPlans[0]?.departureDate || null,
@@ -144,7 +142,6 @@ export async function findVehicleByUserId(userId) {
     loadSize: vehicle.loadSize || 'FULL_LOAD',
     capacityTons: tons,
     capacityKg: tons != null ? Math.round(tons * 1000) : null,
-    volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
   };
 }
 
@@ -166,7 +163,6 @@ export async function upsertVehicle(userId, input) {
   const tons = vehicle.capacityTons != null ? Number(vehicle.capacityTons) : null;
   if (tons != null) {
     const maxWeightKg = tons * 1000;
-    const maxVolumeM3 = vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null;
     const activePlans = await prisma.journeyPlan.findMany({
       where: { transporterId: userId, status: { in: ['ACTIVE', 'FULL'] } },
       include: { assignments: true },
@@ -174,15 +170,11 @@ export async function upsertVehicle(userId, input) {
 
     for (const plan of activePlans) {
       let allocatedWeight = 0;
-      let allocatedVolume = 0;
       for (const assignment of plan.assignments) {
         const isSmall = assignment.loadSize === 'SMALL_LOAD';
         allocatedWeight += isSmall
           ? Number(assignment.weightKg || 0)
           : maxWeightKg * getLoadFraction(assignment.loadSize);
-        allocatedVolume += isSmall
-          ? Number(assignment.volumeM3 || 0)
-          : (maxVolumeM3 != null ? maxVolumeM3 * getLoadFraction(assignment.loadSize) : 0);
       }
       const newFraction = Math.min(1, maxWeightKg > 0 ? allocatedWeight / maxWeightKg : 0);
       const isFull = allocatedWeight >= maxWeightKg - 0.01;
@@ -190,9 +182,7 @@ export async function upsertVehicle(userId, input) {
         where: { id: plan.id },
         data: {
           maxWeightKg,
-          maxVolumeM3,
           allocatedWeightKg: allocatedWeight,
-          allocatedVolumeM3: allocatedVolume,
           allocatedLoadFraction: newFraction,
           status: isFull ? 'FULL' : 'ACTIVE',
         },
@@ -205,7 +195,6 @@ export async function upsertVehicle(userId, input) {
     loadSize: vehicle.loadSize || 'FULL_LOAD',
     capacityTons: tons,
     capacityKg: tons != null ? Math.round(tons * 1000) : null,
-    volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
   };
 }
 
@@ -219,7 +208,6 @@ export async function updateVehiclePhoto(userId, photoUrl) {
   return {
     ...vehicle,
     capacityTons: Number(vehicle.capacityTons),
-    volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
   };
 }
 

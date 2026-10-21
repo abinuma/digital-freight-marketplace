@@ -7,7 +7,6 @@ describe('VehicleDetailsCard', () => {
   const baseVehicle = {
     type: 'Isuzu',
     capacityKg: '5000',
-    volumeM3: '20',
     plateNumber: 'KBZ 123A',
     photo: '',
   };
@@ -31,7 +30,6 @@ describe('VehicleDetailsCard', () => {
     expect(markup).toContain('Upload Photo');
     expect(markup).toContain('KBZ 123A');
     expect(markup).toContain('Maximum Load (kg)');
-    expect(markup).toContain('Volume (m³)');
     expect(markup).toContain('id="vehicle-photo"');
   });
 

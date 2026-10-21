@@ -9,9 +9,6 @@ export function toApiPlan(plan) {
     ? Number(plan.transporter.vehicle.capacityTons) * 1000
     : null;
   const maxWeightKg = vehicleCapacityKg || (plan.maxWeightKg != null ? Number(plan.maxWeightKg) : 10000);
-  const maxVolumeM3 = plan.transporter?.vehicle?.volumeM3 != null
-    ? Number(plan.transporter.vehicle.volumeM3)
-    : (plan.maxVolumeM3 !== null && plan.maxVolumeM3 !== undefined ? Number(plan.maxVolumeM3) : null);
 
   let allocatedWeightKg = plan.allocatedWeightKg != null ? Number(plan.allocatedWeightKg) : 0;
   if (plan.assignments && plan.assignments.length > 0) {
@@ -28,11 +25,7 @@ export function toApiPlan(plan) {
     ? Math.min(1, allocatedWeightKg / maxWeightKg)
     : 0;
   const remainingLoadFraction = Math.max(0, 1.0 - allocatedLoadFraction);
-  const allocatedVolumeM3 = plan.allocatedVolumeM3 != null ? Number(plan.allocatedVolumeM3) : 0;
-
   const remainingWeightKg = Math.max(0, maxWeightKg - allocatedWeightKg);
-  const remainingVolumeM3 = maxVolumeM3 !== null ? Math.max(0, maxVolumeM3 - allocatedVolumeM3) : null;
-  // Percentage remaining and isFull are strictly based on mass (ignoring volume)
   const isFull =
     plan.status === 'FULL' ||
     allocatedWeightKg >= maxWeightKg - 0.01;
@@ -43,11 +36,8 @@ export function toApiPlan(plan) {
     allocatedLoadFraction,
     remainingLoadFraction,
     maxWeightKg,
-    maxVolumeM3,
     allocatedWeightKg,
-    allocatedVolumeM3,
     remainingWeightKg,
-    remainingVolumeM3,
     isFull,
   };
 
@@ -56,13 +46,11 @@ export function toApiPlan(plan) {
       ...assignment,
       loadSize: assignment.shipment?.loadSize || assignment.loadSize || 'FULL_LOAD',
       weightKg: assignment.weightKg != null ? Number(assignment.weightKg) : null,
-      volumeM3: assignment.volumeM3 !== null && assignment.volumeM3 !== undefined ? Number(assignment.volumeM3) : null,
       shipment: assignment.shipment
         ? {
             ...assignment.shipment,
             loadSize: assignment.shipment.loadSize || 'FULL_LOAD',
             weightKg: assignment.shipment.weightKg != null ? Number(assignment.shipment.weightKg) : null,
-            volumeM3: assignment.shipment.volumeM3 !== null && assignment.shipment.volumeM3 !== undefined ? Number(assignment.shipment.volumeM3) : null,
           }
         : undefined,
     }));
@@ -82,7 +70,6 @@ export async function createJourneyPlan(user, input) {
   }
 
   const maxWeightKg = Number(vehicle.capacityTons) * 1000;
-  const maxVolumeM3 = vehicle.volumeM3 !== null ? Number(vehicle.volumeM3) : null;
 
   const departureDate = input.departureDate.includes('T')
     ? new Date(input.departureDate)
@@ -95,7 +82,6 @@ export async function createJourneyPlan(user, input) {
     departureDate,
     fullLoadPrice: input.fullLoadPrice,
     maxWeightKg,
-    maxVolumeM3,
   });
 
   return toApiPlan(plan);
@@ -193,7 +179,6 @@ export async function assignBidToJourneyPlan(user, planId, bidId) {
 
   const loadSize = normalizeLoadSize(bid.shipment.loadSize);
   const weightKg = bid.shipment.weightKg != null ? Number(bid.shipment.weightKg) : null;
-  const volumeM3 = bid.shipment.volumeM3 != null ? Number(bid.shipment.volumeM3) : null;
   if (loadSize === 'SMALL_LOAD' && !(weightKg > 0)) {
     throw new AppError('Small loads must include weight before assignment', 400);
   }
@@ -204,7 +189,6 @@ export async function assignBidToJourneyPlan(user, planId, bidId) {
     shipmentId: bid.shipmentId,
     loadSize,
     weightKg,
-    volumeM3,
   });
 
   if (result.notFound) {
@@ -214,13 +198,6 @@ export async function assignBidToJourneyPlan(user, planId, bidId) {
   if (result.exceedsWeight) {
     throw new AppError(
       `Load weight (${result.addedWeight ?? weightKg} kg) exceeds remaining plan capacity (${result.remainingWeight} kg). Please choose another suitable plan or create a new one.`,
-      400
-    );
-  }
-
-  if (result.exceedsVolume) {
-    throw new AppError(
-      `Load volume (${result.addedVolume ?? volumeM3} m³) exceeds remaining plan volume (${result.remainingVolume} m³). Please choose another suitable plan or create a new one.`,
       400
     );
   }

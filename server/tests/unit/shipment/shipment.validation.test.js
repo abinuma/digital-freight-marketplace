@@ -10,7 +10,6 @@ const validCreateBody = {
   goodsDescription: 'Household furniture shipment',
   goodsType: 'Furniture',
   weightKg: 125.5,
-  volumeM3: 15.5,
   pickupLocation: 'Addis Ababa',
   deliveryLocation: 'Hawassa',
   pickupDate: '2099-10-10',

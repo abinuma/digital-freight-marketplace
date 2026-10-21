@@ -125,15 +125,15 @@ For validation errors, `details` contains field-level issues:
 | GET | `/users/:id` | Yes | Any | Get user public profile |
 | PATCH | `/users/:id` | Yes | Owner | Update profile (name, phone, location, city, zone, region, photo, availableDays, preferredLoadTypes) |
 | POST | `/users/:id/profile-photo` | Yes | Owner | Upload a profile photo to Cloudinary |
-| GET | `/users/:id/vehicle` | Yes | Any | Get transporter's vehicle details (type, capacityKg, capacityTons, volumeM3, plateNumber) |
-| PUT | `/users/:id/vehicle` | Yes | Transporter (owner) | Create or update vehicle details (type, capacityKg / capacityTons, volumeM3, plateNumber) |
+| GET | `/users/:id/vehicle` | Yes | Any | Get transporter's vehicle details (type, capacityKg, capacityTons, plateNumber) |
+| PUT | `/users/:id/vehicle` | Yes | Transporter (owner) | Create or update vehicle details (type, capacityKg / capacityTons, plateNumber) |
 | GET | `/users/:id/reviews` | Yes | Any | Get reviews received by a user |
 
 `POST /users/:id/profile-photo` accepts a single multipart file in the `photo` field. JPEG, PNG, and WebP images are supported up to 5 MB. The endpoint verifies the file signature, requires the authenticated user to match `:id`, and uses the authenticated upload rate limit.
 
 ### 5.3 Shipment Module — `/api/v1/shipments`
 
-`GET /shipments` accepts `page` and `limit` (default `1` and `20`), `pickupLocation` and `deliveryLocation` (case-insensitive partial matches), `goodsType` (case-insensitive exact match), `loadSize` (case-insensitive exact match: `FULL_LOAD`, `HALF_LOAD`, `QUARTER_LOAD`, `SMALL_LOAD`), `pickupDateFrom` and `pickupDateTo` (inclusive `YYYY-MM-DD` bounds), and `q` (case-insensitive search across goods description and special requirements). When `loadSize` is `SMALL_LOAD`, shipments specify cargo mass (`weightKg` in kg) and cargo volume (`volumeM3` in m³). `sortBy` accepts `createdAt` (default, newest first) or `pickupDate` (earliest first). Shippers may also filter their own shipments by `status` (`DRAFT`, `PUBLISHED`, `IN_PROGRESS`, `COMPLETED`, or `CANCELLED`). Results remain scoped by role: Transporters see only `PUBLISHED` shipments and Shippers see only their own shipments.
+`GET /shipments` accepts `page` and `limit` (default `1` and `20`), `pickupLocation` and `deliveryLocation` (case-insensitive partial matches), `goodsType` (case-insensitive exact match), `loadSize` (case-insensitive exact match: `FULL_LOAD`, `HALF_LOAD`, `QUARTER_LOAD`, `SMALL_LOAD`), `pickupDateFrom` and `pickupDateTo` (inclusive `YYYY-MM-DD` bounds), and `q` (case-insensitive search across goods description and special requirements). Small shipments specify cargo mass (`weightKg` in kg); full, half, and quarter shipments consume the corresponding fraction of the transporter's registered mass capacity. `sortBy` accepts `createdAt` (default, newest first) or `pickupDate` (earliest first). Shippers may also filter their own shipments by `status` (`DRAFT`, `PUBLISHED`, `IN_PROGRESS`, `COMPLETED`, or `CANCELLED`). Results remain scoped by role: Transporters see only `PUBLISHED` shipments and Shippers see only their own shipments.
 
 `GET /shipments/dashboard/summary` is restricted to Shippers and returns status counts, non-withdrawn bid and shipment-message totals, and the five most recently created owned shipments with their non-withdrawn bid counts. The message total is cumulative; it is not an unread-message count.
 
@@ -236,9 +236,9 @@ All journey plan endpoints require authenticated `TRANSPORTER` role.
 | GET | `/journey-plans/:id` | Yes (Transporter) | Get journey plan details including vehicle limits, allocated/remaining capacity, and assigned loads |
 | PUT | `/journey-plans/:id` | Yes (Transporter) | Update an owned journey plan with no assigned loads |
 | DELETE | `/journey-plans/:id` | Yes (Transporter) | Delete an owned journey plan; removes assignment links while preserving shipment and bid records |
-| POST | `/journey-plans/:id/assignments` | Yes (Transporter) | Assign an accepted bid to the journey plan; verifies remaining weight & volume capacity atomically |
+| POST | `/journey-plans/:id/assignments` | Yes (Transporter) | Assign an accepted bid to the journey plan; verifies remaining mass capacity atomically |
 
-Assignment tracking uses the driver's registered vehicle limits. Full, half, and quarter shipments consume 100%, 50%, and 25% of both the vehicle's mass and volume capacity. Small shipments consume their shipper-provided mass and volume. The displayed allocated and remaining percentage is calculated from mass only; volume remains a separate fit check and can still mark a plan full. Journey plan capacity totals are recalculated from those per-assignment amounts.
+Assignment tracking uses the driver's registered vehicle mass capacity. Full, half, and quarter shipments consume 100%, 50%, and 25% of that capacity. Small shipments consume the exact mass entered by the shipper. Journey plan capacity totals and the allocated mass display are calculated from those per-assignment amounts.
 
 Plans with assigned loads cannot be edited. Deleting a plan removes its assignment links while preserving shipment and bid records. Completed and cancelled plans cannot be edited.
 

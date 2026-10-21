@@ -11,9 +11,7 @@ const planSelect = {
   status: true,
   allocatedLoadFraction: true,
   maxWeightKg: true,
-  maxVolumeM3: true,
   allocatedWeightKg: true,
-  allocatedVolumeM3: true,
   createdAt: true,
   updatedAt: true,
   transporter: {
@@ -21,7 +19,6 @@ const planSelect = {
       vehicle: {
         select: {
           capacityTons: true,
-          volumeM3: true,
         },
       },
     },
@@ -34,7 +31,7 @@ const planSelect = {
 export function findTransporterVehicle(userId) {
   return prisma.vehicle.findUnique({
     where: { userId },
-    select: { id: true, capacityTons: true, volumeM3: true },
+    select: { id: true, capacityTons: true },
   });
 }
 
@@ -68,7 +65,6 @@ export function findJourneyPlansByTransporter(transporterId, status) {
           bidId: true,
           loadSize: true,
           weightKg: true,
-          volumeM3: true,
           assignedAt: true,
           shipment: {
             select: {
@@ -77,7 +73,6 @@ export function findJourneyPlansByTransporter(transporterId, status) {
               goodsType: true,
               loadSize: true,
               weightKg: true,
-              volumeM3: true,
               pickupLocation: true,
               deliveryLocation: true,
               status: true,
@@ -103,7 +98,6 @@ export function findJourneyPlanById(id) {
           bidId: true,
           loadSize: true,
           weightKg: true,
-          volumeM3: true,
           assignedAt: true,
           shipment: {
             select: {
@@ -112,7 +106,6 @@ export function findJourneyPlanById(id) {
               goodsType: true,
               loadSize: true,
               weightKg: true,
-              volumeM3: true,
               pickupLocation: true,
               deliveryLocation: true,
               status: true,
@@ -141,7 +134,6 @@ export function findAcceptedBidForAssignment(bidId, transporterId) {
           id: true,
           loadSize: true,
           weightKg: true,
-          volumeM3: true,
           goodsDescription: true,
           pickupLocation: true,
           deliveryLocation: true,
@@ -157,7 +149,7 @@ export function findAcceptedBidForAssignment(bidId, transporterId) {
   });
 }
 
-export async function assignBidToPlanWithCapacityCheck({ planId, bidId, shipmentId, loadSize = 'FULL_LOAD', weightKg, volumeM3 }) {
+export async function assignBidToPlanWithCapacityCheck({ planId, bidId, shipmentId, loadSize = 'FULL_LOAD', weightKg }) {
   const normalizedLoadSize = normalizeLoadSize(loadSize);
   const isSmallLoad = normalizedLoadSize === 'SMALL_LOAD';
   return prisma.$transaction(async (tx) => {
@@ -167,7 +159,7 @@ export async function assignBidToPlanWithCapacityCheck({ planId, bidId, shipment
         transporter: {
           select: {
             vehicle: {
-              select: { capacityTons: true, volumeM3: true },
+              select: { capacityTons: true },
             },
           },
         },
@@ -179,19 +171,11 @@ export async function assignBidToPlanWithCapacityCheck({ planId, bidId, shipment
       ? Number(plan.transporter.vehicle.capacityTons) * 1000
       : null;
     const maxWeight = vehicleCapacityKg || (plan.maxWeightKg != null ? Number(plan.maxWeightKg) : 10000);
-    const maxVolume = plan.transporter?.vehicle?.volumeM3 != null
-      ? Number(plan.transporter.vehicle.volumeM3)
-      : (plan.maxVolumeM3 !== null ? Number(plan.maxVolumeM3) : null);
 
     const allocatedWeight = Number(plan.allocatedWeightKg || 0);
-    const allocatedVolume = Number(plan.allocatedVolumeM3 || 0);
     // Exact entered mass for small load, fraction of maxWeight for other loads
     const addedWeight = isSmallLoad ? Number(weightKg || 0) : maxWeight * getLoadFraction(normalizedLoadSize);
-    const addedVolume = isSmallLoad
-      ? Number(volumeM3 || 0)
-      : maxVolume !== null ? maxVolume * getLoadFraction(normalizedLoadSize) : 0;
     const newWeight = allocatedWeight + addedWeight;
-    const newVolume = allocatedVolume + addedVolume;
 
     if (newWeight > maxWeight + 0.01) {
       return { exceedsWeight: true, remainingWeight: Math.max(0, maxWeight - allocatedWeight), addedWeight };
@@ -206,21 +190,18 @@ export async function assignBidToPlanWithCapacityCheck({ planId, bidId, shipment
         bidId,
         loadSize: normalizedLoadSize,
         weightKg: addedWeight,
-        volumeM3: maxVolume !== null || isSmallLoad ? addedVolume : null,
       },
     });
 
-    // Remaining capacity and isFull is strictly calculated for mass (volume ignored)
+    // Remaining capacity and isFull are calculated from mass only.
     const isFull = newWeight >= maxWeight - 0.01;
 
     const updatedPlan = await tx.journeyPlan.update({
       where: { id: planId },
       data: {
         maxWeightKg: maxWeight,
-        maxVolumeM3: maxVolume,
         allocatedLoadFraction: newFraction,
         allocatedWeightKg: newWeight,
-        allocatedVolumeM3: newVolume,
         status: isFull ? 'FULL' : plan.status,
       },
       select: planSelect,

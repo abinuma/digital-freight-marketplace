@@ -94,8 +94,8 @@ describe('ConversationBidCard', () => {
     expect(markup).toContain('pending');
   });
 
-  it('displays legacy vehicle capacity if loadSize is not provided', () => {
-    const legacyVehicle = { type: 'Sinotruk', capacityTons: 40, volumeM3: 65 };
+  it('displays legacy vehicle mass capacity if loadSize is not provided', () => {
+    const legacyVehicle = { type: 'Sinotruk', capacityTons: 40 };
     const markup = renderToStaticMarkup(
       createElement(
         MemoryRouter,
@@ -110,17 +110,16 @@ describe('ConversationBidCard', () => {
       )
     );
 
-    expect(markup).toContain('Sinotruk (40t · 65m³)');
+    expect(markup).toContain('Sinotruk (40t)');
   });
 
-  it('displays small load details with mass and volume and driver vehicle mass in kg', () => {
+  it('displays small load mass and driver vehicle mass in kg', () => {
     const smallLoadBid = {
       ...sampleBid,
       shipment: {
         ...sampleBid.shipment,
         loadSize: 'SMALL_LOAD',
         weightKg: 150,
-        volumeM3: 0.8,
       },
     };
     const markup = renderToStaticMarkup(
@@ -130,14 +129,14 @@ describe('ConversationBidCard', () => {
         createElement(ConversationBidCard, {
           bid: smallLoadBid,
           role: 'SHIPPER',
-          vehicle: { type: 'Pickup', capacityKg: 1000, volumeM3: 5 },
+          vehicle: { type: 'Pickup', capacityKg: 1000 },
           accepting: false,
           onAcceptBid: () => {},
         })
       )
     );
 
-    expect(markup).toContain('Small load (150 kg · 0.8 m³)');
-    expect(markup).toContain('Pickup (1,000 kg · 5m³)');
+    expect(markup).toContain('Small load (150 kg)');
+    expect(markup).toContain('Pickup (1,000 kg)');
   });
 });

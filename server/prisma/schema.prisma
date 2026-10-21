@@ -84,7 +84,6 @@ model Vehicle {
   type         String   @db.VarChar(50)
   loadSize     String?  @default("FULL_LOAD") @db.VarChar(50)
   capacityTons Decimal? @db.Decimal(10, 2)
-  volumeM3     Decimal? @db.Decimal(10, 2)
   plateNumber  String   @db.VarChar(20)
   photo        String?  @db.VarChar(500)
   createdAt    DateTime @default(now()) @db.Timestamp(3)
@@ -100,7 +99,6 @@ model Shipment {
   goodsType           String         @db.VarChar(50)
   loadSize            String         @default("FULL_LOAD") @db.VarChar(50)
   weightKg            Decimal?       @db.Decimal(10, 2)
-  volumeM3            Decimal?       @db.Decimal(10, 2)
   pickupLocation      String         @db.VarChar(255)
   pickupLat           Decimal?       @db.Decimal(10, 7)
   pickupLng           Decimal?       @db.Decimal(10, 7)
@@ -292,9 +290,7 @@ model JourneyPlan {
   status                JourneyPlanStatus @default(ACTIVE)
   allocatedLoadFraction Decimal           @default(0) @db.Decimal(5, 4)
   maxWeightKg           Decimal?          @db.Decimal(10, 2)
-  maxVolumeM3           Decimal?          @db.Decimal(10, 2)
   allocatedWeightKg     Decimal?          @default(0) @db.Decimal(10, 2)
-  allocatedVolumeM3     Decimal?          @default(0) @db.Decimal(10, 2)
   createdAt             DateTime          @default(now()) @db.Timestamp(3)
   updatedAt             DateTime          @updatedAt @db.Timestamp(3)
 
@@ -312,7 +308,6 @@ model JourneyPlanAssignment {
   bidId         String      @unique @db.Uuid
   loadSize      String?     @db.VarChar(50)
   weightKg      Decimal?    @db.Decimal(10, 2)
-  volumeM3      Decimal?    @db.Decimal(10, 2)
   assignedAt    DateTime    @default(now()) @db.Timestamp(3)
 
   journeyPlan JourneyPlan @relation(fields: [journeyPlanId], references: [id], onDelete: Cascade)
