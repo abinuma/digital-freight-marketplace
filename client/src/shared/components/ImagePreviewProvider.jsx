@@ -50,7 +50,7 @@ export function ImagePreviewProvider({ children }) {
             onClick={closeImage}
             aria-label="Close image preview"
           >
-            ×
+            <img src="/xmark-solid-full.svg" alt="" aria-hidden="true" className="h-5 w-5 brightness-0 invert" />
           </button>
           <img
             className="max-h-[calc(100vh-2rem)] max-w-full select-none object-contain"

@@ -34,7 +34,7 @@ export function Toast({ tone = 'success', title, children, onDismiss, closing = 
             onClick={onDismiss}
             aria-label="Dismiss notification"
           >
-            ×
+            <img src="/xmark-solid-full.svg" alt="" aria-hidden="true" className="h-3 w-3 opacity-60" />
           </button>
         )}
       </div>

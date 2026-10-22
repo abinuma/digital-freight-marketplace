@@ -287,7 +287,7 @@ export function JourneyPlansPage() {
                       </span>
                     </div>
                     <h2 className="mb-0 mt-2 text-xl font-bold text-slate-900">
-                      {plan.originCity} <span className="text-blue-600">→</span> {plan.destinationCity}
+                      {plan.originCity} <img src="/arrow-right-long-solid-full.svg" alt="to" aria-hidden="true" className="mx-1 inline h-3 w-4 align-middle" /> {plan.destinationCity}
                     </h2>
                   </div>
                   <div className="text-right max-sm:text-left">
@@ -351,7 +351,7 @@ export function JourneyPlansPage() {
                               {assignment.shipment?.goodsDescription || 'Shipment load'}
                             </strong>
                             <div className="text-xs text-slate-500">
-                              {assignment.shipment?.pickupLocation} → {assignment.shipment?.deliveryLocation}
+                              {assignment.shipment?.pickupLocation} <img src="/arrow-right-long-solid-full.svg" alt="to" aria-hidden="true" className="mx-1 inline h-3 w-4 align-middle" /> {assignment.shipment?.deliveryLocation}
                             </div>
                           </div>
                           <div className="flex items-center gap-4 text-xs font-medium text-slate-600">
@@ -375,24 +375,29 @@ export function JourneyPlansPage() {
         </div>
       ) : (
         <Card className="flex flex-col items-center gap-2 px-4 py-12 text-center">
-          <span className="text-3xl text-slate-400" aria-hidden="true">
-            ⛟
-          </span>
-          <h2 className="m-0 text-base font-semibold text-slate-800">
-            {statusFilter ? `No ${statusFilter.toLowerCase()} journey plans` : 'No journey plans listed'}
-          </h2>
-          <p className="m-0 text-sm text-slate-500">
-            Publish your travel schedules to easily manage truckload capacity and bundle shipper loads.
-          </p>
-          <Button
-            className="mt-3"
-            onClick={() => {
-              resetForm();
-              setIsModalOpen(true);
-            }}
-          >
-            Create your first journey plan
-          </Button>
+          {statusFilter ? (
+            <>
+              <img src="/magnifying-glass-solid-full.svg" alt="" aria-hidden="true" className="h-8 w-8 opacity-25" />
+              <h2 className="m-0 text-base font-semibold text-slate-800">No matching plan try adjusting filters</h2>
+            </>
+          ) : (
+            <>
+              <span className="text-3xl text-slate-400" aria-hidden="true">⛟</span>
+              <h2 className="m-0 text-base font-semibold text-slate-800">No journey plans listed</h2>
+              <p className="m-0 text-sm text-slate-500">
+                Publish your travel schedules to easily manage truckload capacity and bundle shipper loads.
+              </p>
+              <Button
+                className="mt-3"
+                onClick={() => {
+                  resetForm();
+                  setIsModalOpen(true);
+                }}
+              >
+                Create your first journey plan
+              </Button>
+            </>
+          )}
         </Card>
       )}
 
@@ -503,13 +508,13 @@ export function JourneyPlansPage() {
             )}
           </label>
 
-          <div className="mt-4 flex justify-end gap-2">
+          <div className="relative mt-4 flex w-full items-center justify-end gap-2">
             {editingPlanId && (
               <Button
                 size="sm"
                 type="button"
                 variant="danger"
-                className="mr-auto"
+                className="absolute left-0"
                 disabled={isSubmitting}
                 onClick={() => {
                   const plan = plans.find((item) => item.id === editingPlanId);
@@ -528,7 +533,7 @@ export function JourneyPlansPage() {
                   <Spinner /> {editingPlanId ? 'Saving...' : 'Creating...'}
                 </>
               ) : (
-                editingPlanId ? 'Save changes' : 'Create Journey Plan'
+                editingPlanId ? 'Save changes' : 'Create Plan'
               )}
             </Button>
           </div>

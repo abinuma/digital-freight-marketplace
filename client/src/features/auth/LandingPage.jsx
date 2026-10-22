@@ -37,11 +37,9 @@ function LandingPage() {
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <section className="bg-[#0b2034] text-white">
         <header className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4 max-md:flex-wrap max-md:px-5">
-          <Link to="/" className="inline-flex items-center gap-2 text-lg font-extrabold tracking-tight text-white no-underline">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 text-blue-400" fill="currentColor" aria-hidden="true">
-              <path d="M3 6h11v9H3zM14 9h4l3 3v3h-2a3 3 0 0 0-6 0h-1V9zm-7 7a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm10 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4z" />
-            </svg>
-            EthioFreight
+          <Link to="/" className="inline-flex items-center gap-1.5 text-lg font-extrabold tracking-tight text-white no-underline">
+            <img src="/logoFETAN.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />
+            FETAN
           </Link>
           <nav aria-label="Main navigation" className="flex items-center gap-7 text-xs font-medium text-slate-300 max-md:order-3 max-md:w-full max-md:justify-center max-sm:flex-wrap max-sm:gap-x-5 max-sm:gap-y-2">
             <a className="text-inherit no-underline hover:text-white" href="#how-it-works">How it works</a>
@@ -152,7 +150,7 @@ function LandingPage() {
       <footer id="support" className="bg-[#071727] px-6 py-8 text-slate-300 max-md:px-5">
         <div className="mx-auto grid max-w-6xl gap-7 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <Link to="/" className="text-sm font-extrabold text-white no-underline">EthioFreight</Link>
+            <Link to="/" className="text-sm font-extrabold text-white no-underline">FETAN</Link>
             <p className="mb-0 mt-2 text-[10px]">Connecting shippers and carriers.</p>
           </div>
           <div className="grid content-start gap-2 text-[10px]">
@@ -170,7 +168,7 @@ function LandingPage() {
             <a href="#support" className="text-inherit no-underline hover:text-white">Privacy</a>
           </div>
         </div>
-        <p className="mx-auto mb-0 mt-7 max-w-6xl text-[10px]">© EthioFreight. All rights reserved.</p>
+        <p className="mx-auto mb-0 mt-7 max-w-6xl text-[10px]">© FETAN. All rights reserved.</p>
       </footer>
     </main>
   );

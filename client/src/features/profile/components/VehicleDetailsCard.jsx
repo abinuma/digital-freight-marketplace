@@ -148,7 +148,7 @@ export function VehicleDetailsCard({
                           className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 p-2 text-xs transition-colors cursor-pointer"
                           aria-label="Cancel chosen file"
                         >
-                          ✕
+                          <img src="/xmark-solid-full.svg" alt="" aria-hidden="true" className="h-3 w-3" />
                         </button>
                       )}
                     </div>
@@ -198,8 +198,8 @@ export function VehicleDetailsCard({
                       <option value="Sinotruk">Sinotruk</option>
                       <option value="Other">Other</option>
                     </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 text-xs">
-                      ▲
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                      <img src="/angle-down-solid-full.svg" alt="" aria-hidden="true" className="h-3 w-3" />
                     </div>
                   </div>
                   {errors.type && (

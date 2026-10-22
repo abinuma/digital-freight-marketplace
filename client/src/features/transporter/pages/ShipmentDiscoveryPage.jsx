@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -7,18 +7,14 @@ import {
   Skeleton,
 } from "../../../shared/components/index.js";
 import { PreviewableImage } from "../../../shared/components/PreviewableImage.jsx";
+import { CityLocationPicker } from "../../profile/components/CityLocationPicker.jsx";
 import { listAvailableShipments } from "../transporter.api.js";
-import { LOAD_CATEGORY_KEYS } from "../../../shared/constants/loadCategories.js";
 import { LOAD_SIZE_OPTIONS, formatLoadSize, formatShipmentLoad } from "../../../shared/constants/loadSizes.js";
 
 const initialFilters = {
-  q: "",
   pickupLocation: "",
   deliveryLocation: "",
-  goodsType: "",
-  loadSize: "",
-  pickupDateFrom: "",
-  pickupDateTo: "",
+  loadSize: [],
 };
 
 const dateLabel = (date) =>
@@ -29,10 +25,23 @@ const dateLabel = (date) =>
   }).format(new Date(date));
 
 export function ShipmentDiscoveryPage() {
-  const [filters, setFilters] = useState(initialFilters);
+  const [filters, setFilters] = useState({});
   const [draft, setDraft] = useState(initialFilters);
   const [page, setPage] = useState(1);
-  const [filterError, setFilterError] = useState("");
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const activeFilters = Object.fromEntries(
+        Object.entries(draft).flatMap(([key, value]) => {
+          if (Array.isArray(value)) return value.length ? [[key, value.join(",")]] : [];
+          return value ? [[key, value]] : [];
+        }),
+      );
+      setFilters(activeFilters);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [draft]);
 
   const query = useQuery({
     queryKey: ["transporter", "discover", filters, page],
@@ -46,29 +55,9 @@ export function ShipmentDiscoveryPage() {
     setDraft((current) => ({ ...current, [name]: value }));
   }
 
-  function applyFilters(event) {
-    event.preventDefault();
-    if (
-      draft.pickupDateFrom &&
-      draft.pickupDateTo &&
-      draft.pickupDateFrom > draft.pickupDateTo
-    ) {
-      setFilterError(
-        "The earliest pickup date must be before the latest date.",
-      );
-      return;
-    }
-    setFilterError("");
-    setFilters(
-      Object.fromEntries(Object.entries(draft).filter(([, value]) => value)),
-    );
-    setPage(1);
-  }
-
   function clearFilters() {
     setDraft(initialFilters);
-    setFilters(initialFilters);
-    setFilterError("");
+    setFilters({});
     setPage(1);
   }
 
@@ -142,9 +131,7 @@ export function ShipmentDiscoveryPage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
         <div className="flex items-center gap-3 mb-5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shrink-0">
-            <svg className="w-5 h-5 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-            </svg>
+            <img src="/sliders-solid-full.svg" alt="" aria-hidden="true" className="w-5 h-5" />
           </div>
           <div>
             <h2 className="m-0 text-base font-bold text-slate-900">Filter shipments</h2>
@@ -152,248 +139,64 @@ export function ShipmentDiscoveryPage() {
           </div>
         </div>
 
-        {filterError && <Alert tone="danger" className="mb-4">{filterError}</Alert>}
-
-        <form onSubmit={applyFilters} className="space-y-5">
+        <div className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Search */}
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1.5">Search</label>
-              <div className="relative flex items-center">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search by location, cargo type..."
-                  value={draft.q}
-                  onChange={(e) => updateDraft("q", e.target.value)}
-                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                />
-              </div>
-            </div>
+            <CityLocationPicker
+              id="transporter-pickup-city-filter"
+              label="Pickup location"
+              placeholder="Type or select a city..."
+              city={draft.pickupLocation}
+              className=""
+              onChange={({ city }) => updateDraft("pickupLocation", city)}
+            />
 
-            {/* Pickup location */}
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1.5">Pickup location</label>
-              <div className="relative flex items-center">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                    <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Select pickup location"
-                  value={draft.pickupLocation}
-                  onChange={(e) => updateDraft("pickupLocation", e.target.value)}
-                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-9 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                />
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-              </div>
-            </div>
+            <CityLocationPicker
+              id="transporter-delivery-city-filter"
+              label="Delivery location"
+              placeholder="Type or select a city..."
+              city={draft.deliveryLocation}
+              className=""
+              onChange={({ city }) => updateDraft("deliveryLocation", city)}
+            />
 
-            {/* Load size */}
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1.5">Load size</label>
-              <div className="relative flex items-center">
-                <select
-                  value={draft.loadSize || ""}
-                  onChange={(e) => updateDraft("loadSize", e.target.value)}
-                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  <option value="">All load sizes</option>
-                  {LOAD_SIZE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
+            <fieldset className="m-0 min-w-0 border-0 p-0">
+              <legend className="mb-1.5 block text-xs font-bold text-slate-800">Load size</legend>
+              <div className="flex flex-wrap gap-2">
+                {LOAD_SIZE_OPTIONS.map((option) => {
+                  const selected = draft.loadSize.includes(option.value);
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => updateDraft(
+                        "loadSize",
+                        selected
+                          ? draft.loadSize.filter((value) => value !== option.value)
+                          : [...draft.loadSize, option.value],
+                      )}
+                      className={`min-h-10 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${selected ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"}`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
+            </fieldset>
 
-            {/* Delivery location */}
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1.5">Delivery location</label>
-              <div className="relative flex items-center">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                    <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Select delivery location"
-                  value={draft.deliveryLocation}
-                  onChange={(e) => updateDraft("deliveryLocation", e.target.value)}
-                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-9 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                />
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Load size */}
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1.5">Load size</label>
-              <div className="relative flex items-center">
-                <select
-                  value={draft.loadSize || ""}
-                  onChange={(e) => updateDraft("loadSize", e.target.value)}
-                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  <option value="">All load sizes</option>
-                  {LOAD_SIZE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Goods type */}
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1.5">Goods type</label>
-              <div className="relative flex items-center">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                    <line x1="12" y1="22.08" x2="12" y2="12" />
-                  </svg>
-                </div>
-                <select
-                  value={draft.goodsType}
-                  onChange={(e) => updateDraft("goodsType", e.target.value)}
-                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-9 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  <option value="">All goods categories</option>
-                  {LOAD_CATEGORY_KEYS.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Load size */}
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1.5">Load size</label>
-              <div className="relative flex items-center">
-                <select
-                  value={draft.loadSize || ""}
-                  onChange={(e) => updateDraft("loadSize", e.target.value)}
-                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 pr-9 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                >
-                  <option value="">All load sizes</option>
-                  {LOAD_SIZE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Pickup from */}
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1.5">Pickup from</label>
-              <div className="relative flex items-center">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                </div>
-                <input
-                  type="date"
-                  value={draft.pickupDateFrom}
-                  onChange={(e) => updateDraft("pickupDateFrom", e.target.value)}
-                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                />
-              </div>
-            </div>
-
-            {/* Pickup to */}
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1.5">Pickup to</label>
-              <div className="relative flex items-center">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                  <svg className="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                </div>
-                <input
-                  type="date"
-                  value={draft.pickupDateTo}
-                  onChange={(e) => updateDraft("pickupDateTo", e.target.value)}
-                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                />
-              </div>
-            </div>
           </div>
 
           <div className="flex items-center gap-3 pt-1">
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-5 py-2.5 shadow-xs transition-colors cursor-pointer"
-            >
-              <svg className="w-3.5 h-3.5 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-              </svg>
-              Apply filters
-            </button>
             <button
               type="button"
               onClick={clearFilters}
               className="inline-flex items-center gap-2 rounded-xl border border-blue-500 bg-white hover:bg-blue-50 text-blue-600 text-xs font-semibold px-5 py-2.5 shadow-xs transition-colors cursor-pointer"
             >
-              <svg className="w-3.5 h-3.5 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
+              <img src="/rotate-left-solid-full.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
               Clear filters
             </button>
           </div>
-        </form>
+        </div>
       </section>
 
       {/* Available loads section */}
@@ -462,9 +265,6 @@ export function ShipmentDiscoveryPage() {
 
                   {/* Goods category badge */}
                   <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/95 backdrop-blur-xs border border-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800 shadow-2xs">
-                    <svg className="w-3.5 h-3.5 text-emerald-600 fill-current" viewBox="0 0 24 24">
-                      <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z" />
-                    </svg>
                     <span>{shipment.goodsType}</span>
                   </div>
                 </div>
@@ -473,12 +273,7 @@ export function ShipmentDiscoveryPage() {
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="m-0 text-base font-bold text-slate-900">
-                      <Link
-                        className="text-inherit no-underline hover:text-blue-600 transition-colors"
-                        to={`/transporter/shipments/${shipment.id}`}
-                      >
-                        {shipment.goodsDescription}
-                      </Link>
+                      {shipment.goodsDescription}
                     </h3>
                     {shipment.isDirectInvite && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">
@@ -488,17 +283,12 @@ export function ShipmentDiscoveryPage() {
                   </div>
 
                   <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
-                    <svg className="w-4 h-4 text-slate-400 shrink-0 fill-current" viewBox="0 0 24 24">
-                      <path d="M12 3a4 4 0 0 0-4 4v1H6a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3h-2V7a4 4 0 0 0-4-4zm-2 4a2 2 0 1 1 4 0v1h-4V7z" />
-                    </svg>
+                    <img src="/truck-ramp-box-solid-full.svg" alt="" aria-hidden="true" className="w-4 h-4 shrink-0 opacity-50" />
                     <span>{formatShipmentLoad(shipment) || (shipment.weightKg ? `${shipment.weightKg} kg` : "")}</span>
                   </div>
 
                   <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600">
-                    <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                      <img src="/location-dot-solid-full.svg" alt="" aria-hidden="true" className="w-4 h-4 shrink-0 opacity-50" />
                     <span className="truncate">
                       {shipment.pickupLocation} to {shipment.deliveryLocation}
                     </span>
@@ -515,9 +305,6 @@ export function ShipmentDiscoveryPage() {
                       <span>Pickup {dateLabel(shipment.pickupDate)}</span>
                     </div>
 
-                    <span className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                      {shipment.specialRequirements ? "Requirements included" : "Standard handling"}
-                    </span>
                   </div>
                 </div>
 
@@ -535,16 +322,14 @@ export function ShipmentDiscoveryPage() {
           </div>
         ) : (
           <div className="rounded-2xl border border-slate-200 bg-white flex flex-col items-center gap-2 px-4 py-12 text-center shadow-xs">
-            <span className="text-3xl text-slate-300" aria-hidden="true">⌕</span>
-            <h3 className="m-0 text-base font-bold text-slate-900">No matching shipments</h3>
-            <p className="m-0 text-sm text-slate-500 max-w-sm">
-              Try changing the locations, goods type, or pickup date filters.
-            </p>
+            <img src="/magnifying-glass-solid-full.svg" alt="" aria-hidden="true" className="h-8 w-8 opacity-25" />
+            <h3 className="m-0 text-base font-bold text-slate-900">No matching shipments try adjusting filters</h3>
             <button
               type="button"
               onClick={clearFilters}
               className="mt-2 inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 transition-colors cursor-pointer shadow-xs"
             >
+              <img src="/rotate-left-solid-full.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
               Clear filters
             </button>
           </div>

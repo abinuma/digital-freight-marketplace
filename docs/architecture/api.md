@@ -147,7 +147,7 @@ An active session is redirected to the landing page when a protected request det
 | Method | Endpoint | Auth | Roles | Description |
 |--------|----------|------|-------|-------------|
 | POST | `/shipments` | Yes | Shipper | Create a new shipment (DRAFT) |
-| GET | `/shipments` | Yes | Any | List/search shipments (Transporters see PUBLISHED; Shippers see own) |
+| GET | `/shipments` | Yes | Any | List/search shipments (Transporters see PUBLISHED; Shippers see own); `loadSize` accepts comma-separated values for matching any selected load size |
 | GET | `/shipments/dashboard/summary` | Yes | Shipper | Get own shipment, bid, and message counts plus recent shipments |
 | GET | `/shipments/:id` | Yes | Shipper (owner), Admin, or Transporter (published shipment or own pending/accepted bid) | Get shipment detail |
 | PATCH | `/shipments/:id` | Yes | Shipper (owner) | Update shipment fields |

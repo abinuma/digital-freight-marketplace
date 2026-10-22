@@ -12,7 +12,6 @@ import {
 import { listShipments } from "../shipper.api.js";
 
 const statuses = [
-  "DRAFT",
   "PUBLISHED",
   "IN_PROGRESS",
   "COMPLETED",
@@ -130,7 +129,7 @@ export function ShipmentListPage() {
                     <td className="px-3 py-2 text-slate-600">
                       <span className="block max-w-64 truncate">
                         {shipment.pickupLocation}{" "}
-                        <span className="px-1 text-blue-700">→</span>{" "}
+                        <img src="/arrow-right-long-solid-full.svg" alt="to" aria-hidden="true" className="mx-1 inline h-3 w-4 align-middle" />{" "}
                         {shipment.deliveryLocation}
                       </span>
                     </td>

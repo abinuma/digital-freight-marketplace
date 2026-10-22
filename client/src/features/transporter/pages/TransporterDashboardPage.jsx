@@ -131,7 +131,7 @@ export function TransporterDashboardPage() {
         {metrics.map(({ key, title, stage, marker }, index) => (
             <div className="relative min-w-0" key={key}>
               <div className="mb-4 flex h-4 items-center max-sm:mb-2">
-                <span className={`z-10 h-3.5 w-3.5 rounded-full ${marker}`} aria-hidden="true" />
+                <span className={`z-10 h-3.5 w-3.5 rounded-full max-sm:hidden ${marker}`} aria-hidden="true" />
               </div>
               {results[index].isPending ? <Skeleton className="h-9 w-12 bg-slate-700" /> : (
                 <strong className="block text-4xl font-semibold leading-none tracking-tight text-white">
@@ -185,7 +185,7 @@ export function TransporterDashboardPage() {
                       <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">From</span>
                       <strong className="block truncate text-sm text-slate-900">{shipment.pickupLocation}</strong>
                     </div>
-                    <span className="text-xl leading-none text-blue-500" aria-hidden="true">→</span>
+                    
                     <div className="min-w-0">
                       <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">To</span>
                       <strong className="block truncate text-sm text-slate-900">{shipment.deliveryLocation}</strong>
@@ -252,9 +252,6 @@ export function TransporterDashboardPage() {
             >
               Manage journey plans&nbsp;→
             </Link>
-          </div>
-          <div className="hidden h-16 w-20 shrink-0 rounded-xl bg-blue-50 p-2 sm:grid sm:grid-cols-3 sm:grid-rows-2 sm:gap-1" aria-hidden="true">
-            {Array.from({ length: 6 }, (_, index) => <span key={index} className={`rounded-sm ${index === 4 ? 'bg-blue-600' : 'bg-blue-200'}`} />)}
           </div>
         </Card>
       </div>

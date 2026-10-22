@@ -5,8 +5,8 @@ import { useUnreadCount } from "../notifications/useUnreadCount.js";
 
 const navigation = [
   { to: "/shipper", icon: "/dashboard-svgrepo-com.svg", label: "Dashboard", end: true },
-  { to: "/shipper/shipments", icon: "▤", label: "My shipments", end: true },
-  { to: "/shipper/shipments/new", icon: "/circle-plus-solid-full.svg", label: "Post a shipment" },
+  { to: "/shipper/shipments", icon: "/box-solid-full.svg", label: "Shipments", end: true },
+  { to: "/shipper/shipments/new", icon: "/circle-plus-solid-full.svg", label: "Post shipment" },
   { to: "/shipper/messages", icon: "/message-regular-full.svg", label: "Messages" },
 ];
 
@@ -48,14 +48,12 @@ export function ShipperLayout() {
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
         <NavLink
-          className="inline-flex items-center gap-3 font-display text-lg font-extrabold tracking-tight text-slate-900 no-underline transition-colors hover:text-blue-700"
+          className="inline-flex items-center gap-1.5 font-display text-lg font-extrabold tracking-tight text-slate-900 no-underline transition-colors hover:text-blue-700"
           to="/shipper"
-          aria-label="EthioFreight home"
+          aria-label="FETAN home"
         >
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-blue-700 font-sans text-base text-white">
-            E
-          </span>
-          EthioFreight
+          <img src="/logoFETAN.svg" alt="" aria-hidden="true" className="h-9 w-9 rounded-lg object-contain" />
+          FETAN
         </NavLink>
         <div className="flex items-center gap-3">
           <button
@@ -66,9 +64,13 @@ export function ShipperLayout() {
             aria-controls="shipper-mobile-navigation"
             onClick={() => setMenuOpen((open) => !open)}
           >
-            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              {menuOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
-            </svg>
+            {menuOpen ? (
+              <img src="/xmark-solid-full.svg" alt="" aria-hidden="true" className="h-4 w-4" />
+            ) : (
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
           </button>
           <div className="hidden lg:block">
             <UserMenu />

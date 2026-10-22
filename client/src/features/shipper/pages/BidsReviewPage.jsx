@@ -46,7 +46,7 @@ export function BidsReviewPage() {
   return (
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">
       <header>
-        <h1 className="m-0 text-3xl font-semibold tracking-tight text-slate-900 max-md:text-2xl">
+        <h1 className="m-0 flex items-center gap-2 text-3xl font-semibold tracking-tight text-slate-900 max-md:text-2xl">
           Review bids
         </h1>
         <p className="mb-0 mt-2 text-sm text-slate-500">
@@ -83,7 +83,7 @@ export function BidsReviewPage() {
                       </Badge>
                     </div>
                     <p className="m-0 text-sm text-slate-600">
-                      {shipment.pickupLocation} <span className="px-1 text-blue-700">→</span> {shipment.deliveryLocation}
+                      {shipment.pickupLocation} <img src="/arrow-right-long-solid-full.svg" alt="to" aria-hidden="true" className="mx-1 inline h-3 w-4 align-middle" /> {shipment.deliveryLocation}
                     </p>
                     <p className="m-0 text-xs text-slate-500">
                       {shipment.goodsType} · {formatShipmentLoad(shipment) || (shipment.weightKg ? `${Number(shipment.weightKg).toLocaleString()} kg` : "")} · Pickup {dateLabel(shipment.pickupDate)}

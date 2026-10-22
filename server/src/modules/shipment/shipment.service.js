@@ -43,8 +43,10 @@ export async function listShipments(user, query) {
   if (query.deliveryLocation) filters.push({ deliveryLocation: { contains: query.deliveryLocation, mode: 'insensitive' } });
   if (query.goodsType) filters.push({ goodsType: { equals: query.goodsType, mode: 'insensitive' } });
   if (query.loadSize) {
-    const norm = query.loadSize.trim().toUpperCase().replace(/\s+/g, '_');
-    filters.push({ loadSize: { equals: norm, mode: 'insensitive' } });
+    const sizes = [...new Set(query.loadSize.split(',')
+      .map((size) => size.trim().toUpperCase().replace(/\s+/g, '_'))
+      .filter(Boolean))];
+    if (sizes.length) filters.push({ loadSize: { in: sizes, mode: 'insensitive' } });
   }
   if (query.status && user.role === 'SHIPPER') filters.push({ status: query.status });
 

@@ -323,9 +323,7 @@ export function ShipperDashboardPage() {
                         <span className="truncate font-medium text-slate-700">
                           {shipment.pickupLocation}
                         </span>
-                        <span className="font-bold text-blue-600" aria-hidden="true">
-                          →
-                        </span>
+                        <img src="/arrow-right-long-solid-full.svg" alt="to" aria-hidden="true" className="h-3 w-4 shrink-0" />
                         <span className="truncate font-medium text-slate-700">
                           {shipment.deliveryLocation}
                         </span>
@@ -433,9 +431,7 @@ export function ShipperDashboardPage() {
                           <span className="truncate font-medium text-slate-700">
                             {bid.shipment.pickupLocation}
                           </span>
-                          <span className="font-bold text-blue-600" aria-hidden="true">
-                            →
-                          </span>
+                          <img src="/arrow-right-long-solid-full.svg" alt="to" aria-hidden="true" className="h-3 w-4 shrink-0" />
                           <span className="truncate font-medium text-slate-700">
                             {bid.shipment.deliveryLocation}
                           </span>

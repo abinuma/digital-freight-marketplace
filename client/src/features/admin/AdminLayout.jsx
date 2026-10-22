@@ -11,9 +11,9 @@ export function AdminLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
-        <NavLink className="inline-flex items-center gap-3 font-display text-lg font-extrabold tracking-tight text-slate-900 no-underline" to="/admin" aria-label="EthioFreight admin home">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-blue-700 font-sans text-base text-white">E</span>
-          EthioFreight
+        <NavLink className="inline-flex items-center gap-1.5 font-display text-lg font-extrabold tracking-tight text-slate-900 no-underline" to="/admin" aria-label="FETAN admin home">
+          <img src="/logoFETAN.svg" alt="" aria-hidden="true" className="h-9 w-9 rounded-lg object-contain" />
+          FETAN
           <span className="rounded bg-slate-100 px-2 py-1 text-xs font-extrabold tracking-wide text-blue-700">ADMIN</span>
         </NavLink>
         <div className="flex items-center gap-3">

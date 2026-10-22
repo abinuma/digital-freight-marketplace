@@ -278,11 +278,7 @@ export function MessagesPage() {
             </>
           ) : (
             <div className={emptyStateClass}>
-              <span className="text-2xl text-blue-700">✉</span>
-              <h2 className="m-0 text-base">Your shipment conversations</h2>
-              <p className="m-0 max-w-sm text-sm">
-                Select a chat to view messages and coordinate with the other party.
-              </p>
+              <p className="m-0 text-sm">Select a chat to start</p>
             </div>
           )}
         </section>

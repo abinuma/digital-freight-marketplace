@@ -84,16 +84,11 @@ export function AuthGate() {
     <main
       className={`flex min-h-screen flex-col items-center justify-center  bg-gray-100 text-slate-800 text-center         landing`}
     >
-      <div
-        className={`grid w-14 h-14 place-items-center rounded-2xl bg-blue-700 shadow-sm text-white font-display text-base font-extrabold tracking-wide brand-mark`}
-        aria-hidden="true"
-      >
-        EF
-      </div>
+      <img src="/logoFETAN.svg" alt="" aria-hidden="true" className="h-14 w-14 rounded-2xl object-contain shadow-sm brand-mark" />
       <p
         className={`mt-5 mx-0 mb-2 text-blue-700 text-sm font-bold tracking-widest uppercase eyebrow`}
       >
-        EthioFreight
+        FETAN
       </p>
       <h1>{user ? `Welcome, ${user.name}` : "Freight moving forward."}</h1>
       <p

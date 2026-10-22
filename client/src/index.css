@@ -75,6 +75,14 @@ body {
   line-height: 1.5;
 }
 
+.ui-select {
+  appearance: none;
+  background-image: url('/angle-down-solid-full.svg');
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 0.75rem;
+}
+
 button,
 input,
 select,
@@ -381,6 +389,8 @@ input[type='time'] {
 
 input:not(:disabled)::-webkit-calendar-picker-indicator {
   cursor: pointer;
+  background: url('/calendar-regular-full.svg') center / contain no-repeat;
+  opacity: 0.6;
 }
 
 @keyframes toast-bounce-in {

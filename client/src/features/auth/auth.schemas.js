@@ -24,7 +24,7 @@ export const verificationCodeSchema = z
 export const registrationSchema = z.object({
   firstName: z.string().trim().min(1, 'Enter your first name').max(50),
   lastName: z.string().trim().min(1, 'Enter your last name').max(50),
-  role: z.enum(['SHIPPER', 'TRANSPORTER'], { error: 'Choose how you will use EthioFreight' }),
+  role: z.enum(['SHIPPER', 'TRANSPORTER'], { error: 'Choose how you will use FETAN' }),
   email: emailSchema,
   phone: ethiopianPhoneSchema,
   password: passwordSchema,

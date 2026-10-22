@@ -70,7 +70,6 @@ export function UserMenu({ inline = false }) {
           onClick={handleProfile}
           className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2 text-left text-sm text-slate-100 hover:bg-slate-700"
         >
-          <span className="text-base" aria-hidden="true">◉</span>
           My profile
         </button>
         <button
@@ -78,7 +77,6 @@ export function UserMenu({ inline = false }) {
           onClick={handleSignOut}
           className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2 text-left text-sm text-red-300 hover:bg-slate-700"
         >
-          <span className="text-base" aria-hidden="true">⎋</span>
           Sign out
         </button>
       </section>
@@ -115,16 +113,12 @@ export function UserMenu({ inline = false }) {
         <span className="hidden sm:inline">{firstName}</span>
 
         {/* Dropdown icon */}
-        <svg
-          className={`h-4 w-4 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
+        <img
+          src="/angle-down-solid-full.svg"
+          alt=""
           aria-hidden="true"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+          className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {/* Dropdown panel */}
@@ -143,7 +137,6 @@ export function UserMenu({ inline = false }) {
             onClick={handleProfile}
             className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
           >
-            <span className="text-base" aria-hidden="true">◉</span>
             My profile
           </button>
 
@@ -153,7 +146,6 @@ export function UserMenu({ inline = false }) {
             onClick={handleSignOut}
             className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
           >
-            <span className="text-base" aria-hidden="true">⎋</span>
             Sign out
           </button>
         </div>

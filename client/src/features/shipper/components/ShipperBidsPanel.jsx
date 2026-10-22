@@ -42,15 +42,9 @@ export function ShipperBidsPanel({
               <Alert tone="danger">{bidsQuery.error.message}</Alert>
             ) : !bids.length ? (
               <div className="flex flex-col items-center gap-2 py-8 text-center">
-                <span className="text-2xl text-slate-400" aria-hidden="true">
-                  ◇
-                </span>
                 <h3 className="m-0 text-base font-semibold text-slate-800">
                   No bids yet
                 </h3>
-                <p className="m-0 text-sm text-slate-500">
-                  Transporter offers will appear here.
-                </p>
               </div>
             ) : (
               <div className="grid gap-3">

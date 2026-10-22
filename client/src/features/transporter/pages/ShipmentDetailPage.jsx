@@ -115,7 +115,7 @@ export function ShipmentDetailPage() {
         </Alert>
         {unavailableBid?.shipment?.pickupLocation && unavailableBid?.shipment?.deliveryLocation && (
           <p className="m-0 text-sm text-slate-600">
-            {unavailableBid.shipment.pickupLocation} → {unavailableBid.shipment.deliveryLocation}
+            {unavailableBid.shipment.pickupLocation} <img src="/arrow-right-long-solid-full.svg" alt="to" aria-hidden="true" className="mx-1 inline h-3 w-4 align-middle" /> {unavailableBid.shipment.deliveryLocation}
           </p>
         )}
         <Link

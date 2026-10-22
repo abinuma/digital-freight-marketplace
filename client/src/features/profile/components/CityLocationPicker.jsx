@@ -12,6 +12,7 @@ export function CityLocationPicker({
   error,
   required = false,
   disabled = false,
+  className = 'sm:col-span-2',
   onChange,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -97,7 +98,7 @@ export function CityLocationPicker({
   }
 
   return (
-    <div className="relative grid content-start gap-1.5 sm:col-span-2" ref={containerRef}>
+    <div className={`relative grid content-start gap-1.5 ${className}`} ref={containerRef}>
       <label className="cursor-default text-sm font-semibold text-slate-700" htmlFor={id}>
         {label}
       </label>
@@ -129,7 +130,7 @@ export function CityLocationPicker({
               className="text-slate-400 hover:text-slate-600 p-0.5 border-0 bg-transparent cursor-pointer text-xs disabled:cursor-not-allowed"
               aria-label="Clear city"
             >
-              ✕
+              <img src="/xmark-solid-full.svg" alt="" aria-hidden="true" className="h-3 w-3" />
             </button>
           )}
           <button
@@ -139,14 +140,14 @@ export function CityLocationPicker({
             className="text-slate-400 hover:text-slate-600 p-0.5 border-0 bg-transparent cursor-pointer text-xs disabled:cursor-not-allowed"
             aria-label="Toggle city list"
           >
-            ▼
+            <img src="/angle-down-solid-full.svg" alt="" aria-hidden="true" className="h-3 w-3" />
           </button>
         </div>
       </div>
 
       {isOpen && !disabled && (
         <ul
-          className="absolute z-50 left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg list-none p-0 m-0 text-sm text-slate-800"
+          className="absolute z-50 left-0 right-0 top-[calc(100%-2.5rem)] mt-1 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg list-none p-0 m-0 text-sm text-slate-800"
           role="listbox"
         >
           {availableCities.length > 0 ? (

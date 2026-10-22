@@ -4,14 +4,12 @@ export function AuthPageLayout({ title, subtitle, children, footer, icon }) {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-10">
       <Link
-        className="mb-7 inline-flex items-center gap-3 font-display text-2xl font-extrabold tracking-tight text-slate-900 no-underline transition-colors hover:text-blue-700"
+        className="mb-7 inline-flex items-center gap-1.5 font-display text-2xl font-extrabold tracking-tight text-slate-900 no-underline transition-colors hover:text-blue-700"
         to="/"
-        aria-label="EthioFreight home"
+        aria-label="FETAN home"
       >
-        <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-700 font-sans text-lg text-white">
-          E
-        </span>
-        <span>EthioFreight</span>
+        <img src="/logoFETAN.svg" alt="" aria-hidden="true" className="h-10 w-10 rounded-xl object-contain" />
+        <span>FETAN</span>
       </Link>
       <section
         className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg max-sm:p-6"

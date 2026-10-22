@@ -118,9 +118,7 @@ export function TransporterPreferencesCard({
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
       <div className="flex items-center gap-3.5 mb-6">
         <div className="h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-            <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z" />
-          </svg>
+          <img src="/calendar-regular-full.svg" alt="" aria-hidden="true" className="w-5 h-5 brightness-0 invert" />
         </div>
         <div>
           <h2 className="m-0 text-xl font-bold text-slate-900">

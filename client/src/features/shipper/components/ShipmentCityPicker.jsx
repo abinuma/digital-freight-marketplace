@@ -66,7 +66,7 @@ export function ShipmentCityPicker({ id, label, value, excludeCity, disabled = f
         disabled={disabled}
         onClick={() => setIsOpen((open) => !open)}
         className="absolute inset-y-0 right-2 border-0 bg-transparent px-1 text-slate-500"
-      >▼</button>
+      ><img src="/angle-down-solid-full.svg" alt="" aria-hidden="true" className="h-3 w-3" /></button>
       {isOpen && !disabled && (
         <ul id={`${id}-options`} role="listbox" className="absolute z-50 left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 text-sm text-slate-800 shadow-lg">
           {options.length ? options.map(({ id: cityId, city }) => (

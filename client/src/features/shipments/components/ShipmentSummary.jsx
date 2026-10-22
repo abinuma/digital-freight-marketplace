@@ -107,7 +107,7 @@ export function ShipmentInformation({
                     onClick={() => onRemoveImage(image)}
                     aria-label="Remove photo"
                   >
-                    ×
+                    <img src="/xmark-solid-full.svg" alt="" aria-hidden="true" className="h-3.5 w-3.5" />
                   </button>
                 )}
               </figure>

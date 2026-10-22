@@ -18,7 +18,7 @@ export function Modal({ open, onClose, title, children, className = '', contentC
       <section className={`w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <header className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4">
           <h2 className="m-0 text-lg font-semibold text-slate-900" id={titleId}>{title}</h2>
-          <button className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border-0 bg-transparent text-xl text-slate-500 hover:bg-slate-200 hover:text-slate-800" type="button" onClick={onClose} aria-label="Close dialog">×</button>
+          <button className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border-0 bg-transparent text-xl text-slate-500 hover:bg-slate-200 hover:text-slate-800" type="button" onClick={onClose} aria-label="Close dialog"><img src="/xmark-solid-full.svg" alt="" aria-hidden="true" className="h-3.5 w-3.5" /></button>
         </header>
         <div className={`p-5 ${contentClassName}`.trim()}>{children}</div>
       </section>

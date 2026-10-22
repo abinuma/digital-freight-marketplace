@@ -109,7 +109,7 @@ export function ShipmentPhotoUploader({
                 }
                 aria-label={`Remove ${file.name}`}
               >
-                ×
+                <img src="/xmark-solid-full.svg" alt="" aria-hidden="true" className="h-3 w-3 brightness-0 invert" />
               </button>
             </div>
           ))}

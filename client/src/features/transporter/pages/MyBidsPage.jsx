@@ -221,9 +221,7 @@ export function MyBidsPage() {
                   <span className="font-medium">
                     {shipment?.pickupLocation || shipmentSummary?.pickupLocation || "—"}
                   </span>
-                  <span className="text-blue-700" aria-hidden="true">
-                    →
-                  </span>
+                  <img src="/arrow-right-long-solid-full.svg" alt="to" aria-hidden="true" className="h-3 w-4" />
                   <span className="font-medium">
                     {shipment?.deliveryLocation || shipmentSummary?.deliveryLocation || "—"}
                   </span>
@@ -392,7 +390,7 @@ export function MyBidsPage() {
                 <strong className="mt-1 block text-sm text-slate-900">{assigningShipment?.goodsDescription || "Shipment load"}</strong>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs">
                   <span className="rounded-full border border-blue-100 bg-white px-3 py-1.5 text-slate-600">Load size <strong className="text-slate-900">{formatShipmentLoad(assigningShipment) || "Full load"}</strong></span>
-                  <span className="rounded-full border border-blue-100 bg-white px-3 py-1.5 text-slate-600">Route <strong className="text-slate-900">{assigningShipment?.pickupLocation} <span className="px-1 text-blue-600">→</span> {assigningShipment?.deliveryLocation}</strong></span>
+                  <span className="rounded-full border border-blue-100 bg-white px-3 py-1.5 text-slate-600">Route <strong className="text-slate-900">{assigningShipment?.pickupLocation} <img src="/arrow-right-long-solid-full.svg" alt="to" aria-hidden="true" className="mx-1 inline h-3 w-4 align-middle" /> {assigningShipment?.deliveryLocation}</strong></span>
                 </div>
               </div>
 
@@ -475,7 +473,7 @@ export function MyBidsPage() {
                           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
                             <div>
                               <strong className="block text-slate-900">
-                              {plan.originCity} → {plan.destinationCity}
+                              {plan.originCity} <img src="/arrow-right-long-solid-full.svg" alt="to" aria-hidden="true" className="mx-1 inline h-3 w-4 align-middle" /> {plan.destinationCity}
                               </strong>
                             </div>
                             <div className="text-right">

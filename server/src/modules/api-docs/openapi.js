@@ -39,6 +39,7 @@ export const openApiDocument = {
       get: { tags: ['Shipments'], summary: 'Search and list shipments', parameters: [
         { $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Limit' },
         { name: 'pickupLocation', in: 'query', schema: { type: 'string', maxLength: 255 } }, { name: 'deliveryLocation', in: 'query', schema: { type: 'string', maxLength: 255 } },
+        { name: 'loadSize', in: 'query', description: 'One or more comma-separated load sizes.', schema: { type: 'string', example: 'FULL_LOAD,HALF_LOAD' } },
         { name: 'goodsType', in: 'query', schema: { type: 'string', maxLength: 50 } }, { name: 'pickupDateFrom', in: 'query', schema: { type: 'string', format: 'date' } }, { name: 'pickupDateTo', in: 'query', schema: { type: 'string', format: 'date' } },
         { name: 'q', in: 'query', schema: { type: 'string', maxLength: 255 } }, { name: 'sortBy', in: 'query', schema: { type: 'string', enum: ['createdAt', 'pickupDate'], default: 'createdAt' } },
         { name: 'status', in: 'query', schema: { $ref: '#/components/schemas/ShipmentStatus' } },
