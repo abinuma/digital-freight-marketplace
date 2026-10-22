@@ -43,7 +43,7 @@ export function TransporterLayout() {
         </NavLink>
         <div className="flex items-center gap-3">
           <button type="button" className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 lg:hidden" aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={menuOpen} aria-controls="transporter-mobile-navigation" onClick={() => setMenuOpen((open) => !open)}>
-            {menuOpen ? <img src="/xmark-solid-full.svg" alt="" aria-hidden="true" className="h-4 w-4" /> : <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>}
+            {menuOpen ? <img src="/xmark-solid-full.svg" alt="" aria-hidden="true" className="h-4 w-4" /> : <img src="/menu.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />}
           </button>
           <div className="hidden lg:block"><UserMenu /></div>
         </div>
