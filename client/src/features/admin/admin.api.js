@@ -14,6 +14,14 @@ export async function listAdminUsers(params) {
   return { users: response.data.data, pagination: response.data.meta.pagination }
 }
 
+export async function listSuspensionAppeals(params) {
+  const query = Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== '' && value != null),
+  )
+  const response = await apiClient.get('/admin/suspension-appeals', { params: query })
+  return { appeals: response.data.data, pagination: response.data.meta.pagination }
+}
+
 export async function updateAdminUserStatus({ id, action, reason }) {
   return unwrap(await apiClient.patch(`/admin/users/${id}/${action}`, action === 'suspend' ? { reason } : {}))
 }

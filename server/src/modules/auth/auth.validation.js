@@ -36,6 +36,13 @@ export const loginSchema = {
   }),
 };
 
+export const suspensionAppealSchema = {
+  body: z.object({
+    email: emailSchema,
+    message: z.string().trim().min(1).max(2000),
+  }),
+};
+
 export const forgotPasswordSchema = {
   body: z.object({ email: emailSchema }),
 };

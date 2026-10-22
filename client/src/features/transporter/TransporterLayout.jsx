@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { UserMenu } from '../../shared/components/index.js';
-import { NotificationBell } from '../notifications/NotificationBell.jsx';
+import { useUnreadCount } from '../notifications/useUnreadCount.js';
 
 const navigation = [
   { to: '/transporter', icon: '▦', label: 'Dashboard', end: true },
@@ -11,6 +11,8 @@ const navigation = [
 ];
 
 export function TransporterLayout() {
+  const unreadCount = useUnreadCount();
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
@@ -19,7 +21,6 @@ export function TransporterLayout() {
           EthioFreight
         </NavLink>
         <div className="flex items-center gap-3">
-          <NotificationBell />
           <UserMenu />
         </div>
       </header>
@@ -30,7 +31,14 @@ export function TransporterLayout() {
             {navigation.map(({ to, icon, label, end }) => (
               <NavLink key={to} end={end} to={to} className={({ isActive }) => `flex min-h-10 items-center gap-3 whitespace-nowrap rounded-lg px-3 text-sm font-medium no-underline transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
                 <span className="w-5 text-center text-base" aria-hidden="true">{icon}</span>
-                <span>{label}</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span>{label}</span>
+                  {label === 'Messages' && unreadCount > 0 && (
+                    <span className="grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-xs font-bold text-white">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </span>
               </NavLink>
             ))}
           </nav>

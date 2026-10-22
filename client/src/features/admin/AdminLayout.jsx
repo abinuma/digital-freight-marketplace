@@ -4,6 +4,7 @@ import { UserMenu } from '../../shared/components/index.js';
 const navigation = [
   { to: '/admin', icon: '▦', label: 'Overview', end: true },
   { to: '/admin/users', icon: '♙', label: 'User management' },
+  { to: '/admin/suspension-appeals', icon: '✉', label: 'Suspension appeals' },
 ];
 
 export function AdminLayout() {

@@ -23,28 +23,24 @@ const metricCards = [
   {
     key: "activePostings",
     title: "Active postings",
-    caption: "Currently open to bids",
     stage: "Posted",
     marker: "bg-teal-400",
   },
   {
     key: "bidsReceived",
     title: "Bids received",
-    caption: "Offers from transporters",
     stage: "Bids",
     marker: "bg-cyan-400",
   },
   {
     key: "inTransit",
     title: "In transit",
-    caption: "Shipments underway",
     stage: "On the road",
     marker: "bg-blue-400 ring-4 ring-blue-300/20",
   },
   {
     key: "completed",
     title: "Completed deliveries",
-    caption: "Successfully delivered",
     stage: "Delivered",
     marker: "border-2 border-slate-500 bg-slate-900",
   },
@@ -173,9 +169,9 @@ export function ShipperDashboardPage() {
         </div>
         <div className="relative grid grid-cols-4 gap-4 max-sm:grid-cols-2 max-sm:gap-y-6">
           <div className="absolute left-[12.5%] right-[12.5%] top-[7px] border-t border-dashed border-slate-600 max-sm:hidden" aria-hidden="true" />
-          {metricCards.map(({ key, title, caption, stage, marker }) => (
+          {metricCards.map(({ key, title, stage, marker }) => (
             <div className="relative min-w-0" key={key}>
-              <div className="mb-4 flex h-4 items-center max-sm:mb-2">
+              <div className="mb-4 flex h-4 items-center max-sm:hidden">
                 <span className={`z-10 h-3.5 w-3.5 rounded-full ${marker}`} aria-hidden="true" />
               </div>
               {query.isPending ? <Skeleton className="h-9 w-12 bg-slate-700" /> : (
@@ -184,7 +180,6 @@ export function ShipperDashboardPage() {
                 </strong>
               )}
               <p className="mb-0 mt-2 text-sm font-semibold text-white">{title}</p>
-              <p className="mb-0 mt-0.5 text-xs text-slate-300">{caption}</p>
               <span className="sr-only">Pipeline stage: {stage}</span>
             </div>
           ))}
@@ -281,8 +276,8 @@ export function ShipperDashboardPage() {
         {/* Recent Shipments Card */}
         <Card className="flex flex-col justify-between overflow-hidden">
           <div>
-            <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
-              <div>
+            <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-5 py-4 sm:gap-4">
+              <div className="min-w-0">
                 <h2 className="m-0 text-base font-semibold text-slate-900">
                   Recent shipments
                 </h2>
@@ -292,7 +287,7 @@ export function ShipperDashboardPage() {
               </div>
               <Link
                 to="/shipper/shipments"
-                className="text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline"
+                className="shrink-0 whitespace-nowrap text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline"
               >
                 View all
               </Link>
@@ -378,21 +373,21 @@ export function ShipperDashboardPage() {
         {/* Recent Bids Card */}
         <Card className="flex flex-col justify-between overflow-hidden">
           <div>
-            <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
-              <div>
+            <div className="border-b border-slate-200 px-5 py-4">
+              <div className="flex items-center justify-between gap-3">
                 <h2 className="m-0 text-base font-semibold text-slate-900">
                   Recent bids
                 </h2>
-                <p className="mb-0 mt-0.5 text-xs text-slate-500">
-                  Latest transporter offers on your freight
-                </p>
+                <Link
+                  to="/shipper/bids"
+                  className="shrink-0 whitespace-nowrap text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline"
+                >
+                  View all
+                </Link>
               </div>
-              <Link
-                to="/shipper/bids"
-                className="text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline"
-              >
-                Review all
-              </Link>
+              <p className="mb-0 mt-0.5 text-xs text-slate-500">
+                Latest transporter offers on your freight
+              </p>
             </div>
 
             <div className="p-4 sm:p-5">
@@ -478,20 +473,20 @@ export function ShipperDashboardPage() {
         </Card>
       </div>
 
-      <Card className="flex flex-wrap items-center justify-between gap-3 border border-blue-100 bg-blue-50/50 p-4">
-        <div className="min-w-0 flex-1">
-          <h2 className="m-0 text-sm font-semibold text-slate-900">Tell us your usual loads for quicker transport recommendations.</h2>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {usualLoadTypes.map((type) => {
-              const checked = usualLoads.includes(type);
-              return <label key={type} className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium ${checked ? "border-blue-600 bg-blue-100 text-blue-800" : "border-slate-300 bg-white text-slate-600"}`}>
-                <input className="sr-only" type="checkbox" checked={checked} onChange={() => setUsualLoads((current) => checked ? current.filter((item) => item !== type) : [...current, type])} />{type}
-              </label>;
-            })}
+      <Card className="flex flex-col gap-3 border border-blue-100 bg-blue-50/50 p-4">
+        <h2 className="m-0 text-sm font-semibold text-slate-900">Tell us your usual loads for quicker transport recommendations.</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          {usualLoadTypes.map((type) => {
+            const checked = usualLoads.includes(type);
+            return <label key={type} className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium ${checked ? "border-blue-600 bg-blue-100 text-blue-800" : "border-slate-300 bg-white text-slate-600"}`}>
+              <input className="sr-only" type="checkbox" checked={checked} onChange={() => setUsualLoads((current) => checked ? current.filter((item) => item !== type) : [...current, type])} />{type}
+            </label>;
+          })}
+          <div className="ml-auto max-sm:basis-full max-sm:ml-0 max-sm:flex max-sm:justify-center">
+            <button type="button" disabled={preferencesMutation.isPending} onClick={() => preferencesMutation.mutate()} className="min-h-9 shrink-0 rounded-lg bg-blue-700 px-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">{preferencesMutation.isPending ? "Saving…" : "Save loads"}</button>
           </div>
-          {preferencesMutation.isError && <p className="mb-0 mt-2 text-xs text-red-700">{preferencesMutation.error.message}</p>}
         </div>
-        <button type="button" disabled={preferencesMutation.isPending} onClick={() => preferencesMutation.mutate()} className="min-h-9 shrink-0 rounded-lg bg-blue-700 px-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">{preferencesMutation.isPending ? "Saving…" : "Save loads"}</button>
+        {preferencesMutation.isError && <p className="m-0 text-xs text-red-700">{preferencesMutation.error.message}</p>}
       </Card>
 
     </div>

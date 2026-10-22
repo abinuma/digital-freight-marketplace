@@ -10,6 +10,11 @@ export async function loginWithEmail(credentials) {
   return data;
 }
 
+export async function submitSuspensionAppeal(appeal) {
+  const { data } = await apiClient.post('/auth/suspension-appeals', appeal);
+  return data.data;
+}
+
 export async function sendRegistrationVerificationCode(email) {
   const { data } = await apiClient.post('/auth/send-verification-code', { email });
   return data;

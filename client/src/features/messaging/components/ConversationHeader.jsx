@@ -20,17 +20,17 @@ export function ConversationHeader({
   const reviewCount = profile?.reviewCount;
 
   return (
-    <header className="flex min-h-14 items-center justify-between gap-2 border-b border-slate-200 py-2 sm:min-h-16">
-      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+    <header className="flex min-h-14 items-center justify-between gap-1 border-b border-slate-200 py-2 sm:gap-2 sm:min-h-16">
+      <div className="flex min-w-0 items-center gap-1 sm:gap-3">
         {onBack && (
           <button
             type="button"
             onClick={onBack}
-            className="group inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-blue-200 bg-white px-2.5 text-xs font-semibold text-slate-900 transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white md:hidden"
+            className="group inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-blue-200 bg-white px-1.5 text-xs font-semibold text-slate-900 transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white min-[360px]:px-2.5 md:hidden"
             aria-label="Back to conversations list"
           >
             <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-3.5 w-3.5 group-hover:brightness-0 group-hover:invert" />
-            Back
+            <span className="hidden min-[360px]:inline">Back</span>
           </button>
         )}
         <button
@@ -46,10 +46,10 @@ export function ConversationHeader({
             {name}
           </strong>
           {averageRating != null && reviewCount > 0 && (
-            <span className="flex items-center gap-1 text-xs text-slate-600" aria-label={`${Number(averageRating).toFixed(1)} out of 5, ${reviewCount} ratings`}>
+            <span className="flex min-w-0 items-center gap-1 text-xs text-slate-600" aria-label={`${Number(averageRating).toFixed(1)} out of 5, ${reviewCount} ratings`}>
               <span className="text-amber-500" aria-hidden="true">★</span>
               <strong className="text-slate-800">{Number(averageRating).toFixed(1)}</strong>
-              <span>({reviewCount} {reviewCount === 1 ? 'rating' : 'ratings'})</span>
+              <span className="hidden min-[400px]:inline">({reviewCount} {reviewCount === 1 ? 'rating' : 'ratings'})</span>
             </span>
           )}
         </div>
@@ -62,7 +62,6 @@ export function ConversationHeader({
           className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 hover:text-blue-800 lg:hidden"
           aria-label={`View ${bidsCount} bids for this conversation`}
         >
-          <span aria-hidden="true">🏷️</span>
           <span className="hidden xs:inline sm:inline">Bids</span>
           <span className="grid h-5 min-w-5 place-items-center rounded-full bg-blue-700 px-1 text-[11px] font-bold text-white">
             {bidsCount}

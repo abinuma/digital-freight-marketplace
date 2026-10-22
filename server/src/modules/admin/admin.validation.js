@@ -27,6 +27,13 @@ export const adminUserParamsSchema = {
   params: z.object({ id: z.uuid() }),
 };
 
+export const adminSuspensionAppealListSchema = {
+  query: z.object({
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+  }),
+};
+
 export const adminUserSuspendSchema = {
   params: z.object({ id: z.uuid() }),
   body: z.object({ reason: z.string().trim().min(1).max(500) }),

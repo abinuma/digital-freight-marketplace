@@ -30,13 +30,14 @@ import { ImagePreviewProvider } from './shared/components/ImagePreviewProvider.j
 import { AdminLayout } from './features/admin/AdminLayout.jsx';
 import { AdminDashboardPage } from './features/admin/pages/AdminDashboardPage.jsx';
 import { AdminUsersPage } from './features/admin/pages/AdminUsersPage.jsx';
+import { AdminSuspensionAppealsPage } from './features/admin/pages/AdminSuspensionAppealsPage.jsx';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: true,
       retry: (failureCount, error) => {
-        if (error?.status === 401 || error?.response?.status === 401) return false;
+        if ([401, 403].includes(error?.status ?? error?.response?.status)) return false;
         return failureCount < 1;
       },
     },
@@ -87,6 +88,7 @@ function App() {
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboardPage />} />
                   <Route path="users" element={<AdminUsersPage />} />
+                  <Route path="suspension-appeals" element={<AdminSuspensionAppealsPage />} />
                 </Route>
               </Route>
             </Route>

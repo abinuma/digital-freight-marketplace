@@ -8,6 +8,9 @@ import {
   deleteEmailVerificationRecord,
   findAuthUserByEmail,
   findAuthUserById,
+  findSuspendedUserForAppeal,
+  createSuspensionAppeal,
+  findSuspensionAppeals as findSuspensionAppealRecords,
   findPasswordResetToken,
   getEmailVerificationRecord,
   saveEmailVerificationCode,
@@ -62,6 +65,16 @@ export async function login(input, headers) {
   if (!user) throw new AppError("We couldn't find your account. Please register first.", 404);
 
   return auth.api.signInEmail({ body: input, headers: fromNodeHeaders(headers), asResponse: true });
+}
+
+export async function submitSuspensionAppeal({ email, message }) {
+  const user = await findSuspendedUserForAppeal(email);
+  if (!user) throw new AppError('No suspended account was found for that email address', 404);
+  return createSuspensionAppeal(user.id, message);
+}
+
+export function listSuspensionAppeals({ skip, take }) {
+  return findSuspensionAppealRecords({ skip, take });
 }
 
 export function logout(headers) {

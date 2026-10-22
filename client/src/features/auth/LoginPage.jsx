@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Button, Input } from "../../shared/components/index.js";
+import { Alert, Button, Input, Textarea } from "../../shared/components/index.js";
 import { useAuth } from "./AuthContext.jsx";
 import { AuthField } from "./AuthField.jsx";
 import { AuthPageLayout } from "./AuthPageLayout.jsx";
 import { GoogleSignInButton } from "./GoogleSignInButton.jsx";
 import { errorsFromIssues, loginSchema } from "./auth.schemas.js";
 import { PasswordInput } from "./PasswordInput.jsx";
+import { submitSuspensionAppeal } from "./auth.api.js";
 
 const roleHome = {
   SHIPPER: "/shipper",
@@ -29,6 +30,12 @@ export function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuspended, setIsSuspended] = useState(false);
+  const [appealOpen, setAppealOpen] = useState(false);
+  const [appealMessage, setAppealMessage] = useState("");
+  const [appealError, setAppealError] = useState("");
+  const [appealSent, setAppealSent] = useState(false);
+  const [isSendingAppeal, setIsSendingAppeal] = useState(false);
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -56,13 +63,36 @@ export function LoginPage() {
         replace: true,
       });
     } catch (error) {
-      setFormError(
-        error.status === 401 || error.status === 404
-          ? "Invalid credentials."
-          : error.message,
-      );
+      if (error.status === 403 && /suspend/i.test(error.message || "")) {
+        setIsSuspended(true);
+        setFormError("");
+      } else {
+        setFormError(
+          error.status === 401 || error.status === 404
+            ? "Invalid credentials."
+            : error.message,
+        );
+      }
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleAppealSubmit(event) {
+    event.preventDefault();
+    setAppealError("");
+    setIsSendingAppeal(true);
+    try {
+      await submitSuspensionAppeal({
+        email: form.email.trim().toLowerCase(),
+        message: appealMessage.trim(),
+      });
+      setAppealSent(true);
+      setAppealOpen(false);
+    } catch (error) {
+      setAppealError(error.message);
+    } finally {
+      setIsSendingAppeal(false);
     }
   }
 
@@ -131,6 +161,41 @@ export function LoginPage() {
           {isSubmitting ? "Signing in…" : "Sign In"}
         </Button>
       </form>
+      {isSuspended && (
+        <section className="mt-5 grid gap-3" aria-live="polite">
+          {appealSent ? (
+            <Alert tone="success">Your appeal has been sent to the support team.</Alert>
+          ) : (
+            <>
+              <Alert tone="danger" title="Your account is suspended">
+                <p className="m-0">If you believe this is a mistake, contact our support team.</p>
+              </Alert>
+              <Button type="button" variant="primary" onClick={() => { setAppealOpen((open) => !open); setAppealError(""); }}>
+                {appealOpen ? "Close appeal form" : "Request an appeal"}
+              </Button>
+              {appealOpen && (
+                <form className="grid gap-3" onSubmit={handleAppealSubmit}>
+                  <label className="grid gap-1.5 text-sm font-semibold text-slate-800" htmlFor="suspension-appeal-message">
+                    Message to the support team
+                    <Textarea
+                      id="suspension-appeal-message"
+                      value={appealMessage}
+                      onChange={(event) => setAppealMessage(event.target.value)}
+                      maxLength={2000}
+                      placeholder="Explain why you are requesting a review of your account suspension."
+                      required
+                    />
+                  </label>
+                  {appealError && <Alert tone="danger">{appealError}</Alert>}
+                  <Button type="submit" disabled={isSendingAppeal || !appealMessage.trim()}>
+                    {isSendingAppeal ? "Sending…" : "Send appeal"}
+                  </Button>
+                </form>
+              )}
+            </>
+          )}
+        </section>
+      )}
       <div className="my-5 flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-slate-400">
         <span className="h-px flex-1 bg-slate-200" />
         <span>or</span>

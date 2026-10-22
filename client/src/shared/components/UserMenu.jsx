@@ -9,7 +9,7 @@ import { PreviewableImage } from './PreviewableImage.jsx';
  * Shows: circular avatar (profile photo or initials) + first name + chevron.
  * Dropdown: full name label, My Profile link, Sign out.
  */
-export function UserMenu() {
+export function UserMenu({ inline = false }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -55,6 +55,34 @@ export function UserMenu() {
   function handleProfile() {
     setOpen(false);
     navigate('/profile');
+  }
+
+  if (inline) {
+    return (
+      <section className="grid gap-1 rounded-lg border border-slate-700 bg-slate-800 p-3 text-white" aria-label="Profile options">
+        <div className="px-2 pb-2">
+          <p className="m-0 text-xs font-semibold uppercase tracking-wider text-slate-400">Account</p>
+          <p className="m-0 mt-1 text-sm font-bold text-white">{fullName}</p>
+          {user?.email && <p className="m-0 truncate text-xs text-slate-300">{user.email}</p>}
+        </div>
+        <button
+          type="button"
+          onClick={handleProfile}
+          className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2 text-left text-sm text-slate-100 hover:bg-slate-700"
+        >
+          <span className="text-base" aria-hidden="true">◉</span>
+          My profile
+        </button>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2 text-left text-sm text-red-300 hover:bg-slate-700"
+        >
+          <span className="text-base" aria-hidden="true">⎋</span>
+          Sign out
+        </button>
+      </section>
+    );
   }
 
   return (

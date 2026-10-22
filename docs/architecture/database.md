@@ -276,6 +276,19 @@ Owned by: `journey-plan` module
 
 Assignment `weightKg` stores the mass consumed by the load: full, half, and quarter loads use the matching fraction of the vehicle's mass capacity, while small loads store the shipper-provided mass.
 
+### 3.12 SuspensionAppeal
+
+Owned by: `auth` module
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PK | Unique appeal identifier |
+| userId | UUID | FK → User.id, NOT NULL, onDelete Cascade | Suspended account submitting the appeal |
+| message | TEXT | NOT NULL | Appeal message submitted for Admin review |
+| createdAt | TIMESTAMP | NOT NULL, default now | Submission timestamp |
+
+Admins read appeals through the auth service from the user-management screen. Reactivating a user does not remove their appeal history.
+
 ---
 
 ## 4. Indexing Strategy
@@ -309,7 +322,7 @@ Each module owns specific tables. No module writes directly to another module's 
 
 | Module | Owned Tables |
 |--------|-------------|
-| auth | User, Vehicle, Session, Account, Verification (Better Auth managed) |
+| auth | User, Vehicle, SuspensionAppeal, Session, Account, Verification (Better Auth managed) |
 | shipment | Shipment, ShipmentImage, Review |
 | bid | Bid |
 | messaging | Message |

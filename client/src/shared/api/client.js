@@ -30,6 +30,9 @@ export function friendlyErrorMessage(error, fallback = 'Something went wrong. Pl
   const message = error?.response?.data?.error?.message
     || error?.response?.data?.message
     || error?.message;
+  if (status === 403 && /account.*suspend|suspend.*account/i.test(message || '')) {
+    return 'Your account is suspended. If you believe this is a mistake, contact our support team.';
+  }
   if (status === 400 || status === 422) {
     if (typeof message === 'string' && message.trim() && !technicalMessage.test(message)
       && !/^(validation failed|bad request)$/i.test(message.trim())) return message;
@@ -46,8 +49,23 @@ apiClient.interceptors.response.use(
   (response) => response,
   (axiosError) => {
     const response = axiosError.response;
-    if (!response && axiosError.code !== 'ERR_CANCELED' && typeof window !== 'undefined') window.dispatchEvent(new Event('app:network-error'));
+    const responseMessage = response?.data?.error?.message || response?.data?.message;
     const requestPath = axiosError.config?.url || '';
+    const isLogin = /\/auth\/login$/.test(requestPath);
+    const isSuspensionAppeal = /\/auth\/suspension-appeals$/.test(requestPath);
+    const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
+    const isPublicPage = typeof window !== 'undefined' && publicPaths.includes(window.location.pathname);
+    if (
+      response?.status === 403
+      && /account.*suspend|suspend.*account/i.test(responseMessage || '')
+      && !isLogin
+      && !isSuspensionAppeal
+      && !isPublicPage
+      && typeof window !== 'undefined'
+    ) {
+      window.dispatchEvent(new Event('app:account-suspended'));
+    }
+    if (!response && axiosError.code !== 'ERR_CANCELED' && typeof window !== 'undefined') window.dispatchEvent(new Event('app:network-error'));
     const isAuthSubmission = /\/auth\/(login|register)$/.test(requestPath);
     if (response?.status === 401 && !isAuthSubmission && typeof window !== 'undefined') {
       const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password'];

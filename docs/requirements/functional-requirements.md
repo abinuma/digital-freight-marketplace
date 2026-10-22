@@ -130,6 +130,7 @@ PENDING ──→ ACCEPTED
 | FR-603 | Admins shall be able to remove or hide shipment listings that violate platform rules. | Must |
 | FR-604 | The admin dashboard shall display key metrics: total users (by role), active shipments, completed shipments, and new registrations (last 30 days). | Should |
 | FR-605 | Admins shall be able to view user-submitted reports and take moderation actions (warn, suspend, remove content). | Could |
+| FR-606 | Suspended users shall be able to submit an appeal message, and admins shall be able to view submitted appeals. | Must |
 
 ---
 

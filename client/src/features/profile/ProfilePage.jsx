@@ -407,6 +407,7 @@ export function ProfilePage() {
               email={user.email}
               errors={fieldErrors}
               busy={profileBusy}
+              showLocation={user.role !== 'ADMIN'}
               onChange={changeProfile}
               onLocationChange={changeLocation}
               onSave={saveProfile}

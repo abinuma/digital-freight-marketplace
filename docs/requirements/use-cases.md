@@ -71,7 +71,7 @@ Each use case follows a structured template:
 | ID | Condition | Steps |
 |----|-----------|-------|
 | AF-02a | Invalid credentials | System displays "Invalid email or password." Login attempt is rate-limited. |
-| AF-02b | Account suspended | System displays "Your account has been suspended. Contact support." Login is denied. |
+| AF-02b | Account suspended | System redirects any active session to the landing page. On login, system explains the suspension, provides the support message, and allows the user to submit an appeal message to the Admin. Login is denied. |
 
 **Postconditions:**
 - The user has an active session and is on their dashboard.
@@ -293,8 +293,8 @@ Each use case follows a structured template:
 3. Admin clicks "Suspend" on the user's record.
 4. Admin enters a reason for suspension.
 5. System updates the user's status to SUSPENDED.
-6. The suspended user is logged out if currently active.
-7. The suspended user cannot log in until reactivated.
+6. Any active session is redirected to the landing page, and the suspended user cannot log in until reactivated.
+7. The suspended user can submit an appeal message from the login page for Admin review.
 
 **Alternate Flows:**
 
@@ -304,7 +304,7 @@ Each use case follows a structured template:
 
 **Postconditions:**
 - The user's account status is SUSPENDED.
-- The user cannot authenticate until reactivated.
+- The user cannot log in or perform marketplace actions until reactivated.
 
 **Traces to:** FR-601
 
@@ -337,6 +337,27 @@ Each use case follows a structured template:
 - A moderation audit record exists.
 
 **Traces to:** FR-602, FR-603
+
+---
+
+## UC-11: Submit and Review a Suspension Appeal
+
+**Actors:** Suspended user, Admin
+
+**Preconditions:**
+- The user's account status is SUSPENDED.
+
+**Main Flow:**
+1. The user attempts to log in and sees the suspension notice and support guidance.
+2. The user selects **Request an appeal**, enters a message, and submits it.
+3. The system stores the appeal with the user's account and submission date.
+4. An Admin opens the Suspension appeals section in user management and reads the appeal.
+
+**Postconditions:**
+- The appeal is available for Admin review.
+- The account remains suspended unless an Admin separately reactivates it.
+
+**Traces to:** FR-606
 
 ---
 
@@ -394,3 +415,4 @@ Each use case follows a structured template:
 | UC-08 | Messaging Between Parties | Shipper / Transporter | Should |
 | UC-09 | Suspend a User | Admin | Must |
 | UC-10 | Moderate a Shipment Listing | Admin | Must |
+| UC-11 | Submit and Review a Suspension Appeal | Suspended user / Admin | Must |

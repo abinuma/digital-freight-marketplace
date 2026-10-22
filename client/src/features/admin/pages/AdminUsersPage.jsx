@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Alert, Badge, Button, Card, Input, Modal, Pagination, Select, Spinner, Textarea, useSuccessToast } from '../../../shared/components/index.js'
 import { listAdminUsers, updateAdminUserStatus } from '../admin.api.js'
@@ -9,21 +9,24 @@ export function AdminUsersPage() {
   const cache = useQueryClient()
   const showSuccess = useSuccessToast()
   const [filters, setFilters] = useState({ q: '', role: '', status: '' })
-  const [applied, setApplied] = useState(filters)
+  const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const [action, setAction] = useState(null)
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
   const [working, setWorking] = useState(false)
-  const query = useQuery({
-    queryKey: ['admin', 'users', applied, page],
-    queryFn: () => listAdminUsers({ ...applied, page, limit: 20 }),
-  })
+  useEffect(() => {
+    const timeout = setTimeout(() => setSearchQuery(filters.q.trim()), 300)
+    return () => clearTimeout(timeout)
+  }, [filters.q])
 
-  function submitFilters(event) {
-    event.preventDefault()
+  const query = useQuery({
+    queryKey: ['admin', 'users', searchQuery, filters.role, filters.status, page],
+    queryFn: () => listAdminUsers({ q: searchQuery, role: filters.role, status: filters.status, page, limit: 20 }),
+  })
+  function changeFilter(name, value) {
+    setFilters((current) => ({ ...current, [name]: value }))
     setPage(1)
-    setApplied({ ...filters, q: filters.q.trim() })
   }
 
   async function confirmAction() {
@@ -57,25 +60,24 @@ export function AdminUsersPage() {
       {error && <Alert tone="danger" title="Account action failed">{error}</Alert>}
 
       <Card className="admin-users-panel">
-        <form className="admin-user-filters" onSubmit={submitFilters}>
+        <div className="admin-user-filters">
           <label className="admin-user-filters__search">
             <span>Search users</span>
-            <Input type="search" placeholder="Name or email" value={filters.q} onChange={(event) => setFilters((current) => ({ ...current, q: event.target.value }))} />
+            <Input type="search" placeholder="Name or email" value={filters.q} onChange={(event) => changeFilter('q', event.target.value)} />
           </label>
           <label>
             <span>Role</span>
-            <Select value={filters.role} onChange={(event) => setFilters((current) => ({ ...current, role: event.target.value }))}>
+            <Select value={filters.role} onChange={(event) => changeFilter('role', event.target.value)}>
               <option value="">All roles</option><option value="SHIPPER">Shipper</option><option value="TRANSPORTER">Transporter</option><option value="ADMIN">Admin</option>
             </Select>
           </label>
           <label>
             <span>Account status</span>
-            <Select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
+            <Select value={filters.status} onChange={(event) => changeFilter('status', event.target.value)}>
               <option value="">All statuses</option><option value="ACTIVE">Active</option><option value="SUSPENDED">Suspended</option>
             </Select>
           </label>
-          <Button type="submit">Apply filters</Button>
-        </form>
+        </div>
 
         {query.isError && <Alert tone="danger" title="Users could not be loaded">{query.error.message}</Alert>}
         {query.isPending ? (

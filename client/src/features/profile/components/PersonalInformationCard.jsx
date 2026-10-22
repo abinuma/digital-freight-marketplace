@@ -5,6 +5,7 @@ export function PersonalInformationCard({
   email,
   errors,
   busy,
+  showLocation = true,
   onChange,
   onLocationChange,
   onSave,
@@ -106,15 +107,17 @@ export function PersonalInformationCard({
           )}
         </div>
 
-        <div>
-          <CityLocationPicker
-            city={profile.city}
-            zone={profile.zone}
-            region={profile.region}
-            error={errors.city || errors.location}
-            onChange={onLocationChange}
-          />
-        </div>
+        {showLocation && (
+          <div>
+            <CityLocationPicker
+              city={profile.city}
+              zone={profile.zone}
+              region={profile.region}
+              error={errors.city || errors.location}
+              onChange={onLocationChange}
+            />
+          </div>
+        )}
 
         <div className="flex justify-end pt-3">
           <button

@@ -542,6 +542,7 @@ Implement the remaining backend modules — messaging (FR-400-403), notification
    | Method | Endpoint | Description |
    |--------|----------|-------------|
    | GET | `/admin/users` | List all users with search/filter — FR-600 |
+   | GET | `/admin/suspension-appeals` | Review messages from suspended users — FR-606 |
    | PATCH | `/admin/users/:id/suspend` | Suspend user — FR-601 |
    | PATCH | `/admin/users/:id/activate` | Reactivate user — FR-601 |
    | GET | `/admin/shipments` | List all shipments with status filter — FR-602 |
@@ -557,6 +558,7 @@ Implement the remaining backend modules — messaging (FR-400-403), notification
    - Admin can list/search users, filter by role and status.
    - Admin can suspend users with a recorded reason and reactivate them (which clears the reason).
    - Suspended user cannot log in.
+   - Suspended users can submit appeal messages, and admins can review them.
    - Admin can view and remove shipments.
    - Non-admin users get 403 on all admin endpoints.
    - Metrics endpoint returns correct aggregate counts.

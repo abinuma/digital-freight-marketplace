@@ -348,6 +348,18 @@ Stories include acceptance criteria and trace back to functional requirement IDs
 
 ---
 
+### US-A06: Review a Suspension Appeal
+
+**As an** Admin, **I want** to read appeal messages from suspended users, **so that** I can review their requests.
+
+**Acceptance Criteria:**
+- A suspended user can submit an appeal message from the login page.
+- I can view the appeal message with the account name, email, role, and submission date in user management.
+
+**Traces to:** FR-606
+
+---
+
 ## 4. Common Stories
 
 ### US-C01: Reset Password

@@ -108,7 +108,8 @@ For validation errors, `details` contains field-level issues:
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | POST | `/auth/register` | No | Register a new user (Shipper or Transporter) |
-| POST | `/auth/login` | No | Authenticate and create session |
+| POST | `/auth/login` | No | Authenticate and create session; suspended accounts receive a clear suspension error |
+| POST | `/auth/suspension-appeals` | No | Submit an appeal message for a suspended account (rate-limited) |
 | POST | `/auth/logout` | Yes | Destroy current session |
 | POST | `/auth/forgot-password` | No | Request password reset email |
 | POST | `/auth/reset-password` | No | Reset password with token |
@@ -117,6 +118,8 @@ For validation errors, `details` contains field-level issues:
 | POST | `/auth/complete-profile` | Yes | Set the signed-in user's required phone number and marketplace role |
 
 `GET /auth/me` includes `profileComplete`. A signed-in user with `profileComplete: false` may access `/auth/me`, logout, and `POST /auth/complete-profile`; other authenticated API routes return 403 with `error.details.code: PROFILE_INCOMPLETE` until phone and role are set.
+
+An active session is redirected to the landing page when a protected request detects that its account was suspended. Suspended users cannot sign in; the login response identifies the suspension, and they may submit an appeal message through `/auth/suspension-appeals`.
 
 ### 5.2 User / Profile — `/api/v1/users`
 
@@ -209,6 +212,7 @@ All admin endpoints require `ADMIN` role.
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | GET | `/admin/users` | Yes | List all users (with search, filter by role/status) |
+| GET | `/admin/suspension-appeals` | Yes | List submitted suspension appeals with account details |
 | PATCH | `/admin/users/:id/suspend` | Yes | Suspend a user account |
 | PATCH | `/admin/users/:id/activate` | Yes | Reactivate a suspended user |
 | GET | `/admin/shipments` | Yes (Admin) | List all shipments (filter by status; paginated) |

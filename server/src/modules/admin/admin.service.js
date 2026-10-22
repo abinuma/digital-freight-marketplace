@@ -2,6 +2,7 @@ import * as shipmentService from '../shipment/shipment.service.js';
 import { AppError } from '../../shared/utils/AppError.js';
 import { formatPagination, getPagination } from '../../shared/utils/pagination.js';
 import * as adminRepository from './admin.repository.js';
+import * as authService from '../auth/auth.service.js';
 
 function mapMissingUser(error) {
   if (error?.code === 'P2025') throw new AppError('User was not found', 404);
@@ -12,6 +13,12 @@ export async function listUsers(query = {}) {
   const { page, limit, skip, take } = getPagination(query);
   const { users, total } = await adminRepository.findUsers({ ...query, skip, take });
   return { users, pagination: formatPagination({ page, limit, total }) };
+}
+
+export async function listSuspensionAppeals(query = {}) {
+  const { page, limit, skip, take } = getPagination(query);
+  const { appeals, total } = await authService.listSuspensionAppeals({ skip, take });
+  return { appeals, pagination: formatPagination({ page, limit, total }) };
 }
 
 export async function suspendUser(id, reason) {

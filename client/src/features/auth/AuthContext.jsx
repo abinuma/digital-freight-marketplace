@@ -32,10 +32,12 @@ export function AuthProvider({ children }) {
   } = useQuery({
     queryKey: currentUserQueryKey,
     queryFn: loadCurrentUser,
-    // 401 (session expired) returns null instead of throwing, so only
-    // network / 5xx errors reach the retry logic.  Retry those a couple
-    // of times before surfacing the error.
-    retry: 2,
+    // Avoid retrying expired or suspended sessions; retry transient failures.
+    retry: (failureCount, queryError) => {
+      if ([401, 403].includes(queryError?.status ?? queryError?.response?.status)) return false;
+      return failureCount < 2;
+    },
+    refetchInterval: (query) => query.state.data?.status === 'ACTIVE' ? 15_000 : false,
     staleTime: 0,
   });
 
@@ -50,6 +52,20 @@ export function AuthProvider({ children }) {
 
     window.addEventListener("app:unauthorized", handleUnauthorized);
     return () => window.removeEventListener("app:unauthorized", handleUnauthorized);
+  }, [queryClient]);
+
+  useEffect(() => {
+    function handleAccountSuspended() {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        queryClient.clear();
+        window.location.replace('/');
+      } else {
+        queryClient.setQueryData(currentUserQueryKey, null);
+      }
+    }
+
+    window.addEventListener('app:account-suspended', handleAccountSuspended);
+    return () => window.removeEventListener('app:account-suspended', handleAccountSuspended);
   }, [queryClient]);
 
   const refreshUser = useCallback(async () => {

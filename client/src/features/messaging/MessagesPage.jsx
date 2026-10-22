@@ -166,13 +166,13 @@ export function MessagesPage() {
   }, [selectedId, messagesQuery.data, cache]);
 
   function selectConversation(conversation) {
-    setSearchParams({ conversationId: conversation.id });
+    setSearchParams({ conversationId: conversation.id }, { replace: true });
     setContent('');
     setSendError('');
   }
 
   function handleBackToConversations() {
-    setSearchParams({});
+    setSearchParams({}, { replace: true });
   }
 
   async function sendMessage(event) {

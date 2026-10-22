@@ -27,6 +27,38 @@ export function findAuthUserByEmail(email) {
   return prisma.user.findUnique({ where: { email }, select: { id: true } });
 }
 
+export function findSuspendedUserForAppeal(email) {
+  return prisma.user.findFirst({
+    where: { email, status: 'SUSPENDED' },
+    select: { id: true },
+  });
+}
+
+export function createSuspensionAppeal(userId, message) {
+  return prisma.suspensionAppeal.create({
+    data: { userId, message },
+    select: { id: true, createdAt: true },
+  });
+}
+
+export async function findSuspensionAppeals({ skip, take }) {
+  const [appeals, total] = await Promise.all([
+    prisma.suspensionAppeal.findMany({
+      select: {
+        id: true,
+        message: true,
+        createdAt: true,
+        user: { select: { id: true, name: true, email: true, role: true } },
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      skip,
+      take,
+    }),
+    prisma.suspensionAppeal.count(),
+  ]);
+  return { appeals, total };
+}
+
 export async function completeUserProfile(id, input) {
   const currentUser = await prisma.user.findUnique({
     where: { id },

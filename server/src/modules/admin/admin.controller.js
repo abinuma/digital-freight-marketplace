@@ -9,6 +9,15 @@ export async function listUsers(req, res, next) {
   }
 }
 
+export async function listSuspensionAppeals(req, res, next) {
+  try {
+    const { appeals, pagination } = await adminService.listSuspensionAppeals(req.query);
+    return res.json({ data: appeals, meta: { pagination } });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function suspendUser(req, res, next) {
   try {
     const user = await adminService.suspendUser(req.params.id, req.body.reason);

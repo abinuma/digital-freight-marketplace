@@ -52,6 +52,14 @@ export async function sendVerificationCode(req, res, next) {
 
 export const register = handleAuthRequest((req) => authService.register(req.body, req.headers), { created: true });
 export const login = handleAuthRequest((req) => authService.login(req.body, req.headers));
+export async function submitSuspensionAppeal(req, res, next) {
+  try {
+    const appeal = await authService.submitSuspensionAppeal(req.body);
+    return res.status(201).json({ data: appeal });
+  } catch (error) {
+    return next(error);
+  }
+}
 export const logout = handleAuthRequest((req) => authService.logout(req.headers));
 export const forgotPassword = handleAuthRequest((req) => authService.requestPasswordReset(req.body.email, req.headers));
 export const resetPassword = handleAuthRequest((req) => authService.resetPassword(req.body, req.headers));

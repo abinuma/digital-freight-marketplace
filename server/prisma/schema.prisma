@@ -74,6 +74,7 @@ model User {
   sessions                   Session[]
   accounts                   Account[]
   journeyPlans               JourneyPlan[]
+  suspensionAppeals          SuspensionAppeal[]
 
   @@index([role, status], map: "idx_user_role_status")
 }
@@ -316,5 +317,16 @@ model JourneyPlanAssignment {
 
   @@index([journeyPlanId], map: "idx_journey_assignment_plan")
   @@index([shipmentId], map: "idx_journey_assignment_shipment")
+}
+
+model SuspensionAppeal {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  message   String   @db.Text
+  createdAt DateTime @default(now()) @db.Timestamp(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)], map: "idx_suspension_appeal_created_at")
 }
 
