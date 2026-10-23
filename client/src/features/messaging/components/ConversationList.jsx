@@ -49,14 +49,17 @@ export function ConversationList({
           Back
         </Link>
         <h1 className="m-0 text-2xl font-semibold tracking-tight text-slate-900">Messages</h1>
-        <Input
-          type="search"
-          aria-label="Search conversations"
-          placeholder="Search people"
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-          className="min-h-10 rounded-full border-slate-300 bg-slate-50 px-4"
-        />
+        <div className="relative">
+          <Input
+            type="search"
+            aria-label="Search conversations"
+            placeholder="Search people"
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            className="min-h-10 rounded-full border-slate-300 bg-slate-50 pl-10 pr-4"
+          />
+          <img src="/magnifying-glass-solid-full.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" />
+        </div>
         <div className="flex flex-wrap gap-2" aria-label="Filter conversations">
           {[
             ['all', 'All'],

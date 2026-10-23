@@ -14,55 +14,30 @@ const LOAD_TYPES = [
     legacyKeys: ['Agricultural Products', 'agriculture'],
     label: 'Agriculture',
     testText: 'Agriculture',
-    icon: (
-      <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-      </svg>
-    ),
   },
   {
     key: 'Construction',
     legacyKeys: ['Construction Materials', 'construction'],
     label: 'Construction',
     testText: 'Construction',
-    icon: (
-      <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-      </svg>
-    ),
   },
   {
     key: 'Food Products',
     legacyKeys: ['Food & Beverages', 'food products'],
     label: 'Food Products',
     testText: '',
-    icon: (
-      <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-      </svg>
-    ),
   },
   {
     key: 'Beverage',
     legacyKeys: ['Bottled water', 'Food & Beverages', 'beverage', 'beveregae'],
     label: 'Beverage',
     testText: 'Beverage, Bottled water',
-    icon: (
-      <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-      </svg>
-    ),
   },
   {
     key: 'Other',
     legacyKeys: ['Others', 'Timber', 'Machinery & Equipment', 'Consumer Goods', 'other'],
     label: 'Other',
     testText: 'Timber',
-    icon: (
-      <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9ZM4 7.5l8 4.5m8-4.5-8 4.5m0 0V21" />
-      </svg>
-    ),
   },
 ];
 
@@ -116,10 +91,7 @@ export function TransporterPreferencesCard({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-      <div className="flex items-center gap-3.5 mb-6">
-        <div className="h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-          <img src="/calendar-regular-full.svg" alt="" aria-hidden="true" className="w-5 h-5 brightness-0 invert" />
-        </div>
+      <div className="mb-6">
         <div>
           <h2 className="m-0 text-xl font-bold text-slate-900">
             Availability & Load Preferences
@@ -137,11 +109,11 @@ export function TransporterPreferencesCard({
               </span>
 
               {/* Quick Select Buttons */}
-              <div className="flex items-center gap-2 mt-3.5">
+              <div className="flex flex-wrap items-center gap-2 mt-3.5">
                 <button
                   type="button"
                   onClick={setAllDays}
-                  className={`px-5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  className={`shrink-0 whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     isAllSelected
                       ? 'bg-blue-600 text-white shadow-xs'
                       : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -152,7 +124,7 @@ export function TransporterPreferencesCard({
                 <button
                   type="button"
                   onClick={setWeekdays}
-                  className={`px-5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  className={`shrink-0 whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     isWeekdaysOnly
                       ? 'bg-blue-600 text-white shadow-xs'
                       : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -163,7 +135,7 @@ export function TransporterPreferencesCard({
                 <button
                   type="button"
                   onClick={clearDays}
-                  className="px-5 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
+                  className="shrink-0 whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
                 >
                   Clear
                 </button>
@@ -217,7 +189,6 @@ export function TransporterPreferencesCard({
                     }`}
                     aria-pressed={selected}
                   >
-                    {item.icon}
                     <span className="whitespace-normal">{item.label}</span>
                     {item.testText && <span className="sr-only">{item.testText}</span>}
                   </button>

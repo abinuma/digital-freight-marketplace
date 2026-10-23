@@ -358,7 +358,7 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
                 onChange={(event) =>
                   setField("specialRequirements", event.target.value)
                 }
-                placeholder="Fragile items, loading requirements, delivery notes…"
+                placeholder="delivery notes"
               />
               <small className="font-normal text-slate-500">
                 Up to 2,000 characters

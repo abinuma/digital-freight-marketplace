@@ -61,7 +61,6 @@ export function ProfilePage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [vehicleErrors, setVehicleErrors] = useState({});
   const [profileBusy, setProfileBusy] = useState(false);
-  const [photoBusy, setPhotoBusy] = useState(false);
   const [vehicleBusy, setVehicleBusy] = useState(false);
   const [prefBusy, setPrefBusy] = useState(false);
   const [photoFile, setPhotoFile] = useState(null);
@@ -165,8 +164,15 @@ export function ProfilePage() {
         zone: parsed.data.zone || null,
         city: parsed.data.city || null,
       };
-      await updateProfile(user.id, updates);
+      await Promise.all([
+        updateProfile(user.id, updates),
+        photoFile ? uploadProfilePhoto(user.id, photoFile) : Promise.resolve(),
+      ]);
       await refreshUser();
+      if (photoFile) {
+        setPhotoPreview('');
+        setPhotoFile(null);
+      }
       showSuccess('Profile updated');
     } catch (error) {
       setStatus({ tone: 'danger', text: error.message });
@@ -195,24 +201,6 @@ export function ProfilePage() {
     }
     setPhotoPreview(URL.createObjectURL(file));
     setPhotoFile(file);
-  }
-
-  async function savePhoto(event) {
-    event.preventDefault();
-    if (!photoFile) return;
-    setStatus(null);
-    setPhotoBusy(true);
-    try {
-      await uploadProfilePhoto(user.id, photoFile);
-      await refreshUser();
-      setPhotoPreview('');
-      setPhotoFile(null);
-      showSuccess('Photo updated');
-    } catch (error) {
-      setStatus({ tone: 'danger', text: error.message });
-    } finally {
-      setPhotoBusy(false);
-    }
   }
 
   function chooseVehiclePhoto(event) {
@@ -332,7 +320,6 @@ export function ProfilePage() {
     }
   }
 
-  const initials = (user.name || 'EF').split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
   const avatar = photoPreview || user.profilePhoto;
   const backPath = routeLocation.key === 'default'
     ? user.role === 'SHIPPER' ? '/shipper' : user.role === 'TRANSPORTER' ? '/transporter' : '/admin'
@@ -351,37 +338,6 @@ export function ProfilePage() {
             </p>
           </div>
 
-          {/* Right-aligned Highway Truck Banner */}
-          <div className="hidden sm:flex items-center justify-center h-20 w-52 rounded-2xl bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-600 p-1.5 overflow-hidden shadow-xs shrink-0 relative">
-            <div className="absolute top-2 right-4 w-7 h-7 rounded-full bg-amber-300/80 blur-[1px]" />
-            <div className="absolute top-4 right-8 w-12 h-3 rounded-full bg-white/40 blur-[0.5px]" />
-            <svg
-              viewBox="0 0 160 60"
-              className="w-full h-full object-cover"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M0 38 Q30 24 65 34 T130 28 T160 36 V60 H0 Z" fill="#3B82F6" opacity="0.6" />
-              <path d="M10 40 Q50 30 90 38 T160 34 V60 H0 Z" fill="#2563EB" opacity="0.8" />
-              <path d="M20 60 L70 36 H90 L140 60 Z" fill="#334155" />
-              <line x1="80" y1="38" x2="80" y2="44" stroke="#FDE047" strokeWidth="1.5" strokeDasharray="3 3" />
-              <line x1="80" y1="46" x2="80" y2="56" stroke="#FDE047" strokeWidth="2.5" strokeDasharray="4 4" />
-              <g transform="translate(68, 30) scale(0.32)">
-                <rect x="0" y="5" width="55" height="30" rx="2" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="2" />
-                <line x1="18" y1="5" x2="18" y2="35" stroke="#E2E8F0" strokeWidth="1.5" />
-                <line x1="36" y1="5" x2="36" y2="35" stroke="#E2E8F0" strokeWidth="1.5" />
-                <path d="M55 12 H70 C73 12 76 14 78 18 L82 25 C83 27 84 29 84 31 V37 H55 V12 Z" fill="#2563EB" />
-                <path d="M58 15 H68 C70 15 71 16 72 19 L75 25 H58 V15 Z" fill="#93C5FD" />
-                <rect x="4" y="37" width="78" height="3" fill="#1E293B" />
-                <circle cx="16" cy="40" r="6" fill="#1E293B" />
-                <circle cx="16" cy="40" r="2.5" fill="#94A3B8" />
-                <circle cx="44" cy="40" r="6" fill="#1E293B" />
-                <circle cx="44" cy="40" r="2.5" fill="#94A3B8" />
-                <circle cx="72" cy="40" r="6" fill="#1E293B" />
-                <circle cx="72" cy="40" r="2.5" fill="#94A3B8" />
-              </g>
-            </svg>
-          </div>
         </div>
       </header>
 
@@ -394,11 +350,8 @@ export function ProfilePage() {
             <ProfilePhotoCard
               avatar={avatar}
               userName={user.name}
-              initials={initials}
               photoFile={photoFile}
-              photoBusy={photoBusy}
               onChoosePhoto={choosePhoto}
-              onSavePhoto={savePhoto}
             />
           </div>
           <div className="lg:col-span-8">
@@ -406,7 +359,6 @@ export function ProfilePage() {
               profile={profile}
               email={user.email}
               errors={fieldErrors}
-              busy={profileBusy}
               showLocation={user.role !== 'ADMIN'}
               onChange={changeProfile}
               onLocationChange={changeLocation}
@@ -414,11 +366,19 @@ export function ProfilePage() {
             />
           </div>
         </div>
+        <div className="mt-6 flex justify-end border-t border-slate-200 pt-4">
+          <button
+            type="submit"
+            form="profile-information-form"
+            disabled={profileBusy}
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {profileBusy ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-        <UserReviews userId={user.id} />
-      </section>
+      <UserReviews userId={user.id} />
 
       {/* Card 2 & 3: Transporter specific cards */}
       {user.role === 'TRANSPORTER' && (

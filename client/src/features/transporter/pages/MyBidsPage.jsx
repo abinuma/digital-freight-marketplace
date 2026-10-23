@@ -375,8 +375,8 @@ export function MyBidsPage() {
         open={Boolean(assigningBid)}
         onClose={() => !assignWorking && setAssigningBid(null)}
         title="Assign load to journey plan"
-        className="flex max-h-[calc(100dvh-1.5rem)] max-w-2xl flex-col rounded-2xl"
-        contentClassName="flex min-h-0 flex-1 flex-col"
+        className="flex max-h-[calc(100dvh-1rem)] max-w-2xl flex-col rounded-2xl"
+        contentClassName="flex min-h-0 flex-1 flex-col overflow-y-auto"
       >
         {(() => {
           const assigningShipment = shipmentQueries.find(
@@ -384,8 +384,8 @@ export function MyBidsPage() {
           )?.data;
 
           return (
-            <div className="flex min-h-0 flex-1 flex-col gap-4">
-              <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+              <div className="flex flex-col gap-3 sm:gap-4">
+              <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-3 sm:p-4">
                 <span className="block text-[10px] font-bold tracking-[0.16em] text-blue-700">SHIPMENT</span>
                 <strong className="mt-1 block text-sm text-slate-900">{assigningShipment?.goodsDescription || "Shipment load"}</strong>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs">
@@ -419,7 +419,7 @@ export function MyBidsPage() {
                   </Link>
                 </div>
               ) : (
-                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
+                <div className="flex flex-col gap-3 pr-1">
                   <p className="m-0 text-sm font-semibold text-slate-700">
                     Select a suitable journey plan for this delivery:
                   </p>
@@ -449,7 +449,7 @@ export function MyBidsPage() {
                       <label
                         key={plan.id}
                         aria-disabled={!isEligible}
-                        className={`flex items-start gap-3 rounded-2xl border p-4 text-sm transition-colors ${
+                      className={`flex items-start gap-3 rounded-2xl border p-3 sm:p-4 text-sm transition-colors ${
                           !isEligible
                             ? "cursor-not-allowed border-slate-200 bg-slate-50"
                             : selectedPlanId === plan.id
@@ -505,7 +505,7 @@ export function MyBidsPage() {
                 </div>
               )}
 
-              <div className="-mx-5 -mb-5 mt-1 flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 max-sm:flex-col-reverse">
+              <div className="-mx-5 -mb-5 mt-1 flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4">
                 <Button
                   variant="secondary"
                   onClick={() => setAssigningBid(null)}

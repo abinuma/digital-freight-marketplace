@@ -18,7 +18,6 @@ import {
   withdrawBid,
 } from "../transporter.api.js";
 import { BidEditor } from "../components/BidEditor.jsx";
-import { ShipmentReviews } from "../../shipper/components/ShipmentReviews.jsx";
 import { listConversations } from "../../messaging/messaging.api.js";
 import { ShipmentHeading, ShipmentInformation } from "../../shipments/components/ShipmentSummary.jsx";
 import { dateLabel, money, shipmentTones } from "../../shipments/shipmentFormatters.js";
@@ -163,12 +162,6 @@ export function ShipmentDetailPage() {
       <div className="grid grid-cols-3 items-start gap-4 max-lg:grid-cols-1">
         <div className="grid gap-4 lg:col-span-2">
           <ShipmentInformation shipment={shipment} />
-          {shipment.status === "COMPLETED" && (
-            <ShipmentReviews
-              shipmentId={id}
-              canReview={latestBid?.status === "ACCEPTED"}
-            />
-          )}
         </div>
 
         <aside className="grid gap-4 lg:col-span-1">

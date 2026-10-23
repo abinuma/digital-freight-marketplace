@@ -2,9 +2,9 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { UserMenu } from '../../shared/components/index.js';
 
 const navigation = [
-  { to: '/admin', icon: '▦', label: 'Overview', end: true },
-  { to: '/admin/users', icon: '♙', label: 'User management' },
-  { to: '/admin/suspension-appeals', icon: '✉', label: 'Suspension appeals' },
+  { to: '/admin', icon: '/dashboard-svgrepo-com.svg', label: 'Overview', end: true },
+  { to: '/admin/users', icon: '/user-solid-full.svg', label: 'Users' },
+  { to: '/admin/suspension-appeals', icon: '/message-regular-full.svg', label: 'Suspension appeals' },
 ];
 
 export function AdminLayout() {
@@ -26,7 +26,9 @@ export function AdminLayout() {
           <nav className="grid gap-1 max-md:flex max-md:gap-1" aria-label="Admin navigation">
             {navigation.map(({ to, icon, label, end }) => (
               <NavLink key={to} end={end} to={to} className={({ isActive }) => `flex min-h-10 items-center gap-3 whitespace-nowrap rounded-lg px-3 text-sm font-medium no-underline transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
-                <span className="w-5 text-center text-base" aria-hidden="true">{icon}</span>
+                <span className="w-5 shrink-0 text-center" aria-hidden="true">
+                  <img src={icon} alt="" className="mx-auto h-5 w-5 brightness-0 invert" />
+                </span>
                 <span>{label}</span>
               </NavLink>
             ))}

@@ -44,11 +44,10 @@ export function ShipmentReviews({ shipmentId, canReview }) {
 
   return (
     <Card className={`     grid gap-5 p-5 shipper-detail-card content-start shipment-reviews`}>
-      <div className={`flex items-center justify-between gap-4         max-md:items-start max-md:flex-col shipper-panel__heading`}><div><h2>Shipment reviews</h2><p>Feedback shared by the people who completed this delivery.</p></div></div>
+      <div className={`flex items-center justify-between gap-4         max-md:items-start max-md:flex-col shipper-panel__heading`}><div><h2>Shipment reviews</h2><p>Share your experience with the driver and rate them.</p></div></div>
       {query.isError && <Alert tone="danger" title="Reviews unavailable">{query.error.message}</Alert>}
       {reviews.map((review) => <article className={`grid gap-1.5 py-3 px-0 border-t      shipment-review`} key={review.id}><div className={`flex items-center justify-between gap-4 text-slate-500 text-sm    max-md:items-start max-md:flex-col max-md:gap-1 shipment-review__heading`}><strong>{review.reviewer?.name || 'Marketplace member'}</strong><span aria-label={`${review.rating} out of 5 stars`}><span className="text-amber-500">{'★'.repeat(review.rating)}</span><span className="text-slate-300">{'☆'.repeat(5 - review.rating)}</span></span></div>{review.comment && <p>{review.comment}</p>}</article>)}
       {!query.isPending && canReview && !ownReview && !query.isError && <form className={`grid gap-3 pt-4 border-t          shipment-review-form`} onSubmit={submit}>
-        <h3>Leave feedback</h3>
         <fieldset className={`grid gap-1.5 m-0 p-0 border-0               shipment-review-rating`}><legend>Your rating <i>*</i></legend><div role="radiogroup" aria-label="Your rating">{[1, 2, 3, 4, 5].map((value) => <button key={value} type="button" role="radio" aria-checked={rating === value} aria-label={`${value} ${value === 1 ? 'star' : 'stars'}`} className={`transition-transform hover:scale-110 hover:text-amber-500 ${value <= rating ? 'text-amber-500' : 'text-slate-300'}`} onClick={() => setRating(value)}>★</button>)}</div></fieldset>
         <label className={`grid content-start gap-1.5 text-slate-500 text-sm font-bold                    shipper-field`}><span>Comment <small>Optional</small></span><Textarea maxLength={2000} value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Share how the delivery went" /></label>
         {error && <Alert tone="danger">{error}</Alert>}

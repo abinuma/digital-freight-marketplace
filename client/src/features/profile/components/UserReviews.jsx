@@ -23,6 +23,8 @@ export function UserReviews({ userId, averageRating, reviewCount }) {
   const resolvedAverage = averageRating ?? profileQuery.data?.averageRating;
   const resolvedCount = reviewCount ?? profileQuery.data?.reviewCount;
 
+  if (resolvedCount === 0) return null;
+
   return (
     <section className="grid gap-2 border-t border-slate-200 pt-3" aria-label="User ratings and reviews">
       <div className="flex items-center justify-between gap-3">
@@ -31,7 +33,7 @@ export function UserReviews({ userId, averageRating, reviewCount }) {
           <span className="text-xs font-medium text-slate-600" aria-label={`${Number(resolvedAverage).toFixed(1)} out of 5, ${resolvedCount} reviews`}>
             <span className="text-amber-500" aria-hidden="true">★</span> {Number(resolvedAverage).toFixed(1)} · {resolvedCount} {resolvedCount === 1 ? 'review' : 'reviews'}
           </span>
-        ) : resolvedCount === 0 ? <span className="text-xs text-slate-500">No ratings yet</span> : profileQuery.isError ? <span className="text-xs text-slate-500">Rating summary unavailable</span> : <Skeleton className="h-4 w-24" />}
+        ) : profileQuery.isError ? <span className="text-xs text-slate-500">Rating summary unavailable</span> : <Skeleton className="h-4 w-24" />}
       </div>
       {query.isPending ? (
         <div className="grid gap-2"><Skeleton className="h-14" /><Skeleton className="h-14" /></div>
@@ -55,7 +57,7 @@ export function UserReviews({ userId, averageRating, reviewCount }) {
             <p className="m-0 text-xs text-slate-500">Showing the 5 most recent reviews.</p>
           )}
         </div>
-      ) : <p className="m-0 text-xs text-slate-500">No written reviews yet.</p>}
+      ) : null}
     </section>
   );
 }

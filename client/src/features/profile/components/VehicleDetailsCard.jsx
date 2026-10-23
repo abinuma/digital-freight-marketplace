@@ -21,12 +21,7 @@ export function VehicleDetailsCard({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-      <div className="flex items-center gap-3.5 mb-6">
-        <div className="h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-            <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
-          </svg>
-        </div>
+      <div className="mb-6">
         <div>
           <h2 className="m-0 text-xl font-bold text-slate-900">Vehicle Details</h2>
           <p className="m-0 mt-0.5 text-xs text-slate-500">
@@ -159,9 +154,6 @@ export function VehicleDetailsCard({
                       htmlFor="vehicle-photo"
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 cursor-pointer py-1 px-2 rounded-lg hover:bg-blue-50 transition-colors"
                     >
-                      <svg className="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="2.5">
-                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                      </svg>
                       {vehicle.photo ? 'Change Photo' : 'Upload Photo'}
                     </label>
                   </div>

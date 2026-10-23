@@ -16,7 +16,7 @@ export function ShipmentCargoFields({ values, errors, setField }) {
           value={values.goodsDescription}
           onChange={(event) => setField("goodsDescription", event.target.value)}
           aria-invalid={Boolean(errors.goodsDescription)}
-          placeholder="Describe your cargo, packaging, and anything transporters should know"
+          placeholder="Describe your cargo"
         />
         {fieldError(errors, "goodsDescription")}
         <small className="font-normal text-slate-500">10–1,000 characters</small>

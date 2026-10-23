@@ -63,7 +63,7 @@ export function ForgotPasswordPage() {
       title={isSubmitted ? "We have sent reset link" : "Forgot Password?"}
       subtitle={
         isSubmitted
-          ? ""
+          ? `Check your email at ${email} for a link to reset your password.`
           : "Enter your email and we’ll send you a link to reset your password."
       }
       icon={

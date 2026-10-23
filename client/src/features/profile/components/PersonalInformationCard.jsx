@@ -4,7 +4,6 @@ export function PersonalInformationCard({
   profile,
   email,
   errors,
-  busy,
   showLocation = true,
   onChange,
   onLocationChange,
@@ -29,7 +28,7 @@ export function PersonalInformationCard({
         <h3 className="m-0 text-base font-bold text-slate-900">Personal Information</h3>
       </div>
 
-      <form className="grid gap-4" onSubmit={onSave} noValidate>
+      <form id="profile-information-form" className="grid gap-4" onSubmit={onSave} noValidate>
         <div>
           <label
             htmlFor="profile-name"
@@ -118,16 +117,6 @@ export function PersonalInformationCard({
             />
           </div>
         )}
-
-        <div className="flex justify-end pt-3">
-          <button
-            type="submit"
-            disabled={busy}
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2.5 shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
-          >
-            {busy ? 'Saving…' : 'Save Changes'}
-          </button>
-        </div>
       </form>
     </div>
   );
