@@ -8,10 +8,9 @@ const roleCards = [
   ['ADMIN', 'Admin accounts'],
 ]
 
-function MetricCard({ title, value, caption, icon, tone = 'blue', isPending }) {
+function MetricCard({ title, value, caption, tone = 'blue', isPending }) {
   return (
     <Card className={`admin-metric admin-metric--${tone}`}>
-      <span className="admin-metric__icon" aria-hidden="true">{icon}</span>
       <div className="admin-metric__body">
         <p className="admin-metric__label">{title}</p>
         {isPending ? <Skeleton className="h-8 w-16" /> : <strong className="admin-metric__value">{value ?? 0}</strong>}
@@ -36,13 +35,12 @@ export function AdminDashboardPage() {
       {query.isError && <Alert tone="danger" title="Dashboard unavailable">{query.error.message}</Alert>}
 
       <section className="admin-metrics" aria-label="Admin summary">
-        <MetricCard title="Total users" value={metrics?.totalUsers} caption="All registered marketplace accounts" icon="◈" isPending={query.isPending} />
-        <MetricCard title="New registrations" value={metrics?.newRegistrationsLast30Days} caption="Accounts created in the last 30 days" icon="＋" tone="purple" isPending={query.isPending} />
+        <MetricCard title="Total users" value={metrics?.totalUsers} caption="All registered marketplace accounts" isPending={query.isPending} />
         {roleCards.map(([role, title]) => (
-          <MetricCard key={role} title={title} value={metrics?.usersByRole?.[role]} caption="Registered users by role" icon="♙" tone="purple" isPending={query.isPending} />
+          <MetricCard key={role} title={title} value={metrics?.usersByRole?.[role]} caption="Registered users by role" tone="purple" isPending={query.isPending} />
         ))}
-        <MetricCard title="Active shipments" value={metrics?.shipments?.active} caption="Published or in progress" icon="⇢" tone="green" isPending={query.isPending} />
-        <MetricCard title="Completed shipments" value={metrics?.shipments?.completed} caption="Successfully delivered" icon="✓" tone="gold" isPending={query.isPending} />
+        <MetricCard title="Active shipments" value={metrics?.shipments?.active} caption="Published or in progress" tone="green" isPending={query.isPending} />
+        <MetricCard title="Completed shipments" value={metrics?.shipments?.completed} caption="Successfully delivered" tone="gold" isPending={query.isPending} />
       </section>
 
       <Card className="admin-intro">

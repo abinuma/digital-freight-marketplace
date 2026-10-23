@@ -164,7 +164,7 @@ export function LoginPage() {
       {isSuspended && (
         <section className="mt-5 grid gap-3" aria-live="polite">
           {appealSent ? (
-            <Alert tone="success">Your appeal has been sent to the support team.</Alert>
+            <Alert tone="success">Your appeal has been sent to the support team. We’ll reach you soon if necessary.</Alert>
           ) : (
             <>
               <Alert tone="danger" title="Your account is suspended">

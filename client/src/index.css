@@ -217,7 +217,7 @@ textarea[aria-invalid="true"]:not(:disabled):focus-visible,
 
 .admin-metrics {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -336,6 +336,16 @@ textarea[aria-invalid="true"]:not(:disabled):focus-visible,
 .admin-user-table td:first-child strong { color: #202b3c; font-size: 0.88rem; }
 .admin-user-table td:first-child small { margin-top: 0.15rem; color: #778293; font-size: 0.75rem; white-space: normal; }
 .admin-user-table td:last-child { text-align: right; }
+.admin-user-table .admin-user-date { min-width: 7.5rem; white-space: nowrap; }
+
+@media (max-width: 380px) {
+  .admin-user-table { min-width: 42rem; }
+  .admin-user-table th,
+  .admin-user-table td { padding: 0.65rem 0.55rem; }
+  .admin-user-table td:first-child { min-width: 11rem; }
+  .admin-user-table td { font-size: 0.75rem; }
+  .admin-user-table .admin-user-date { min-width: 8rem; white-space: nowrap; }
+}
 
 .admin-users-loading,
 .admin-users-empty {

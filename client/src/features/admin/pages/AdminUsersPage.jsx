@@ -93,7 +93,7 @@ export function AdminUsersPage() {
                   <td><strong>{user.name || 'Incomplete profile'}</strong><small>{user.email}</small>{user.suspensionReason && <small>Reason: {user.suspensionReason}</small>}</td>
                   <td>{user.role || 'Unassigned'}</td>
                   <td><Badge tone={user.status === 'SUSPENDED' ? 'danger' : 'success'}>{user.status}</Badge></td>
-                  <td>{formatDate(user.createdAt)}</td>
+                  <td className="admin-user-date">{formatDate(user.createdAt)}</td>
                   <td><Button size="sm" variant={user.status === 'SUSPENDED' ? 'primary' : 'danger'} onClick={() => { setAction({ user, type: user.status === 'SUSPENDED' ? 'activate' : 'suspend' }); setReason(''); setError('') }}>{user.status === 'SUSPENDED' ? 'Restore access' : 'Suspend'}</Button></td>
                 </tr>
               ))}</tbody>

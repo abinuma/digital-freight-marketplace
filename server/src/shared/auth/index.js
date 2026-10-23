@@ -28,7 +28,7 @@ const passwordSchema = z
 const allowedRoles = new Set(['SHIPPER', 'TRANSPORTER']);
 
 export const auth = betterAuth({
-  appName: 'Digital Freight Marketplace',
+  appName: 'FETAN Digital Freight Marketplace',
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
   trustedOrigins: [config.CORS_ORIGIN],

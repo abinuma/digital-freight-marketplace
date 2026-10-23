@@ -1,9 +1,9 @@
 export const openApiDocument = {
   openapi: '3.1.0',
   info: {
-    title: 'Digital Freight Marketplace API',
+    title: 'FETAN Digital Freight Marketplace API',
     version: '1.0.0',
-    description: 'REST API for the Digital Freight Marketplace. API routes use session cookies issued by the authentication endpoints.',
+    description: 'REST API for the FETAN Digital Freight Marketplace. API routes use session cookies issued by the authentication endpoints.',
   },
   servers: [{ url: '/api/v1', description: 'Current API version' }],
   tags: [

@@ -90,21 +90,12 @@ export function ShipperLayout() {
       )}
       <div className="flex flex-1 max-md:flex-col">
         <aside className="sticky top-16 hidden w-56 shrink-0 flex-col self-stretch bg-slate-900 px-3 py-5 text-white lg:flex">
-          <p className="mb-4 px-3 text-xs font-extrabold tracking-widest text-slate-400 max-md:hidden">
-            SHIPPER WORKSPACE
-          </p>
           <nav
             className="grid gap-1"
             aria-label="Shipper navigation"
           >
             {renderNavigation()}
           </nav>
-          <div className="mt-auto grid gap-1 rounded-lg border border-slate-700 bg-slate-800 p-4 text-sm max-md:hidden">
-            <strong>Need help?</strong>
-            <small className="text-slate-300">
-              We’re here to help with your shipments.
-            </small>
-          </div>
         </aside>
         <main className="min-w-0 flex-1">
           <Outlet />
