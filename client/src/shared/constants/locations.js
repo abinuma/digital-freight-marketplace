@@ -275,7 +275,7 @@ export const ETHIOPIA_LOCATIONS_DATA = [
       },
       {
         name: 'Dhawa Zone',
-        cities: ['Lahey', 'Hudet', 'Moyale'],
+        cities: ['Lahey', 'Hudet'],
       },
     ],
   },

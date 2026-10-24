@@ -68,7 +68,7 @@ export function MyBidsPage() {
   useEffect(() => {
     if (!assignShipmentId || query.isPending || query.isError) return;
     const acceptedBid = bids.find((bid) => bid.status === "ACCEPTED");
-    if (acceptedBid && !acceptedBid.journeyPlanAssignment) {
+    if (acceptedBid && !acceptedBid.journeyPlanAssignment && acceptedBid.shipment?.status !== 'COMPLETED') {
       setAssigningBid(acceptedBid);
       setSelectedPlanId("");
       setAssignError("");
@@ -191,6 +191,8 @@ export function MyBidsPage() {
             const isCancelled = shipment?.status === "CANCELLED"
               || shipmentSummary?.status === "CANCELLED"
               || Boolean(shipmentSummary?.removedAt);
+            const isCompleted = shipment?.status === "COMPLETED"
+              || shipmentSummary?.status === "COMPLETED";
             const displayedStatus = isCancelled ? "CANCELLED" : bid.status;
             return (
               <Card className="grid gap-4 p-4" key={bid.id}>
@@ -227,7 +229,7 @@ export function MyBidsPage() {
                   </span>
                 </div>
 
-                {bid.status === "ACCEPTED" && !isCancelled && (
+                {bid.status === "ACCEPTED" && !isCancelled && (!isCompleted || bid.journeyPlanAssignment || assignedPlans[bid.id]) && (
                   bid.journeyPlanAssignment || assignedPlans[bid.id] ? (
                     <div className="text-sm">
                       <Link

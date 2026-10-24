@@ -5,8 +5,9 @@ export async function listConversations() {
   return data.data;
 }
 
-export async function startConversation(transporterId) {
-  const { data } = await apiClient.post('/messages/conversations', { transporterId });
+export async function startConversation(payload) {
+  const body = typeof payload === 'string' ? { transporterId: payload } : payload;
+  const { data } = await apiClient.post('/messages/conversations', body);
   return data.data;
 }
 

@@ -157,6 +157,7 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const showSuccess = useSuccessToast();
+  const [isOpeningInvitedDriverChat, setIsOpeningInvitedDriverChat] = useState(false);
   const [showInvitedDriverProfile, setShowInvitedDriverProfile] = useState(false);
   const invitedDriverProfileQuery = useQuery({
     queryKey: ["shipper", "invitedDriverProfile", invitedDriver?.id],
@@ -195,6 +196,20 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  async function openInvitedDriverChat() {
+    if (!invitedDriver?.id || isOpeningInvitedDriverChat) return;
+    setIsOpeningInvitedDriverChat(true);
+    setSaveError("");
+    try {
+      const conversation = await startConversation(invitedDriver.id);
+      navigate(`/shipper/messages?conversationId=${conversation.id}`);
+    } catch (error) {
+      setSaveError(error.message);
+    } finally {
+      setIsOpeningInvitedDriverChat(false);
+    }
+  }
 
   function setField(name, value) {
     setValues((current) => ({ ...current, [name]: value }));
@@ -317,6 +332,9 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
               {invitedDriver.destination ? ` → Heading to ${invitedDriver.destination}` : ""}
             </p>
           </div>
+          <Button size="sm" variant="primary" onClick={openInvitedDriverChat} disabled={isOpeningInvitedDriverChat}>
+            Chat
+          </Button>
         </div>
       )}
 

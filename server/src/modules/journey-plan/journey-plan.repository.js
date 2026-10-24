@@ -132,6 +132,7 @@ export function findAcceptedBidForAssignment(bidId, transporterId) {
       shipment: {
         select: {
           id: true,
+          status: true,
           loadSize: true,
           weightKg: true,
           goodsDescription: true,

@@ -79,6 +79,10 @@ export function findActiveTransporter(id) {
   return prisma.user.findFirst({ where: { id, role: 'TRANSPORTER', status: 'ACTIVE' }, select: { id: true } });
 }
 
+export function findActiveShipper(id) {
+  return prisma.user.findFirst({ where: { id, role: 'SHIPPER', status: 'ACTIVE' }, select: { id: true } });
+}
+
 export function findOrCreateConversation(shipperId, transporterId) {
   return prisma.conversation.upsert({
     where: { shipperId_transporterId: { shipperId, transporterId } },
@@ -109,6 +113,7 @@ export function findConversationBids(conversation) {
           id: true,
           goodsDescription: true,
           goodsType: true,
+          loadSize: true,
           weightKg: true,
           pickupLocation: true,
           deliveryLocation: true,

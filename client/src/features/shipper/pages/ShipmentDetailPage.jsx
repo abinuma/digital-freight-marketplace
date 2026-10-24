@@ -20,6 +20,7 @@ import {
 } from "../shipper.api.js";
 import { ShipmentReviews } from "../components/ShipmentReviews.jsx";
 import { ShipperBidsPanel } from "../components/ShipperBidsPanel.jsx";
+import { startConversation } from "../../messaging/messaging.api.js";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import { ShipmentHeading, ShipmentInformation } from "../../shipments/components/ShipmentSummary.jsx";
 
@@ -43,6 +44,7 @@ export function ShipmentDetailPage() {
   const [declineReason, setDeclineReason] = useState("");
   const [actionError, setActionError] = useState("");
   const [working, setWorking] = useState(false);
+  const [chattingBidId, setChattingBidId] = useState(null);
   const shipmentQuery = useQuery({
     queryKey: ["shipper", "shipment", id],
     queryFn: () => getShipment(id),
@@ -111,6 +113,20 @@ export function ShipmentDetailPage() {
       setActionError(error.message);
     } finally {
       setWorking(false);
+    }
+  }
+
+  async function openDriverChat(bid) {
+    if (!bid?.transporterId || chattingBidId) return;
+    setChattingBidId(bid.id);
+    setActionError("");
+    try {
+      const conversation = await startConversation({ transporterId: bid.transporterId });
+      navigate(`/shipper/messages?conversationId=${conversation.id}`);
+    } catch (error) {
+      setActionError(error.message);
+    } finally {
+      setChattingBidId(null);
     }
   }
 
@@ -251,6 +267,8 @@ export function ShipmentDetailPage() {
               setDeclineReason("");
               setConfirmation({ type: "bid", id: bid.id, action: "decline" });
             }}
+            onChat={openDriverChat}
+            chattingBidId={chattingBidId}
           />
         </aside>
       </div>

@@ -173,6 +173,10 @@ export async function assignBidToJourneyPlan(user, planId, bidId) {
     throw new AppError('Only accepted bids can be assigned to a journey plan', 400);
   }
 
+  if (bid.shipment.status === 'COMPLETED') {
+    throw new AppError('A delivered shipment cannot be assigned to a journey plan', 400);
+  }
+
   if (bid.journeyPlanAssignment) {
     throw new AppError('This accepted load is already assigned to a journey plan', 409);
   }

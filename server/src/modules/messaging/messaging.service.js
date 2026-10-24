@@ -39,12 +39,27 @@ export async function listConversations(user) {
   return conversations.map((conversation) => serializeConversation(conversation, user));
 }
 
-export async function startConversation(user, transporterId) {
-  if (user.role !== 'SHIPPER') throw new AppError('Only Shippers can contact a Transporter', 403);
-  if (user.id === transporterId) throw new AppError('You cannot contact yourself', 400);
-  const transporter = await messagingRepository.findActiveTransporter(transporterId);
-  if (!transporter) throw new AppError('Transporter was not found', 404);
-  return messagingRepository.findOrCreateConversation(user.id, transporterId);
+export async function startConversation(user, input) {
+  const transporterId = typeof input === 'string' ? input : input?.transporterId;
+  const shipperId = typeof input === 'object' ? input?.shipperId : undefined;
+
+  if (user.role === 'SHIPPER') {
+    if (!transporterId) throw new AppError('Transporter ID is required', 400);
+    if (user.id === transporterId) throw new AppError('You cannot contact yourself', 400);
+    const transporter = await messagingRepository.findActiveTransporter(transporterId);
+    if (!transporter) throw new AppError('Transporter was not found', 404);
+    return messagingRepository.findOrCreateConversation(user.id, transporterId);
+  }
+
+  if (user.role === 'TRANSPORTER') {
+    if (!shipperId) throw new AppError('Shipper ID is required', 400);
+    if (user.id === shipperId) throw new AppError('You cannot contact yourself', 400);
+    const shipper = await messagingRepository.findActiveShipper(shipperId);
+    if (!shipper) throw new AppError('Shipper was not found', 404);
+    return messagingRepository.findOrCreateConversation(shipperId, user.id);
+  }
+
+  throw new AppError('Only Shippers and Transporters can start conversations', 403);
 }
 
 export async function listConversationBids(user, conversationId) {
@@ -57,7 +72,7 @@ export async function listConversationBids(user, conversationId) {
       price: Number(bid.price),
       shipment: {
         ...bid.shipment,
-        weightKg: Number(bid.shipment.weightKg),
+        weightKg: bid.shipment.weightKg == null ? null : Number(bid.shipment.weightKg),
         shipper: bid.shipment?.shipper
           ? {
               ...bid.shipment.shipper,

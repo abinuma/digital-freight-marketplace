@@ -11,7 +11,7 @@ export async function listConversations(req, res, next) {
 
 export async function startConversation(req, res, next) {
   try {
-    const conversation = await messagingService.startConversation(req.user, req.body.transporterId);
+    const conversation = await messagingService.startConversation(req.user, req.body);
     return res.status(201).json({ data: conversation });
   } catch (error) { return next(error); }
 }

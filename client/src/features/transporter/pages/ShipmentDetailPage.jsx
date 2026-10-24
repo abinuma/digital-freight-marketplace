@@ -18,7 +18,7 @@ import {
   withdrawBid,
 } from "../transporter.api.js";
 import { BidEditor } from "../components/BidEditor.jsx";
-import { listConversations } from "../../messaging/messaging.api.js";
+import { listConversations, startConversation } from "../../messaging/messaging.api.js";
 import { ShipmentHeading, ShipmentInformation } from "../../shipments/components/ShipmentSummary.jsx";
 import { dateLabel, money, shipmentTones } from "../../shipments/shipmentFormatters.js";
 
@@ -40,6 +40,7 @@ export function ShipmentDetailPage() {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [actionError, setActionError] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isOpeningChat, setIsOpeningChat] = useState(false);
   const shipmentQuery = useQuery({
     queryKey: ["transporter", "shipment", id],
     queryFn: () => getShipment(id),
@@ -95,6 +96,20 @@ export function ShipmentDetailPage() {
     }
   }
 
+  async function openShipperChat() {
+    if (!shipment?.shipperId || isOpeningChat) return;
+    setIsOpeningChat(true);
+    setActionError("");
+    try {
+      const conversation = await startConversation({ shipperId: shipment.shipperId });
+      navigate(`/transporter/messages?conversationId=${conversation.id}`);
+    } catch (error) {
+      setActionError(error.message);
+    } finally {
+      setIsOpeningChat(false);
+    }
+  }
+
   if (shipmentQuery.isPending) {
     return (
       <div className="grid gap-4 px-6 py-6 max-md:px-4">
@@ -134,12 +149,17 @@ export function ShipmentDetailPage() {
         <div className="min-w-0 max-w-3xl">
           <ShipmentHeading shipment={shipment} hidePublishedStatus hideCargoSummary />
         </div>
-        <Link
-          className="inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50"
-          to="/transporter/bids"
-        >
-          My bids
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button variant="primary" size="sm" onClick={openShipperChat} disabled={isOpeningChat}>
+            Chat
+          </Button>
+          <Link
+            className="inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50"
+            to="/transporter/bids"
+          >
+            My bids
+          </Link>
+        </div>
       </header>
 
       {actionError && (
@@ -224,7 +244,7 @@ export function ShipmentDetailPage() {
                     >
                       chat
                     </Link>
-                    {!latestBid?.journeyPlanAssignment && (
+                    {!latestBid?.journeyPlanAssignment && shipment.status !== "COMPLETED" && (
                       <Link
                         className="inline-flex min-h-8 items-center justify-center rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white no-underline hover:bg-blue-800"
                         to={`/transporter/bids?assignShipmentId=${id}`}

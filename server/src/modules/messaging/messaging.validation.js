@@ -18,5 +18,8 @@ export const createMessageSchema = {
 };
 
 export const startConversationSchema = {
-  body: z.object({ transporterId: z.uuid() }),
+  body: z.union([
+    z.object({ transporterId: z.uuid() }).strict(),
+    z.object({ shipperId: z.uuid() }).strict(),
+  ]),
 };

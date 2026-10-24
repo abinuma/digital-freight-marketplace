@@ -17,6 +17,8 @@ export function ShipperBidsPanel({
   shipment,
   onAccept,
   onDecline,
+  onChat,
+  chattingBidId,
 }) {
   return (
           <Card className="grid gap-4 p-5">
@@ -103,6 +105,16 @@ export function ShipperBidsPanel({
                           Reason: {bid.declineReason}
                         </p>
                       )}
+                      <div className="flex justify-end border-t border-slate-100 pt-3">
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onClick={() => onChat(bid)}
+                          disabled={chattingBidId === bid.id}
+                        >
+                          Chat with driver
+                        </Button>
+                      </div>
                       {bid.status === "PENDING" &&
                         shipment.status === "PUBLISHED" && (
                           <div className="flex flex-wrap gap-2">
