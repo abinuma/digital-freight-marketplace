@@ -30,6 +30,10 @@ const allowedRoles = new Set(['SHIPPER', 'TRANSPORTER']);
 export const auth = betterAuth({
   account: {
     skipStateCookieCheck: true,
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ['google'],
+    },
   },
   appName: 'FETAN Digital Freight Marketplace',
   baseURL: process.env.BETTER_AUTH_URL,
@@ -111,7 +115,7 @@ export const auth = betterAuth({
       create: {
         before: async (user) => {
           if (user.phone == null && user.role == null) {
-            return { data: { ...user, phone: null, role: null } };
+            return { data: { ...user, phone: null, role: null, emailVerified: user.emailVerified ?? true } };
           }
 
           const phone = phoneSchema.safeParse(user.phone);

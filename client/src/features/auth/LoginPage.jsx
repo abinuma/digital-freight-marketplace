@@ -38,6 +38,18 @@ export function LoginPage() {
   const [appealSent, setAppealSent] = useState(false);
   const [isSendingAppeal, setIsSendingAppeal] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const errorParam = params.get("error");
+    if (errorParam) {
+      if (errorParam === "account_not_linked") {
+        setFormError("An account with this email already exists. Sign in with your password to link your account.");
+      } else {
+        setFormError(`Sign-in failed (${errorParam}). Please try again.`);
+      }
+    }
+  }, [location.search]);
+
   function updateField(event) {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));

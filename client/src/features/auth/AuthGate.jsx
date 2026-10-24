@@ -49,6 +49,12 @@ export function AuthGate() {
     );
   }
 
+  const searchParams = new URLSearchParams(location.search);
+  const errorParam = searchParams.get("error");
+  if (location.pathname === "/" && errorParam) {
+    return <Navigate to={`/login?error=${encodeURIComponent(errorParam)}`} replace />;
+  }
+
   if (location.pathname === "/" && !user) return <LandingPage />;
 
   if (!user) return <Navigate to="/" replace />;
