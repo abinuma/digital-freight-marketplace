@@ -4,8 +4,7 @@
 
 ## Problem
 
-Shippers who need road freight transport and transporters who can provide it may have difficulty finding suitable counterparties efficiently and coordinating a transport arrangement. The specific causes, frequency, current workarounds, and impact of this problem in Ethiopia still need validation through research with users.
-
+Shippers who need road freight transport and transporters who can provide it may have difficulty finding suitable counterparties efficiently and coordinating a transport arrangement. The specific causes, frequency, current workarounds, and impact of this problem in Ethiopia still need validation through research with users.I was inspired to build this system when I visited Merkato and saw shippers calling many people and asking, “Do you know anyone heading to Hawassa tomorrow night?” or “Is anyone leaving for Adama today?” They were wasting time searching for transporters. Also, one of my friends who drives a cargo truck told me that drivers have to arrive at "Grament sefer" as early as 10:00 LT to find shipments they can transport to the countryside the next day. These experiences motivated me to build the system.
 ## Target users
 
 The platform has exactly three user roles:
@@ -38,21 +37,15 @@ The platform will operate as a two-sided digital marketplace connecting Shippers
 
 ## Tech stack
 
-Frontend: React + Vite + JavaScript  
-UI styling: Tailwind CSS  
-State management: React Context (simple shared state)  
-Server-state management and caching: TanStack Query  
-Backend: Node.js + Express.js + JavaScript (ES modules)  
-Database: PostgreSQL  
-ORM: Prisma  
-Authentication: Better Auth  
-Server-side caching: Redis (only if server-side caching or shared coordination becomes necessary)  
-API documentation: Swagger / OpenAPI  
-Maps and locations: OpenStreetMap + Leaflet  
-File storage: Cloudinary or S3-compatible storage  
-Validation: Zod  
-Testing: Vitest + Supertest + Playwright  
-Version control: Git + GitHub  
-Deployment: Vercel (frontend) + Render (backend) + managed PostgreSQL  
-Containers: Docker + Docker Compose
-
+Frontend : React + Vite + JavaScript 
+UI styling : Tailwind CSS 
+Server-state management and caching : TanStack Query 
+Backend : Node.js + Express.js + JavaScript
+Database : PostgreSQL 
+ORM : Prisma 
+Authentication: Better Auth 
+File storage: Cloudinary 
+Validation: Zod 
+Version control: Git + GitHub 
+Deployment " Vercel (frontend) + Render (backend) + managed PostgreSQL on neon.
+Containers : Docker + Docker Compose 

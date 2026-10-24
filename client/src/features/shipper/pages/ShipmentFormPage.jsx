@@ -8,10 +8,13 @@ import {
   Button,
   Spinner,
   Textarea,
+  Modal,
   useSuccessToast,
 } from "../../../shared/components/index.js";
+import { PreviewableImage } from "../../../shared/components/PreviewableImage.jsx";
 import {
   getShipment,
+  getUserProfile,
   saveShipment,
   transitionShipment,
   uploadShipmentImages,
@@ -23,6 +26,7 @@ import { ShipmentPhotoUploader } from "../components/ShipmentPhotoUploader.jsx";
 import { ShipmentRouteFields } from "../components/ShipmentRouteFields.jsx";
 import { fieldClass } from "../shipmentForm.utils.js";
 import { formatLoadSize } from "../../../shared/constants/loadSizes.js";
+import { initials } from "../../messaging/messaging.formatters.js";
 
 const formSchema = z
   .object({
@@ -140,6 +144,7 @@ export function ShipmentFormPage() {
               city: invitedCity,
               destination: invitedDestination,
               vehicleType: invitedVehicle,
+              profilePhoto: location.state?.invitedDriver?.profilePhoto || location.state?.invitedDriver?.image || null,
             }
           : null
       }
@@ -152,6 +157,12 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const showSuccess = useSuccessToast();
+  const [showInvitedDriverProfile, setShowInvitedDriverProfile] = useState(false);
+  const invitedDriverProfileQuery = useQuery({
+    queryKey: ["shipper", "invitedDriverProfile", invitedDriver?.id],
+    queryFn: () => getUserProfile(invitedDriver.id),
+    enabled: Boolean(showInvitedDriverProfile && invitedDriver?.id),
+  });
   const [shipmentId, setShipmentId] = useState(routeId || null);
   const [values, setValues] = useState(() => {
     if (initialShipment) {
@@ -287,11 +298,14 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
 
       {invitedDriver?.id && (
         <div className="flex items-center gap-3.5 rounded-2xl border border-blue-200 bg-blue-50/80 p-4 shadow-2xs">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
-            <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
-              <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
-            </svg>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowInvitedDriverProfile(true)}
+            className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border-0 bg-indigo-100 p-0 text-sm font-bold text-blue-700 hover:ring-2 hover:ring-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+            aria-label={`View ${invitedDriver.name}'s profile details`}
+          >
+            {invitedDriver.profilePhoto ? <img className="h-full w-full object-cover" src={invitedDriver.profilePhoto} alt="" /> : initials(invitedDriver.name)}
+          </button>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-slate-900">Inviting: {invitedDriver.name}</span>
@@ -305,6 +319,38 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
           </div>
         </div>
       )}
+
+      <Modal open={showInvitedDriverProfile} onClose={() => setShowInvitedDriverProfile(false)} title="Contact details" className="max-w-sm">
+        {(() => {
+          const profile = invitedDriverProfileQuery.data || invitedDriver || {};
+          const photo = profile.profilePhoto || profile.image || invitedDriver?.profilePhoto;
+          const name = profile.name || invitedDriver?.name || "Driver";
+          const driverCity = profile.city || profile.location || invitedDriver?.city;
+          const phone = profile.phone;
+          const email = profile.email;
+          return (
+            <div className="flex flex-col items-center gap-4 text-center">
+              <span className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-indigo-100 text-2xl font-bold text-blue-700">
+                {photo ? <PreviewableImage className="h-full w-full object-cover" src={photo} alt={`${name} profile photo`} /> : initials(name)}
+              </span>
+              <div className="grid gap-2">
+                <strong className="text-lg text-slate-900">{name}</strong>
+                <span className="text-sm text-slate-600">{driverCity || "City not provided"}</span>
+                {profile.averageRating != null && profile.reviewCount > 0 && (
+                  <span className="flex items-center justify-center gap-1 text-sm text-slate-600" aria-label={`${Number(profile.averageRating).toFixed(1)} out of 5, ${profile.reviewCount} ratings`}>
+                    <span className="text-amber-500" aria-hidden="true">★</span>
+                    <strong className="text-slate-800">{Number(profile.averageRating).toFixed(1)}</strong>
+                    <span>({profile.reviewCount} {profile.reviewCount === 1 ? "rating" : "ratings"})</span>
+                  </span>
+                )}
+                {phone ? <a className="text-sm font-semibold text-blue-700 hover:underline" href={`tel:${phone}`}>{phone}</a> : <span className="text-sm text-slate-500">Phone number not provided</span>}
+                {email ? <span className="text-sm text-slate-600">{email}</span> : <span className="text-sm text-slate-500">Email not provided</span>}
+                {invitedDriverProfileQuery.isError && <span className="text-sm text-slate-500">Some contact details could not be loaded.</span>}
+              </div>
+            </div>
+          );
+        })()}
+      </Modal>
 
       {!isEditable && (
         <Alert tone="warning" title="This shipment can’t be edited">

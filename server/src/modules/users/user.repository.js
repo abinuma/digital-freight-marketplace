@@ -31,7 +31,10 @@ const vehicleSelect = {
 };
 
 export async function findPublicProfileById(id) {
-  const user = await prisma.user.findUnique({ where: { id }, select: publicUserSelect });
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: { ...publicUserSelect, email: true },
+  });
   if (!user) return null;
 
   const { image, ...profile } = user;

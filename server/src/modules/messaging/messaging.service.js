@@ -84,6 +84,6 @@ export async function getLastMessage(user, conversationId) {
 export async function sendMessage(user, conversationId, content) {
   const conversation = await getParticipantConversation(user, conversationId);
   const message = await messagingRepository.createMessage(conversation.id, user.id, content);
-  await notificationService.newMessage(conversation.id, user.id, content);
+  await notificationService.newMessage(conversation.id, user.id);
   return message;
 }

@@ -136,9 +136,17 @@ export function ShipperDashboardPage() {
       return { ...driver, matchesLoads };
     })
     .sort((a, b) => {
+      const aHasRating = a.reviewCount > 0 && a.averageRating != null;
+      const bHasRating = b.reviewCount > 0 && b.averageRating != null;
+      if (aHasRating !== bHasRating) return aHasRating ? -1 : 1;
+      if (aHasRating && bHasRating && Number(a.averageRating) !== Number(b.averageRating)) {
+        return Number(b.averageRating) - Number(a.averageRating);
+      }
       if (a.matchesLoads && !b.matchesLoads) return -1;
       if (!a.matchesLoads && b.matchesLoads) return 1;
-      return new Date(b.availabilityUpdatedAt || 0) - new Date(a.availabilityUpdatedAt || 0);
+      const availabilityOrder = new Date(b.availabilityUpdatedAt || 0) - new Date(a.availabilityUpdatedAt || 0);
+      if (availabilityOrder) return availabilityOrder;
+      return (a.name || '').localeCompare(b.name || '');
     });
 
   const displayedShipments = (summary?.recentShipments || []).slice(0, 2);

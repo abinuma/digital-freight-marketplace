@@ -3,8 +3,8 @@ import { listNotifications } from './notifications.api.js';
 
 export function useUnreadCount() {
   const unread = useQuery({
-    queryKey: ['notifications', 'unread'],
-    queryFn: () => listNotifications({ limit: 1, unreadOnly: true }),
+    queryKey: ['notifications', 'unread-messages'],
+    queryFn: () => listNotifications({ limit: 1, unreadOnly: true, type: 'NEW_MESSAGE' }),
     refetchInterval: 15_000,
   });
 

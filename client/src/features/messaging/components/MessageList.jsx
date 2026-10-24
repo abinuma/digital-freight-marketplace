@@ -62,7 +62,6 @@ export function MessageList({ messages, userId, isPending, error, listRef }) {
             <span className="text-2xl text-blue-700">✉</span>
             <strong>No messages yet</strong>
             <p className="m-0 max-w-sm text-sm">Start the conversation.</p>
-            <p className="m-0 max-w-sm text-sm">Start the conversation.</p>
           </div>
         )}
       </div>

@@ -8,5 +8,5 @@ export const timeLabel = (value) => new Intl.DateTimeFormat(undefined, {
 }).format(new Date(value));
 
 export function initials(name = '') {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || '?';
+  return Array.from(name.trim())[0]?.toUpperCase() || '?';
 }

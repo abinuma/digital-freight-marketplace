@@ -11,13 +11,15 @@ export function ConversationHeader({
   onBack,
 }) {
   const [profileOpen, setProfileOpen] = useState(false);
+  const [failedPhoto, setFailedPhoto] = useState(null);
   const counterpart = conversation?.counterpart;
-  const photo = profile?.profilePhoto || profile?.image || counterpart?.profilePhoto || counterpart?.image;
+  const photo = counterpart?.profilePhoto || counterpart?.image || profile?.profilePhoto || profile?.image;
   const name = profile?.name || counterpart?.name || 'User';
   const city = profile?.city || profile?.location || counterpart?.city || counterpart?.location;
   const phone = profile?.phone || counterpart?.phone;
   const averageRating = profile?.averageRating;
   const reviewCount = profile?.reviewCount;
+  const hasPhoto = Boolean(photo && failedPhoto !== photo);
 
   return (
     <header className="flex min-h-14 items-center justify-between gap-1 border-b border-slate-200 py-2 sm:gap-2 sm:min-h-16">
@@ -39,7 +41,7 @@ export function ConversationHeader({
           className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-0 bg-indigo-100 p-0 text-xs font-bold text-blue-700 hover:ring-2 hover:ring-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 sm:h-10 sm:w-10 sm:text-sm"
           aria-label={`View ${name}'s profile details`}
         >
-          {photo ? <img className="h-full w-full object-cover" src={photo} alt="" /> : initials(name)}
+          {hasPhoto ? <img className="h-full w-full object-cover" src={photo} alt="" onError={() => setFailedPhoto(photo)} /> : initials(name)}
         </button>
         <div className="grid min-w-0 gap-0.5">
           <strong className="truncate text-sm font-semibold text-slate-900 sm:text-base">
@@ -71,13 +73,20 @@ export function ConversationHeader({
       <Modal open={profileOpen} onClose={() => setProfileOpen(false)} title="Contact details" className="max-w-sm">
         <div className="flex flex-col items-center gap-4 text-center">
           <span className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-indigo-100 text-2xl font-bold text-blue-700">
-            {photo ? (
-              <PreviewableImage className="h-full w-full object-cover" src={photo} alt={`${name} profile photo`} />
+            {hasPhoto ? (
+              <PreviewableImage className="h-full w-full object-cover" src={photo} alt={`${name} profile photo`} onError={() => setFailedPhoto(photo)} />
             ) : initials(name)}
           </span>
           <div className="grid gap-2">
             <strong className="text-lg text-slate-900">{name}</strong>
             <span className="text-sm text-slate-600">{city || 'City not provided'}</span>
+            {averageRating != null && reviewCount > 0 && (
+              <span className="flex items-center justify-center gap-1 text-sm text-slate-600" aria-label={`${Number(averageRating).toFixed(1)} out of 5, ${reviewCount} ratings`}>
+                <span className="text-amber-500" aria-hidden="true">★</span>
+                <strong className="text-slate-800">{Number(averageRating).toFixed(1)}</strong>
+                <span>({reviewCount} {reviewCount === 1 ? 'rating' : 'ratings'})</span>
+              </span>
+            )}
             {phone ? (
               <a className="text-sm font-semibold text-blue-700 hover:underline" href={`tel:${phone}`}>{phone}</a>
             ) : (

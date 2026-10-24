@@ -143,37 +143,36 @@ export function CityLocationPicker({
             <img src="/angle-down-solid-full.svg" alt="" aria-hidden="true" className="h-3 w-3" />
           </button>
         </div>
+        {isOpen && !disabled && (
+          <ul
+            className="absolute z-50 left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg list-none p-0 m-0 text-sm text-slate-800"
+            role="listbox"
+          >
+            {availableCities.length > 0 ? (
+              availableCities.map((item) => {
+                const isSelected = item.city === city && item.zone === zone && (!region || item.region === region);
+                return (
+                  <li
+                    key={item.id}
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => handleSelect(item)}
+                    className={`cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-900 transition-colors ${
+                      isSelected ? 'bg-blue-50 font-semibold text-blue-900' : ''
+                    }`}
+                  >
+                    {item.displayName}
+                  </li>
+                );
+              })
+            ) : (
+              <li className="px-3 py-2 text-slate-400 italic cursor-default">
+                No matching cities found
+              </li>
+            )}
+          </ul>
+        )}
       </div>
-
-      {isOpen && !disabled && (
-        <ul
-          className="absolute z-50 left-0 right-0 top-[calc(100%-2.5rem)] mt-1 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg list-none p-0 m-0 text-sm text-slate-800"
-          role="listbox"
-        >
-          {availableCities.length > 0 ? (
-            availableCities.map((item) => {
-              const isSelected = item.city === city && item.zone === zone && (!region || item.region === region);
-              return (
-                <li
-                  key={item.id}
-                  role="option"
-                  aria-selected={isSelected}
-                  onClick={() => handleSelect(item)}
-                  className={`cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-900 transition-colors ${
-                    isSelected ? 'bg-blue-50 font-semibold text-blue-900' : ''
-                  }`}
-                >
-                  {item.displayName}
-                </li>
-              );
-            })
-          ) : (
-            <li className="px-3 py-2 text-slate-400 italic cursor-default">
-              No matching cities found
-            </li>
-          )}
-        </ul>
-      )}
 
       {error && (
         <span className="text-sm text-red-700" id={`${id}-error`}>

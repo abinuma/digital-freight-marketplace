@@ -38,7 +38,12 @@ async function saveInAppNotification({ userId, type, title, message, referenceId
 
 export async function listNotifications(userId, query = {}) {
   const { page, limit, skip, take } = getPagination(query);
-  const { notifications, total } = await notificationRepository.findNotifications(userId, { skip, take, unreadOnly: query.unreadOnly });
+  const { notifications, total } = await notificationRepository.findNotifications(userId, {
+    skip,
+    take,
+    unreadOnly: query.unreadOnly,
+    type: query.type,
+  });
   return { notifications, pagination: formatPagination({ page, limit, total }) };
 }
 
@@ -132,7 +137,7 @@ export function shipmentRemoved(shipmentId, transporterIds) {
   });
 }
 
-export function newMessage(conversationId, senderId, content) {
+export function newMessage(conversationId, senderId) {
   return safely('NEW_MESSAGE', async () => {
     const conversation = await notificationRepository.findMessageNotificationDetails(conversationId);
     if (!conversation) return;
@@ -148,11 +153,6 @@ export function newMessage(conversationId, senderId, content) {
       title: 'New message',
       message: `${sender.name} sent you a message.`,
       referenceId: conversationId,
-    });
-    await notify(recipient, {
-      type: 'NEW_MESSAGE',
-      senderName: sender.name,
-      content,
     });
   });
 }

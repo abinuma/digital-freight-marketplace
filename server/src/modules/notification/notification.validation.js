@@ -5,6 +5,7 @@ export const notificationListSchema = {
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
     unreadOnly: z.enum(['true', 'false']).transform((value) => value === 'true').optional(),
+    type: z.string().trim().min(1).max(50).optional(),
   }),
 };
 
