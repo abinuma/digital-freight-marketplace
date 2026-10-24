@@ -1,0 +1,23 @@
+
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated output on the host
+node_modules
+generated
+
+# Git and development files
+.git
+.agents
+
+# Tests and reports
+tests
+coverage
+.nyc_output
+
+# Logs and temporary files
+*.log
+npm-debug.log*
+.DS_Store

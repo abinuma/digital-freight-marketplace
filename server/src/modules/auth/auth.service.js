@@ -1,5 +1,5 @@
 import { fromNodeHeaders } from 'better-auth/node';
-import { config } from '../../shared/config/index.js';
+import { config, allowedOrigins } from '../../shared/config/index.js';
 import { auth } from '../../shared/auth/index.js';
 import { AppError } from '../../shared/utils/AppError.js';
 import { logger } from '../../shared/utils/logger.js';
@@ -86,7 +86,7 @@ export async function requestPasswordReset(email, headers) {
   if (!user) throw new AppError('No account was found with this email address.', 404);
 
   const response = await auth.api.requestPasswordReset({
-    body: { email, redirectTo: `${config.CORS_ORIGIN}/reset-password` },
+    body: { email, redirectTo: `${allowedOrigins[0] || config.CORS_ORIGIN}/reset-password` },
     headers: fromNodeHeaders(headers),
     asResponse: true,
   });

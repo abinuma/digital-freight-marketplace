@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
-import { Button } from "../../shared/components/index.js";
+import { Button, Spinner } from "../../shared/components/index.js";
 import { useAuth } from "./AuthContext.jsx";
 import { ProfileCompletionForm } from "./ProfileCompletionForm.jsx";
 import LandingPage from "./LandingPage.jsx";
@@ -44,7 +44,7 @@ export function AuthGate() {
         className={`flex min-h-screen flex-col items-center justify-center  bg-gray-100 text-slate-800 text-center         landing`}
         aria-live="polite"
       >
-        <p>Checking your sign-in…</p>
+        <Spinner label="Loading" className="h-8 w-8 border-[3px]" />
       </main>
     );
   }

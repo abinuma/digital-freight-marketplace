@@ -77,7 +77,11 @@ export function AuthProvider({ children }) {
   const login = useCallback(
     async (credentials) => {
       await loginWithEmail(credentials);
-      return refreshUser();
+      const user = await refreshUser();
+      if (!user) {
+        throw new Error('Unable to establish a session. Please verify that your browser allows cross-site cookies, or check your backend CORS and cookie settings.');
+      }
+      return user;
     },
     [refreshUser],
   );
@@ -85,7 +89,11 @@ export function AuthProvider({ children }) {
   const register = useCallback(
     async (details) => {
       await registerWithEmail(details);
-      return refreshUser();
+      const user = await refreshUser();
+      if (!user) {
+        throw new Error('Unable to establish a session. Please verify that your browser allows cross-site cookies, or check your backend CORS and cookie settings.');
+      }
+      return user;
     },
     [refreshUser],
   );

@@ -1,4 +1,4 @@
-import { config } from '../../shared/config/index.js';
+import { config, allowedOrigins } from '../../shared/config/index.js';
 
 function escapeHtml(value = '') {
   return String(value).replace(
@@ -16,7 +16,7 @@ function escapeHtml(value = '') {
 
 export function buildNotificationEmail({ type, recipientName, shipment, bid, senderName, content }) {
   const brandName = 'FETAN digital freight marketplace';
-  const logoUrl = new URL('/logoFETAN.png', config.CORS_ORIGIN).href;
+  const logoUrl = new URL('/logoFETAN.png', allowedOrigins[0] || config.CORS_ORIGIN).href;
   const shipmentLabel = shipment?.goodsDescription || 'your shipment';
   const route = [shipment?.pickupLocation, shipment?.deliveryLocation].filter(Boolean).join(' → ');
   const greeting = recipientName ? `Hello ${recipientName},` : 'Hello,';

@@ -16,6 +16,7 @@ const roleHome = {
 };
 
 function destinationFor(user, requestedPath) {
+  if (!user) return "/login";
   if (!user.profileComplete) return "/complete-profile";
   if (requestedPath === "/profile") return requestedPath;
   const rolePath = roleHome[user.role] || "/";

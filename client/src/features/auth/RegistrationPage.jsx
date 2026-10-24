@@ -129,8 +129,8 @@ export function RegistrationPage() {
         code: parsedCode.data,
       });
       navigate(
-        user.profileComplete
-          ? `/${user.role.toLowerCase()}`
+        user?.profileComplete
+          ? `/${user.role?.toLowerCase() || 'shipper'}`
           : "/complete-profile",
         { replace: true },
       );

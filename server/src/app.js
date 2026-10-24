@@ -2,7 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import { toNodeHandler } from 'better-auth/node';
-import { config } from './shared/config/index.js';
+import { config, allowedOrigins } from './shared/config/index.js';
 import { auth } from './shared/auth/index.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 import { generalRateLimiter } from './shared/middleware/rateLimiter.js';
@@ -12,9 +12,19 @@ import apiRouter from './index.js';
 import apiDocsRouter from './modules/api-docs/api-docs.routes.js';
 
 export const app = express();
+app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(helmet());
-app.use(cors({ origin: config.CORS_ORIGIN, credentials: true }));
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
+  credentials: true,
+}));
 app.use((req, res, next) => {
   res.on('finish', () => logger.info({ method: req.method, path: req.path, statusCode: res.statusCode }, 'HTTP request'));
   next();

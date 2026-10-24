@@ -3,7 +3,7 @@ import { betterAuth } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { z } from 'zod';
-import { config } from '../config/index.js';
+import { config, allowedOrigins } from '../config/index.js';
 import { prisma } from '../db/prisma.js';
 import { authSessionOptions } from './session.config.js';
 import * as notificationService from '../../modules/notification/notification.service.js';
@@ -28,10 +28,13 @@ const passwordSchema = z
 const allowedRoles = new Set(['SHIPPER', 'TRANSPORTER']);
 
 export const auth = betterAuth({
+  account: {
+    skipStateCookieCheck: true,
+  },
   appName: 'FETAN Digital Freight Marketplace',
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
-  trustedOrigins: [config.CORS_ORIGIN],
+  trustedOrigins: allowedOrigins,
   database: prismaAdapter(prisma, { provider: 'postgresql' }),
   rateLimit: {
     enabled: true,
@@ -127,7 +130,8 @@ export const auth = betterAuth({
     useSecureCookies: process.env.NODE_ENV === 'production',
     defaultCookieAttributes: {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: process.env.COOKIE_SAME_SITE || (process.env.NODE_ENV === 'production' ? 'none' : 'lax'),
+      partitioned: process.env.NODE_ENV === 'production',
       secure: process.env.NODE_ENV === 'production',
     },
   },

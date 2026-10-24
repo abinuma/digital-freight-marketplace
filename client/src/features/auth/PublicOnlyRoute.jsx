@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "./AuthContext.jsx";
+import { Spinner } from "../../shared/components/index.js";
 
 const roleHome = {
   SHIPPER: "/shipper",
@@ -16,7 +17,7 @@ export function PublicOnlyRoute() {
         className={`flex min-h-screen flex-col items-center justify-center  bg-gray-100 text-slate-800 text-center         landing`}
         aria-live="polite"
       >
-        <p>Checking your sign-in…</p>
+        <Spinner label="Loading" className="h-8 w-8 border-[3px]" />
       </main>
     );
   // Network/server error — we can't confirm auth status, but these are
