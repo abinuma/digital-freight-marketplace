@@ -33,6 +33,7 @@ export const auth = betterAuth({
     accountLinking: {
       enabled: true,
       trustedProviders: ['google'],
+      requireLocalEmailVerified: false,
     },
   },
   appName: 'FETAN Digital Freight Marketplace',
@@ -135,8 +136,7 @@ export const auth = betterAuth({
     defaultCookieAttributes: {
       httpOnly: true,
       sameSite: process.env.COOKIE_SAME_SITE || (process.env.NODE_ENV === 'production' ? 'none' : 'lax'),
-      partitioned: process.env.NODE_ENV === 'production',
-      secure: process.env.NODE_ENV === 'production',
+            secure: process.env.NODE_ENV === 'production',
     },
   },
 });
