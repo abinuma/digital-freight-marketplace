@@ -1,4 +1,4 @@
-import { prisma } from '../../shared/db/prisma.js';
+import { prisma } from "../../shared/db/prisma.js";
 
 const notificationSelect = {
   id: true,
@@ -15,7 +15,10 @@ export function createNotification(data) {
   return prisma.notification.create({ data, select: notificationSelect });
 }
 
-export async function findNotifications(userId, { skip, take, unreadOnly, type }) {
+export async function findNotifications(
+  userId,
+  { skip, take, unreadOnly, type },
+) {
   const where = {
     userId,
     ...(unreadOnly ? { read: false } : {}),
@@ -25,7 +28,7 @@ export async function findNotifications(userId, { skip, take, unreadOnly, type }
     prisma.notification.findMany({
       where,
       select: notificationSelect,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip,
       take,
     }),
@@ -35,17 +38,29 @@ export async function findNotifications(userId, { skip, take, unreadOnly, type }
 }
 
 export async function markNotificationRead(userId, id) {
-  const updated = await prisma.notification.updateMany({ where: { id, userId }, data: { read: true } });
+  const updated = await prisma.notification.updateMany({
+    where: { id, userId },
+    data: { read: true },
+  });
   if (updated.count === 0) return null;
-  return prisma.notification.findFirst({ where: { id, userId }, select: notificationSelect });
+  return prisma.notification.findFirst({
+    where: { id, userId },
+    select: notificationSelect,
+  });
 }
 
 export function markAllNotificationsRead(userId) {
-  return prisma.notification.updateMany({ where: { userId, read: false }, data: { read: true } });
+  return prisma.notification.updateMany({
+    where: { userId, read: false },
+    data: { read: true },
+  });
 }
 
 export function markNotificationsReadByReference(userId, referenceId) {
-  return prisma.notification.updateMany({ where: { userId, referenceId, read: false }, data: { read: true } });
+  return prisma.notification.updateMany({
+    where: { userId, referenceId, read: false },
+    data: { read: true },
+  });
 }
 
 export function findBidNotificationDetails(bidId) {
@@ -69,7 +84,7 @@ export function findBidNotificationDetails(bidId) {
 
 export function findAcceptedTransporterForShipment(shipmentId) {
   return prisma.bid.findFirst({
-    where: { shipmentId, status: 'ACCEPTED' },
+    where: { shipmentId, status: "ACCEPTED" },
     select: {
       transporter: { select: { id: true, name: true, email: true } },
       shipment: {
@@ -83,17 +98,26 @@ export function findAcceptedTransporterForShipment(shipmentId) {
   });
 }
 
-export function findShipmentRemovalNotificationDetails(shipmentId, transporterIds) {
+export function findShipmentRemovalNotificationDetails(
+  shipmentId,
+  transporterIds,
+) {
   return Promise.all([
     prisma.shipment.findUnique({
       where: { id: shipmentId },
-      select: { goodsDescription: true, pickupLocation: true, deliveryLocation: true },
+      select: {
+        goodsDescription: true,
+        pickupLocation: true,
+        deliveryLocation: true,
+      },
     }),
     prisma.user.findMany({
       where: { id: { in: transporterIds } },
       select: { id: true, name: true, email: true },
     }),
-  ]).then(([shipment, transporters]) => shipment ? { shipment, transporters } : null);
+  ]).then(([shipment, transporters]) =>
+    shipment ? { shipment, transporters } : null,
+  );
 }
 
 export function findMessageNotificationDetails(conversationId) {
@@ -105,4 +129,3 @@ export function findMessageNotificationDetails(conversationId) {
     },
   });
 }
-

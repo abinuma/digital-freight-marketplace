@@ -1,34 +1,43 @@
-import { AppError } from '../../shared/utils/AppError.js';
-import { formatPagination, getPagination } from '../../shared/utils/pagination.js';
-import * as shipmentRepository from './shipment.repository.js';
-import * as shipmentStorage from './shipment.storage.js';
-import * as notificationService from '../notification/notification.service.js';
+import { AppError } from "../../shared/utils/AppError.js";
+import {
+  formatPagination,
+  getPagination,
+} from "../../shared/utils/pagination.js";
+import * as shipmentRepository from "./shipment.repository.js";
+import * as shipmentStorage from "./shipment.storage.js";
+import * as notificationService from "../notification/notification.service.js";
 
 function toApiShipment(shipment) {
-  const inviteMatch = shipment.specialRequirements?.match(/\[INVITED_DRIVER:([^\]]+)\]/);
+  const inviteMatch = shipment.specialRequirements?.match(
+    /\[INVITED_DRIVER:([^\]]+)\]/,
+  );
   const invitedDriverId = inviteMatch ? inviteMatch[1] : null;
   const cleanSpecialRequirements = shipment.specialRequirements
-    ? shipment.specialRequirements.replace(/\[INVITED_DRIVER:[^\]]+\]\s*/g, '').trim() || null
+    ? shipment.specialRequirements
+        .replace(/\[INVITED_DRIVER:[^\]]+\]\s*/g, "")
+        .trim() || null
     : null;
 
   return {
     ...shipment,
-    loadSize: shipment.loadSize || 'FULL_LOAD',
+    loadSize: shipment.loadSize || "FULL_LOAD",
     specialRequirements: cleanSpecialRequirements,
     invitedDriverId,
     isDirectInvite: Boolean(invitedDriverId),
     weightKg: shipment.weightKg != null ? Number(shipment.weightKg) : null,
     pickupLat: shipment.pickupLat === null ? null : Number(shipment.pickupLat),
     pickupLng: shipment.pickupLng === null ? null : Number(shipment.pickupLng),
-    deliveryLat: shipment.deliveryLat === null ? null : Number(shipment.deliveryLat),
-    deliveryLng: shipment.deliveryLng === null ? null : Number(shipment.deliveryLng),
+    deliveryLat:
+      shipment.deliveryLat === null ? null : Number(shipment.deliveryLat),
+    deliveryLng:
+      shipment.deliveryLng === null ? null : Number(shipment.deliveryLng),
   };
 }
 
 export async function createShipment(shipperId, input) {
   const data = {
     ...input,
-    status: 'PUBLISHED',
+    status: "PUBLISHED",
     pickupDate: new Date(`${input.pickupDate}T00:00:00.000Z`),
   };
   const shipment = await shipmentRepository.createShipment(shipperId, data);
@@ -39,22 +48,45 @@ export async function listShipments(user, query) {
   const { page, limit, skip, take } = getPagination(query);
   const filters = [];
 
-  if (query.pickupLocation) filters.push({ pickupLocation: { contains: query.pickupLocation, mode: 'insensitive' } });
-  if (query.deliveryLocation) filters.push({ deliveryLocation: { contains: query.deliveryLocation, mode: 'insensitive' } });
-  if (query.goodsType) filters.push({ goodsType: { equals: query.goodsType, mode: 'insensitive' } });
+  if (query.pickupLocation)
+    filters.push({
+      pickupLocation: { contains: query.pickupLocation, mode: "insensitive" },
+    });
+  if (query.deliveryLocation)
+    filters.push({
+      deliveryLocation: {
+        contains: query.deliveryLocation,
+        mode: "insensitive",
+      },
+    });
+  if (query.goodsType)
+    filters.push({
+      goodsType: { equals: query.goodsType, mode: "insensitive" },
+    });
   if (query.loadSize) {
-    const sizes = [...new Set(query.loadSize.split(',')
-      .map((size) => size.trim().toUpperCase().replace(/\s+/g, '_'))
-      .filter(Boolean))];
-    if (sizes.length) filters.push({ loadSize: { in: sizes, mode: 'insensitive' } });
+    const sizes = [
+      ...new Set(
+        query.loadSize
+          .split(",")
+          .map((size) => size.trim().toUpperCase().replace(/\s+/g, "_"))
+          .filter(Boolean),
+      ),
+    ];
+    if (sizes.length)
+      filters.push({ loadSize: { in: sizes, mode: "insensitive" } });
   }
-  if (query.status && user.role === 'SHIPPER') filters.push({ status: query.status });
+  if (query.status && user.role === "SHIPPER")
+    filters.push({ status: query.status });
 
   if (query.pickupDateFrom || query.pickupDateTo) {
     filters.push({
       pickupDate: {
-        ...(query.pickupDateFrom ? { gte: new Date(`${query.pickupDateFrom}T00:00:00.000Z`) } : {}),
-        ...(query.pickupDateTo ? { lte: new Date(`${query.pickupDateTo}T00:00:00.000Z`) } : {}),
+        ...(query.pickupDateFrom
+          ? { gte: new Date(`${query.pickupDateFrom}T00:00:00.000Z`) }
+          : {}),
+        ...(query.pickupDateTo
+          ? { lte: new Date(`${query.pickupDateTo}T00:00:00.000Z`) }
+          : {}),
       },
     });
   }
@@ -62,70 +94,76 @@ export async function listShipments(user, query) {
   if (query.q) {
     filters.push({
       OR: [
-        { goodsDescription: { contains: query.q, mode: 'insensitive' } },
-        { specialRequirements: { contains: query.q, mode: 'insensitive' } },
+        { goodsDescription: { contains: query.q, mode: "insensitive" } },
+        { specialRequirements: { contains: query.q, mode: "insensitive" } },
       ],
     });
   }
 
   let visibility;
-  if (user.role === 'SHIPPER') {
+  if (user.role === "SHIPPER") {
     visibility = { shipperId: user.id, removedAt: null };
-  } else if (user.role === 'TRANSPORTER') {
-    if (query.invitedOnly === 'true') {
+  } else if (user.role === "TRANSPORTER") {
+    if (query.invitedOnly === "true") {
       visibility = {
-        status: 'PUBLISHED',
+        status: "PUBLISHED",
         removedAt: null,
         specialRequirements: { contains: `[INVITED_DRIVER:${user.id}]` },
       };
     } else {
       visibility = {
-        status: 'PUBLISHED',
+        status: "PUBLISHED",
         removedAt: null,
         OR: [
           { specialRequirements: null },
-          { NOT: { specialRequirements: { contains: '[INVITED_DRIVER:' } } },
+          { NOT: { specialRequirements: { contains: "[INVITED_DRIVER:" } } },
           { specialRequirements: { contains: `[INVITED_DRIVER:${user.id}]` } },
         ],
       };
     }
   } else {
-    visibility = { status: 'PUBLISHED', removedAt: null };
+    visibility = { status: "PUBLISHED", removedAt: null };
   }
-  const where = filters.length > 0 ? { AND: [visibility, ...filters] } : visibility;
-  const sortField = query.sortBy === 'pickupDate' ? 'pickupDate' : 'createdAt';
-  const sortDirection = sortField === 'pickupDate' ? 'asc' : 'desc';
-  const orderBy = [{ [sortField]: sortDirection }, { id: 'asc' }];
+  const where =
+    filters.length > 0 ? { AND: [visibility, ...filters] } : visibility;
+  const sortField = query.sortBy === "pickupDate" ? "pickupDate" : "createdAt";
+  const sortDirection = sortField === "pickupDate" ? "asc" : "desc";
+  const orderBy = [{ [sortField]: sortDirection }, { id: "asc" }];
   const { shipments, total } = await shipmentRepository.findShipments({
     where,
     orderBy,
     skip,
     take,
-    includeImages: user.role === 'TRANSPORTER',
+    includeImages: user.role === "TRANSPORTER",
   });
 
-  const bidCounts = user.role === 'SHIPPER'
-    ? await shipmentRepository.countActiveBidsByShipment(shipments.map(({ id }) => id))
-    : {};
+  const bidCounts =
+    user.role === "SHIPPER"
+      ? await shipmentRepository.countActiveBidsByShipment(
+          shipments.map(({ id }) => id),
+        )
+      : {};
 
   return {
     shipments: shipments.map((shipment) => ({
       ...toApiShipment(shipment),
-      ...(user.role === 'SHIPPER' ? { bidCount: bidCounts[shipment.id] || 0 } : {}),
+      ...(user.role === "SHIPPER"
+        ? { bidCount: bidCounts[shipment.id] || 0 }
+        : {}),
     })),
     pagination: formatPagination({ page, limit, total }),
   };
 }
 
 export async function getShipperDashboardSummary(user) {
-  if (user.role !== 'SHIPPER') throw new AppError('Only Shippers can view the shipper dashboard', 403);
+  if (user.role !== "SHIPPER")
+    throw new AppError("Only Shippers can view the shipper dashboard", 403);
   const summary = await shipmentRepository.getShipperDashboardSummary(user.id);
-  const counts = { DRAFT: 0, PUBLISHED: 0, IN_PROGRESS: 0, COMPLETED: 0, CANCELLED: 0 };
+  const counts = { PUBLISHED: 0, IN_PROGRESS: 0, COMPLETED: 0, CANCELLED: 0 };
   for (const { status, count } of summary.statusCounts) counts[status] = count;
 
   return {
     counts: {
-      drafts: counts.DRAFT,
       activePostings: counts.PUBLISHED,
       inTransit: counts.IN_PROGRESS,
       completed: counts.COMPLETED,
@@ -146,7 +184,10 @@ export async function getShipperDashboardSummary(user) {
             vehicle: bid.transporter.vehicle
               ? {
                   ...bid.transporter.vehicle,
-                  capacityTons: bid.transporter.vehicle.capacityTons != null ? Number(bid.transporter.vehicle.capacityTons) : null,
+                  capacityTons:
+                    bid.transporter.vehicle.capacityTons != null
+                      ? Number(bid.transporter.vehicle.capacityTons)
+                      : null,
                 }
               : null,
           }
@@ -156,10 +197,11 @@ export async function getShipperDashboardSummary(user) {
 }
 
 export async function listAdminShipments(user, query = {}) {
-  if (user.role !== 'ADMIN') throw new AppError('You are not authorized to access this resource', 403);
+  if (user.role !== "ADMIN")
+    throw new AppError("You are not authorized to access this resource", 403);
 
   const { page, limit, skip, take } = getPagination(query);
-  const orderBy = [{ createdAt: 'desc' }, { id: 'asc' }];
+  const orderBy = [{ createdAt: "desc" }, { id: "asc" }];
   const { shipments, total } = await shipmentRepository.findAdminShipments({
     status: query.status,
     orderBy,
@@ -167,7 +209,10 @@ export async function listAdminShipments(user, query = {}) {
     take,
   });
 
-  return { shipments: shipments.map(toApiShipment), pagination: formatPagination({ page, limit, total }) };
+  return {
+    shipments: shipments.map(toApiShipment),
+    pagination: formatPagination({ page, limit, total }),
+  };
 }
 
 export function getAdminShipmentMetrics() {
@@ -175,22 +220,31 @@ export function getAdminShipmentMetrics() {
 }
 
 export async function softRemoveShipment(user, id, reason) {
-  if (user.role !== 'ADMIN') throw new AppError('You are not authorized to access this resource', 403);
+  if (user.role !== "ADMIN")
+    throw new AppError("You are not authorized to access this resource", 403);
 
   const removedAt = new Date();
   let result;
   try {
-    result = await shipmentRepository.softRemoveShipmentWithAudit({ id, adminId: user.id, reason, removedAt });
+    result = await shipmentRepository.softRemoveShipmentWithAudit({
+      id,
+      adminId: user.id,
+      reason,
+      removedAt,
+    });
   } catch (error) {
-    if (error?.code === 'P2034') {
-      throw new AppError('Shipment or bids changed during moderation. Please retry.', 409);
+    if (error?.code === "P2034") {
+      throw new AppError(
+        "Shipment or bids changed during moderation. Please retry.",
+        409,
+      );
     }
     throw error;
   }
   if (!result) {
     const shipment = await shipmentRepository.findShipmentById(id);
-    if (!shipment) throw new AppError('Shipment was not found', 404);
-    throw new AppError('Shipment has already been removed', 409);
+    if (!shipment) throw new AppError("Shipment was not found", 404);
+    throw new AppError("Shipment has already been removed", 409);
   }
 
   await notificationService.shipmentRemoved(id, result.transporterIds);
@@ -205,113 +259,164 @@ export async function softRemoveShipment(user, id, reason) {
 
 export async function getShipment(user, id) {
   const shipment = await shipmentRepository.findShipmentById(id);
-  if (!shipment || (shipment.removedAt && user.role !== 'ADMIN')) throw new AppError('Shipment was not found', 404);
+  if (!shipment || (shipment.removedAt && user.role !== "ADMIN"))
+    throw new AppError("Shipment was not found", 404);
 
-  const inviteMatch = shipment.specialRequirements?.match(/\[INVITED_DRIVER:([^\]]+)\]/);
+  const inviteMatch = shipment.specialRequirements?.match(
+    /\[INVITED_DRIVER:([^\]]+)\]/,
+  );
   const invitedDriverId = inviteMatch ? inviteMatch[1] : null;
 
-  if (invitedDriverId && user.role === 'TRANSPORTER' && user.id !== invitedDriverId) {
-    const hasTransporterBid = await shipmentRepository.hasTransporterBid(id, user.id);
+  if (
+    invitedDriverId &&
+    user.role === "TRANSPORTER" &&
+    user.id !== invitedDriverId
+  ) {
+    const hasTransporterBid = await shipmentRepository.hasTransporterBid(
+      id,
+      user.id,
+    );
     if (!hasTransporterBid) {
-      throw new AppError('This shipment is an exclusive load invitation for another transporter', 403);
+      throw new AppError(
+        "This shipment is an exclusive load invitation for another transporter",
+        403,
+      );
     }
   }
 
-  const normallyVisible = shipment.shipperId === user.id || shipment.status === 'PUBLISHED' || user.role === 'ADMIN';
-  const hasTransporterBid = !normallyVisible && user.role === 'TRANSPORTER'
-    ? await shipmentRepository.hasTransporterBid(id, user.id)
-    : false;
+  const normallyVisible =
+    shipment.shipperId === user.id ||
+    shipment.status === "PUBLISHED" ||
+    user.role === "ADMIN";
+  const hasTransporterBid =
+    !normallyVisible && user.role === "TRANSPORTER"
+      ? await shipmentRepository.hasTransporterBid(id, user.id)
+      : false;
   const canView = normallyVisible || Boolean(hasTransporterBid);
-  if (!canView) throw new AppError('You are not authorized to view this shipment', 403);
+  if (!canView)
+    throw new AppError("You are not authorized to view this shipment", 403);
 
   return toApiShipment(shipment);
 }
 
 export async function updateShipment(user, id, input) {
   const shipment = await shipmentRepository.findShipmentForUpdate(id);
-  if (!shipment) throw new AppError('Shipment was not found', 404);
-  if (shipment.removedAt) throw new AppError('Shipment was not found', 404);
-  if (shipment.shipperId !== user.id) throw new AppError('You can only update your own shipments', 403);
+  if (!shipment) throw new AppError("Shipment was not found", 404);
+  if (shipment.removedAt) throw new AppError("Shipment was not found", 404);
+  if (shipment.shipperId !== user.id)
+    throw new AppError("You can only update your own shipments", 403);
 
-  const canEdit = shipment.status === 'DRAFT' || (shipment.status === 'PUBLISHED' && shipment.bids.length === 0);
-  if (!canEdit) throw new AppError('Shipment cannot be edited in its current state', 409);
+  const canEdit = shipment.status === "PUBLISHED" && shipment.bids.length === 0;
+  if (!canEdit)
+    throw new AppError("Shipment cannot be edited in its current state", 409);
 
   const data = { ...input };
-  if (data.pickupDate !== undefined) data.pickupDate = new Date(`${data.pickupDate}T00:00:00.000Z`);
+  if (data.pickupDate !== undefined)
+    data.pickupDate = new Date(`${data.pickupDate}T00:00:00.000Z`);
 
   return toApiShipment(await shipmentRepository.updateShipment(id, data));
 }
 
 async function getOwnedShipment(user, id) {
   const shipment = await shipmentRepository.findShipmentStatusById(id);
-  if (!shipment) throw new AppError('Shipment was not found', 404);
-  if (shipment.removedAt) throw new AppError('Shipment was not found', 404);
-  if (shipment.shipperId !== user.id) throw new AppError('You can only manage your own shipments', 403);
+  if (!shipment) throw new AppError("Shipment was not found", 404);
+  if (shipment.removedAt) throw new AppError("Shipment was not found", 404);
+  if (shipment.shipperId !== user.id)
+    throw new AppError("You can only manage your own shipments", 403);
   return shipment;
 }
 
 async function applyTransition(user, id, allowedFrom, targetStatus) {
   const shipment = await getOwnedShipment(user, id);
   if (!allowedFrom.includes(shipment.status)) {
-    throw new AppError(`Shipment cannot transition from ${shipment.status} to ${targetStatus}`, 422);
+    throw new AppError(
+      `Shipment cannot transition from ${shipment.status} to ${targetStatus}`,
+      422,
+    );
   }
 
-  const updated = await shipmentRepository.transitionShipment(id, allowedFrom, targetStatus);
+  const updated = await shipmentRepository.transitionShipment(
+    id,
+    allowedFrom,
+    targetStatus,
+  );
   if (updated.count === 0) {
-    throw new AppError('Shipment status changed before the requested action could be applied', 409);
+    throw new AppError(
+      "Shipment status changed before the requested action could be applied",
+      409,
+    );
   }
 
-  if (targetStatus === 'COMPLETED') await notificationService.shipmentCompleted(id);
-  return toApiShipment(await shipmentRepository.findShipmentAfterTransition(id));
-}
-
-export function publishShipment(user, id) {
-  return applyTransition(user, id, ['DRAFT'], 'PUBLISHED');
+  if (targetStatus === "COMPLETED")
+    await notificationService.shipmentCompleted(id);
+  return toApiShipment(
+    await shipmentRepository.findShipmentAfterTransition(id),
+  );
 }
 
 export async function cancelShipment(user, id) {
   const shipment = await getOwnedShipment(user, id);
-  if (shipment.status === 'COMPLETED') {
-    throw new AppError('Completed shipments cannot be cancelled', 422);
+  if (shipment.status === "COMPLETED") {
+    throw new AppError("Completed shipments cannot be cancelled", 422);
   }
 
-  const result = await shipmentRepository.cancelShipmentAndDeclinePendingBids(id);
+  const result =
+    await shipmentRepository.cancelShipmentAndDeclinePendingBids(id);
   if (result.blockedByAcceptedBid) {
-    throw new AppError('A shipment cannot be cancelled after a bid has been accepted', 409);
+    throw new AppError(
+      "A shipment cannot be cancelled after a bid has been accepted",
+      409,
+    );
   }
   if (!result.cancelled) {
-    throw new AppError('Shipment status changed before the requested action could be applied', 409);
+    throw new AppError(
+      "Shipment status changed before the requested action could be applied",
+      409,
+    );
   }
 
-  return toApiShipment(await shipmentRepository.findShipmentAfterTransition(id));
+  return toApiShipment(
+    await shipmentRepository.findShipmentAfterTransition(id),
+  );
 }
 
 export function completeShipment(user, id) {
-  return applyTransition(user, id, ['IN_PROGRESS'], 'COMPLETED');
+  return applyTransition(user, id, ["IN_PROGRESS"], "COMPLETED");
 }
 
 export async function uploadShipmentImages(user, id, files) {
   await getOwnedShipment(user, id);
   const currentCount = await shipmentRepository.countShipmentImages(id);
   if (currentCount + files.length > 1) {
-    throw new AppError('A shipment may have no more than one cargo photo', 409);
+    throw new AppError("A shipment may have no more than one cargo photo", 409);
   }
 
   const uploadedImages = [];
   try {
     for (const file of files) {
-      uploadedImages.push(await shipmentStorage.uploadShipmentImage(file.buffer, id));
+      uploadedImages.push(
+        await shipmentStorage.uploadShipmentImage(file.buffer, id),
+      );
     }
 
-    const savedImages = await shipmentRepository.createShipmentImages(id, uploadedImages);
+    const savedImages = await shipmentRepository.createShipmentImages(
+      id,
+      uploadedImages,
+    );
     if (!savedImages) {
-      throw new AppError('A shipment may have no more than one cargo photo', 409);
+      throw new AppError(
+        "A shipment may have no more than one cargo photo",
+        409,
+      );
     }
     return savedImages;
   } catch (error) {
     await shipmentStorage.deleteUploadedImages(uploadedImages);
-    if (error?.code === 'P2034') {
-      throw new AppError('Shipment images changed during upload. Please retry.', 409);
+    if (error?.code === "P2034") {
+      throw new AppError(
+        "Shipment images changed during upload. Please retry.",
+        409,
+      );
     }
     throw error;
   }
@@ -320,11 +425,15 @@ export async function uploadShipmentImages(user, id, files) {
 export async function removeShipmentImage(user, shipmentId, imageId) {
   await getOwnedShipment(user, shipmentId);
   const image = await shipmentRepository.findShipmentImage(shipmentId, imageId);
-  if (!image) throw new AppError('Shipment image was not found', 404);
+  if (!image) throw new AppError("Shipment image was not found", 404);
 
   await shipmentStorage.deleteShipmentImage(image.url);
-  const result = await shipmentRepository.deleteShipmentImage(shipmentId, imageId);
-  if (result.count === 0) throw new AppError('Shipment image was not found', 404);
+  const result = await shipmentRepository.deleteShipmentImage(
+    shipmentId,
+    imageId,
+  );
+  if (result.count === 0)
+    throw new AppError("Shipment image was not found", 404);
 
   return { id: image.id, shipmentId, deleted: true };
 }

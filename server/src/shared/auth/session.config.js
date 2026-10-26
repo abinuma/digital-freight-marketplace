@@ -3,4 +3,3 @@ export const authSessionOptions = Object.freeze({
   expiresIn: 24 * 60 * 60,
   updateAge: 60 * 60,
 });
-

@@ -37,5 +37,5 @@
 - Server-side caching (Redis) shall be introduced only when measured performance data justifies it.
 ## Deployment & DevOps
 - The application shall be containerized using Docker with a `docker-compose.yml` for local development. | `docker-compose up` starts full stack locally
-- The project shall include a CI pipeline that runs linting, type checking, and tests on every pull request. | CI status check required for merge
+- The project shall include a CI pipeline that runs linting, type checking on every pull request. | CI status check required for merge
 - Frontend shall be deployable to Vercel; backend shall be deployable to Render.

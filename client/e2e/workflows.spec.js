@@ -24,7 +24,7 @@ async function installApiMocks(page, initialRole = null) {
   const state = {
     role: null,
     loginRole: initialRole,
-    shipment: { ...initialShipment, status: 'DRAFT' },
+    shipment: { ...initialShipment },
     bids: [],
     reviews: [],
     targetSuspended: false,
@@ -61,12 +61,8 @@ async function installApiMocks(page, initialRole = null) {
       return json(200, { success: true })
     }
     if (path === '/shipments' && method === 'POST') {
-      state.shipment = { ...state.shipment, ...JSON.parse(request.postData() || '{}'), status: 'DRAFT' }
+      state.shipment = { ...state.shipment, ...JSON.parse(request.postData() || '{}'), status: 'PUBLISHED' }
       return json(201, { data: state.shipment })
-    }
-    if (path === `/shipments/${shipmentId}/publish` && method === 'PATCH') {
-      state.shipment.status = 'PUBLISHED'
-      return json(200, { data: state.shipment })
     }
     if (path === `/shipments/${shipmentId}` && method === 'GET') return json(200, { data: state.shipment })
     if (path === '/shipments/dashboard/summary') return json(200, { data: { counts: {}, recentShipments: [] } })
@@ -116,7 +112,7 @@ async function installApiMocks(page, initialRole = null) {
   return state
 }
 
-test('register, create a shipment, and publish it', async ({ page }) => {
+test('register and create a shipment', async ({ page }) => {
   const state = await installApiMocks(page)
   await page.goto('/register')
   await page.getByLabel('First Name').fill('Abebe')

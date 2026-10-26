@@ -1,20 +1,29 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 const shipmentId = z.uuid();
 
-const coordinate = (minimum, maximum) => z.number().min(minimum).max(maximum).optional();
-const pickupDate = z.iso.date().refine((date) => date >= new Date().toISOString().slice(0, 10), 'pickupDate must be today or later');
+const coordinate = (minimum, maximum) =>
+  z.number().min(minimum).max(maximum).optional();
+const pickupDate = z.iso
+  .date()
+  .refine(
+    (date) => date >= new Date().toISOString().slice(0, 10),
+    "pickupDate must be today or later",
+  );
 
 const loadSizeSchema = z.preprocess(
-  (val) => (typeof val === 'string' ? val.trim().toUpperCase().replace(/\s+/g, '_') : val),
-  z.enum(['FULL_LOAD', 'HALF_LOAD', 'QUARTER_LOAD', 'SMALL_LOAD'])
+  (val) =>
+    typeof val === "string"
+      ? val.trim().toUpperCase().replace(/\s+/g, "_")
+      : val,
+  z.enum(["FULL_LOAD", "HALF_LOAD", "QUARTER_LOAD", "SMALL_LOAD"]),
 );
 
 export const createShipmentSchema = {
   body: z.object({
     goodsDescription: z.string().trim().min(10).max(1000),
     goodsType: z.string().trim().min(1).max(50),
-    loadSize: loadSizeSchema.optional().default('FULL_LOAD'),
+    loadSize: loadSizeSchema.optional().default("FULL_LOAD"),
     weightKg: z.number().positive().max(99_999_999.99).nullable().optional(),
     pickupLocation: z.string().trim().min(1).max(255),
     pickupLat: coordinate(-90, 90),
@@ -42,7 +51,10 @@ const updateShipmentBody = z
     pickupDate: pickupDate.optional(),
     specialRequirements: z.string().trim().max(2000).nullable().optional(),
   })
-  .refine((body) => Object.keys(body).length > 0, 'Provide at least one shipment field to update');
+  .refine(
+    (body) => Object.keys(body).length > 0,
+    "Provide at least one shipment field to update",
+  );
 
 export const updateShipmentSchema = {
   params: z.object({ id: shipmentId }),
@@ -58,21 +70,30 @@ export const shipmentImageParamsSchema = {
 };
 
 export const shipmentListQuerySchema = {
-  query: z.object({
-    page: z.coerce.number().int().positive().optional(),
-    limit: z.coerce.number().int().positive().max(100).optional(),
-    status: z.enum(['DRAFT', 'PUBLISHED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
-    loadSize: z.string().trim().optional(),
-    pickupLocation: z.string().trim().min(1).max(255).optional(),
-    deliveryLocation: z.string().trim().min(1).max(255).optional(),
-    goodsType: z.string().trim().min(1).max(50).optional(),
-    pickupDateFrom: z.iso.date().optional(),
-    pickupDateTo: z.iso.date().optional(),
-    q: z.string().trim().min(1).max(255).optional(),
-    sortBy: z.enum(['createdAt', 'pickupDate']).optional(),
-    invitedOnly: z.enum(['true', 'false']).optional(),
-  }).refine(
-    ({ pickupDateFrom, pickupDateTo }) => !pickupDateFrom || !pickupDateTo || pickupDateFrom <= pickupDateTo,
-    { path: ['pickupDateTo'], message: 'pickupDateTo must be the same as or later than pickupDateFrom' },
-  ),
+  query: z
+    .object({
+      page: z.coerce.number().int().positive().optional(),
+      limit: z.coerce.number().int().positive().max(100).optional(),
+      status: z
+        .enum(["PUBLISHED", "IN_PROGRESS", "COMPLETED", "CANCELLED"])
+        .optional(),
+      loadSize: z.string().trim().optional(),
+      pickupLocation: z.string().trim().min(1).max(255).optional(),
+      deliveryLocation: z.string().trim().min(1).max(255).optional(),
+      goodsType: z.string().trim().min(1).max(50).optional(),
+      pickupDateFrom: z.iso.date().optional(),
+      pickupDateTo: z.iso.date().optional(),
+      q: z.string().trim().min(1).max(255).optional(),
+      sortBy: z.enum(["createdAt", "pickupDate"]).optional(),
+      invitedOnly: z.enum(["true", "false"]).optional(),
+    })
+    .refine(
+      ({ pickupDateFrom, pickupDateTo }) =>
+        !pickupDateFrom || !pickupDateTo || pickupDateFrom <= pickupDateTo,
+      {
+        path: ["pickupDateTo"],
+        message:
+          "pickupDateTo must be the same as or later than pickupDateFrom",
+      },
+    ),
 };

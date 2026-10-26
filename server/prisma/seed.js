@@ -114,7 +114,7 @@ const seedShipments = [
     deliveryLng: "38.48000",
     pickupDate: daysFromToday(2),
     specialRequirements: null,
-    status: "DRAFT",
+    status: "PUBLISHED",
   },
   {
     id: "00000000-0000-4000-8000-000000000203",

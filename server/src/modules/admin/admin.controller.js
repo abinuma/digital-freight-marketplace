@@ -1,4 +1,4 @@
-import * as adminService from './admin.service.js';
+import * as adminService from "./admin.service.js";
 
 export async function listUsers(req, res, next) {
   try {
@@ -11,7 +11,9 @@ export async function listUsers(req, res, next) {
 
 export async function listSuspensionAppeals(req, res, next) {
   try {
-    const { appeals, pagination } = await adminService.listSuspensionAppeals(req.query);
+    const { appeals, pagination } = await adminService.listSuspensionAppeals(
+      req.query,
+    );
     return res.json({ data: appeals, meta: { pagination } });
   } catch (error) {
     return next(error);
@@ -47,7 +49,10 @@ export async function getMetrics(req, res, next) {
 
 export async function listShipments(req, res, next) {
   try {
-    const { shipments, pagination } = await adminService.listShipments(req.user, req.query);
+    const { shipments, pagination } = await adminService.listShipments(
+      req.user,
+      req.query,
+    );
     return res.json({ data: shipments, meta: { pagination } });
   } catch (error) {
     return next(error);
@@ -56,7 +61,11 @@ export async function listShipments(req, res, next) {
 
 export async function removeShipment(req, res, next) {
   try {
-    const result = await adminService.removeShipment(req.user, req.params.id, req.body.reason);
+    const result = await adminService.removeShipment(
+      req.user,
+      req.params.id,
+      req.body.reason,
+    );
     return res.json({ data: result });
   } catch (error) {
     return next(error);

@@ -1,5 +1,4 @@
 export const shipmentTones = {
-  DRAFT: "neutral",
   PUBLISHED: "brand",
   IN_PROGRESS: "warning",
   COMPLETED: "success",

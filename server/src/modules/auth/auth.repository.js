@@ -1,4 +1,4 @@
-import { prisma } from '../../shared/db/prisma.js';
+import { prisma } from "../../shared/db/prisma.js";
 
 const authUserSelect = {
   id: true,
@@ -29,7 +29,7 @@ export function findAuthUserByEmail(email) {
 
 export function findSuspendedUserForAppeal(email) {
   return prisma.user.findFirst({
-    where: { email, status: 'SUSPENDED' },
+    where: { email, status: "SUSPENDED" },
     select: { id: true },
   });
 }
@@ -50,7 +50,7 @@ export async function findSuspensionAppeals({ skip, take }) {
         createdAt: true,
         user: { select: { id: true, name: true, email: true, role: true } },
       },
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       skip,
       take,
     }),
@@ -69,7 +69,8 @@ export async function completeUserProfile(id, input) {
   const data = {};
   if (currentUser.phone === null) data.phone = input.phone;
   if (currentUser.role === null) data.role = input.role;
-  if (Object.keys(data).length === 0) return { alreadyComplete: true, user: null };
+  if (Object.keys(data).length === 0)
+    return { alreadyComplete: true, user: null };
 
   const result = await prisma.user.updateMany({
     where: { id, phone: currentUser.phone, role: currentUser.role },
@@ -96,7 +97,7 @@ export async function getEmailVerificationRecord(email) {
   const identifier = `registration-code:${email.toLowerCase()}`;
   return prisma.verification.findFirst({
     where: { identifier },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -115,4 +116,3 @@ export async function findPasswordResetToken(token) {
     },
   });
 }
-

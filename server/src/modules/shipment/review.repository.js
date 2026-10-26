@@ -1,4 +1,4 @@
-import { prisma } from '../../shared/db/prisma.js';
+import { prisma } from "../../shared/db/prisma.js";
 
 const shipmentReviewSelect = {
   id: true,
@@ -21,7 +21,7 @@ export function findShipmentReviewContext(shipmentId) {
       status: true,
       removedAt: true,
       bids: {
-        where: { status: 'ACCEPTED' },
+        where: { status: "ACCEPTED" },
         select: { transporterId: true },
         take: 1,
       },
@@ -39,7 +39,7 @@ export async function findReviewsForShipment(shipmentId, { skip, take }) {
     prisma.review.findMany({
       where,
       select: shipmentReviewSelect,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip,
       take,
     }),
@@ -49,7 +49,10 @@ export async function findReviewsForShipment(shipmentId, { skip, take }) {
   return {
     reviews: reviews.map(({ reviewer, ...review }) => {
       const { image, ...reviewerProfile } = reviewer;
-      return { ...review, reviewer: { ...reviewerProfile, profilePhoto: image } };
+      return {
+        ...review,
+        reviewer: { ...reviewerProfile, profilePhoto: image },
+      };
     }),
     total,
   };
@@ -74,7 +77,7 @@ export async function findReviewsForUser(revieweeId, { skip, take }) {
         createdAt: true,
         reviewer: { select: { id: true, name: true, image: true } },
       },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip,
       take,
     }),
@@ -84,7 +87,10 @@ export async function findReviewsForUser(revieweeId, { skip, take }) {
   return {
     reviews: reviews.map(({ reviewer, ...review }) => {
       const { image, ...reviewerProfile } = reviewer;
-      return { ...review, reviewer: { ...reviewerProfile, profilePhoto: image } };
+      return {
+        ...review,
+        reviewer: { ...reviewerProfile, profilePhoto: image },
+      };
     }),
     total,
   };

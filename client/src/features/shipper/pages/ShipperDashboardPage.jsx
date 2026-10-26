@@ -48,7 +48,6 @@ const metricCards = [
 const usualLoadTypes = LOAD_CATEGORY_KEYS;
 
 const statusTones = {
-  DRAFT: "neutral",
   PUBLISHED: "brand",
   IN_PROGRESS: "warning",
   COMPLETED: "success",

@@ -1,5 +1,8 @@
-import { prisma } from '../../shared/db/prisma.js';
-import { getLoadFraction, normalizeLoadSize } from '../../shared/constants/loadSizes.js';
+import { prisma } from "../../shared/db/prisma.js";
+import {
+  getLoadFraction,
+  normalizeLoadSize,
+} from "../../shared/constants/loadSizes.js";
 
 const planSelect = {
   id: true,
@@ -79,10 +82,10 @@ export function findJourneyPlansByTransporter(transporterId, status) {
             },
           },
         },
-        orderBy: { assignedAt: 'asc' },
+        orderBy: { assignedAt: "asc" },
       },
     },
-    orderBy: [{ createdAt: 'desc' }, { departureDate: 'asc' }],
+    orderBy: [{ createdAt: "desc" }, { departureDate: "asc" }],
   });
 }
 
@@ -112,7 +115,7 @@ export function findJourneyPlanById(id) {
             },
           },
         },
-        orderBy: { assignedAt: 'asc' },
+        orderBy: { assignedAt: "asc" },
       },
     },
   });
@@ -150,9 +153,15 @@ export function findAcceptedBidForAssignment(bidId, transporterId) {
   });
 }
 
-export async function assignBidToPlanWithCapacityCheck({ planId, bidId, shipmentId, loadSize = 'FULL_LOAD', weightKg }) {
+export async function assignBidToPlanWithCapacityCheck({
+  planId,
+  bidId,
+  shipmentId,
+  loadSize = "FULL_LOAD",
+  weightKg,
+}) {
   const normalizedLoadSize = normalizeLoadSize(loadSize);
-  const isSmallLoad = normalizedLoadSize === 'SMALL_LOAD';
+  const isSmallLoad = normalizedLoadSize === "SMALL_LOAD";
   return prisma.$transaction(async (tx) => {
     const plan = await tx.journeyPlan.findUnique({
       where: { id: planId },
@@ -168,18 +177,27 @@ export async function assignBidToPlanWithCapacityCheck({ planId, bidId, shipment
     });
     if (!plan) return { notFound: true };
 
-    const vehicleCapacityKg = plan.transporter?.vehicle?.capacityTons != null
-      ? Number(plan.transporter.vehicle.capacityTons) * 1000
-      : null;
-    const maxWeight = vehicleCapacityKg || (plan.maxWeightKg != null ? Number(plan.maxWeightKg) : 10000);
+    const vehicleCapacityKg =
+      plan.transporter?.vehicle?.capacityTons != null
+        ? Number(plan.transporter.vehicle.capacityTons) * 1000
+        : null;
+    const maxWeight =
+      vehicleCapacityKg ||
+      (plan.maxWeightKg != null ? Number(plan.maxWeightKg) : 10000);
 
     const allocatedWeight = Number(plan.allocatedWeightKg || 0);
     // Exact entered mass for small load, fraction of maxWeight for other loads
-    const addedWeight = isSmallLoad ? Number(weightKg || 0) : maxWeight * getLoadFraction(normalizedLoadSize);
+    const addedWeight = isSmallLoad
+      ? Number(weightKg || 0)
+      : maxWeight * getLoadFraction(normalizedLoadSize);
     const newWeight = allocatedWeight + addedWeight;
 
     if (newWeight > maxWeight + 0.01) {
-      return { exceedsWeight: true, remainingWeight: Math.max(0, maxWeight - allocatedWeight), addedWeight };
+      return {
+        exceedsWeight: true,
+        remainingWeight: Math.max(0, maxWeight - allocatedWeight),
+        addedWeight,
+      };
     }
 
     const newFraction = Math.min(1, maxWeight > 0 ? newWeight / maxWeight : 0);
@@ -203,7 +221,7 @@ export async function assignBidToPlanWithCapacityCheck({ planId, bidId, shipment
         maxWeightKg: maxWeight,
         allocatedLoadFraction: newFraction,
         allocatedWeightKg: newWeight,
-        status: isFull ? 'FULL' : plan.status,
+        status: isFull ? "FULL" : plan.status,
       },
       select: planSelect,
     });

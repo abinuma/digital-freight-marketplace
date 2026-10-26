@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { ethiopianPhoneSchema } from '../../shared/utils/ethiopianPhone.js';
+import { z } from "zod";
+import { ethiopianPhoneSchema } from "../../shared/utils/ethiopianPhone.js";
 
 const userId = z.uuid();
 
@@ -21,7 +21,10 @@ export const updateProfileSchema = {
       availableDays: z.array(z.string().trim()).optional(),
       preferredLoadTypes: z.array(z.string().trim()).optional(),
     })
-    .refine((body) => Object.keys(body).length > 0, 'Provide at least one profile field to update'),
+    .refine(
+      (body) => Object.keys(body).length > 0,
+      "Provide at least one profile field to update",
+    ),
 };
 
 export const paginationQuerySchema = {
@@ -36,10 +39,16 @@ export const upsertVehicleSchema = {
   params: z.object({ id: userId }),
   body: z.object({
     type: z.string().trim().min(1).max(50),
-    loadSize: z.preprocess(
-      (val) => (typeof val === 'string' ? val.trim().toUpperCase().replace(/\s+/g, '_') : val),
-      z.enum(['FULL_LOAD', 'HALF_LOAD', 'QUARTER_LOAD', 'SMALL_LOAD'])
-    ).optional().default('FULL_LOAD'),
+    loadSize: z
+      .preprocess(
+        (val) =>
+          typeof val === "string"
+            ? val.trim().toUpperCase().replace(/\s+/g, "_")
+            : val,
+        z.enum(["FULL_LOAD", "HALF_LOAD", "QUARTER_LOAD", "SMALL_LOAD"]),
+      )
+      .optional()
+      .default("FULL_LOAD"),
     capacityTons: z.number().positive().max(99_999_999.99).optional(),
     capacityKg: z.number().positive().max(99_999_999.99).optional(),
     plateNumber: z.string().trim().min(1).max(20),

@@ -16,7 +16,6 @@ import {
   getShipment,
   getUserProfile,
   saveShipment,
-  transitionShipment,
   uploadShipmentImages,
 } from "../shipper.api.js";
 import { startConversation, sendConversationMessage } from "../../messaging/messaging.api.js";
@@ -248,8 +247,6 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
       const saved = await saveShipment({ id: shipmentId, values: payload });
       setShipmentId(saved.id);
       if (files.length) await uploadShipmentImages({ id: saved.id, files });
-      if (saved.status === "DRAFT")
-        await transitionShipment({ id: saved.id, action: "publish" });
       await queryClient.invalidateQueries({ queryKey: ["shipper"] });
 
       if (invitedDriver?.id) {
@@ -287,7 +284,7 @@ function ShipmentForm({ routeId, initialShipment, invitedDriver, prefillShipment
   }
 
   const isEditable =
-    !initialShipment || ["DRAFT", "PUBLISHED"].includes(initialShipment.status);
+    !initialShipment || initialShipment.status === "PUBLISHED";
 
   return (
     <div className="grid w-full gap-6 px-6 py-6 max-md:gap-4 max-md:px-4 max-md:py-5">

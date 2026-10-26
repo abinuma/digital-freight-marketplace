@@ -19,7 +19,6 @@ enum UserStatus {
 }
 
 enum ShipmentStatus {
-  DRAFT
   PUBLISHED
   IN_PROGRESS
   COMPLETED
@@ -108,7 +107,7 @@ model Shipment {
   deliveryLng         Decimal?       @db.Decimal(10, 7)
   pickupDate          DateTime       @db.Date
   specialRequirements String?        @db.Text
-  status              ShipmentStatus @default(DRAFT)
+  status              ShipmentStatus @default(PUBLISHED)
   removedAt           DateTime?      @db.Timestamp(3)
   createdAt           DateTime       @default(now()) @db.Timestamp(3)
   updatedAt           DateTime       @updatedAt @db.Timestamp(3)

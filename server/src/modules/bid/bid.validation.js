@@ -1,10 +1,13 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 const bidId = z.uuid();
 
 const futurePickupDate = z.iso
   .datetime({ offset: true })
-  .refine((value) => new Date(value).getTime() > Date.now(), 'pickupDate must be in the future');
+  .refine(
+    (value) => new Date(value).getTime() > Date.now(),
+    "pickupDate must be in the future",
+  );
 
 const bidFields = {
   price: z.number().positive().max(999_999_999_999.99),
@@ -27,7 +30,10 @@ const updateBidBody = z
     pickupDate: bidFields.pickupDate.optional(),
     message: bidFields.message.nullable().optional(),
   })
-  .refine((body) => Object.keys(body).length > 0, 'Provide at least one bid field to update');
+  .refine(
+    (body) => Object.keys(body).length > 0,
+    "Provide at least one bid field to update",
+  );
 
 export const updateBidSchema = {
   params: z.object({ shipmentId: bidId, id: bidId }),
@@ -49,7 +55,7 @@ export const bidListQuerySchema = {
   query: z.object({
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
-    status: z.enum(['PENDING', 'ACCEPTED', 'DECLINED']).optional(),
+    status: z.enum(["PENDING", "ACCEPTED", "DECLINED"]).optional(),
   }),
 };
 
@@ -57,7 +63,7 @@ export const myBidsQuerySchema = {
   query: z.object({
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
-    status: z.enum(['PENDING', 'ACCEPTED', 'DECLINED', 'WITHDRAWN']).optional(),
+    status: z.enum(["PENDING", "ACCEPTED", "DECLINED", "WITHDRAWN"]).optional(),
     shipmentId: bidId.optional(),
   }),
 };

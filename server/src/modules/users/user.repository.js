@@ -1,5 +1,5 @@
-import { prisma } from '../../shared/db/prisma.js';
-import { getLoadFraction } from '../../shared/constants/loadSizes.js';
+import { prisma } from "../../shared/db/prisma.js";
+import { getLoadFraction } from "../../shared/constants/loadSizes.js";
 
 const publicUserSelect = {
   id: true,
@@ -62,23 +62,23 @@ export function setLoadAvailability(id, lookingForLoads) {
 }
 
 export async function findAvailableTransporters(city) {
-  const targetCity = (city || '').trim();
+  const targetCity = (city || "").trim();
   if (!targetCity) return [];
 
   const users = await prisma.user.findMany({
     where: {
-      role: 'TRANSPORTER',
-      status: 'ACTIVE',
+      role: "TRANSPORTER",
+      status: "ACTIVE",
       lookingForLoads: true,
       OR: [
-        { city: { equals: targetCity, mode: 'insensitive' } },
-        { city: { contains: targetCity, mode: 'insensitive' } },
-        { location: { contains: targetCity, mode: 'insensitive' } },
+        { city: { equals: targetCity, mode: "insensitive" } },
+        { city: { contains: targetCity, mode: "insensitive" } },
+        { location: { contains: targetCity, mode: "insensitive" } },
         {
           journeyPlans: {
             some: {
-              status: 'ACTIVE',
-              originCity: { equals: targetCity, mode: 'insensitive' },
+              status: "ACTIVE",
+              originCity: { equals: targetCity, mode: "insensitive" },
             },
           },
         },
@@ -94,21 +94,29 @@ export async function findAvailableTransporters(city) {
       availableDays: true,
       preferredLoadTypes: true,
       reviewsReceived: { select: { rating: true } },
-      vehicle: { select: { type: true, loadSize: true, capacityTons: true, photo: true } },
+      vehicle: {
+        select: { type: true, loadSize: true, capacityTons: true, photo: true },
+      },
       journeyPlans: {
-        where: { status: 'ACTIVE', departureDate: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+        where: {
+          status: "ACTIVE",
+          departureDate: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+        },
         select: { destinationCity: true, departureDate: true },
-        orderBy: { departureDate: 'asc' },
+        orderBy: { departureDate: "asc" },
         take: 1,
       },
     },
-    orderBy: [{ availabilityUpdatedAt: 'desc' }, { name: 'asc' }],
+    orderBy: [{ availabilityUpdatedAt: "desc" }, { name: "asc" }],
   });
 
   return users.map((user) => {
     const reviewCount = user.reviewsReceived.length;
     const averageRating = reviewCount
-      ? user.reviewsReceived.reduce((total, review) => total + review.rating, 0) / reviewCount
+      ? user.reviewsReceived.reduce(
+          (total, review) => total + review.rating,
+          0,
+        ) / reviewCount
       : null;
 
     return {
@@ -117,9 +125,12 @@ export async function findAvailableTransporters(city) {
       city: user.city || targetCity,
       availabilityUpdatedAt: user.availabilityUpdatedAt,
       profilePhoto: user.image,
-      vehicleType: user.vehicle?.type || 'Truck (details pending)',
-      loadSize: user.vehicle?.loadSize || 'FULL_LOAD',
-      capacityTons: user.vehicle && user.vehicle.capacityTons != null ? Number(user.vehicle.capacityTons) : 0,
+      vehicleType: user.vehicle?.type || "Truck (details pending)",
+      loadSize: user.vehicle?.loadSize || "FULL_LOAD",
+      capacityTons:
+        user.vehicle && user.vehicle.capacityTons != null
+          ? Number(user.vehicle.capacityTons)
+          : 0,
       vehiclePhoto: user.vehicle?.photo || null,
       intendedDestination: user.journeyPlans[0]?.destinationCity || null,
       plannedDepartureDate: user.journeyPlans[0]?.departureDate || null,
@@ -136,13 +147,17 @@ export function findProfilePhotoByUserId(id) {
 }
 
 export async function findVehicleByUserId(userId) {
-  const vehicle = await prisma.vehicle.findUnique({ where: { userId }, select: vehicleSelect });
+  const vehicle = await prisma.vehicle.findUnique({
+    where: { userId },
+    select: vehicleSelect,
+  });
   if (!vehicle) return null;
-  const tons = vehicle.capacityTons != null ? Number(vehicle.capacityTons) : null;
+  const tons =
+    vehicle.capacityTons != null ? Number(vehicle.capacityTons) : null;
 
   return {
     ...vehicle,
-    loadSize: vehicle.loadSize || 'FULL_LOAD',
+    loadSize: vehicle.loadSize || "FULL_LOAD",
     capacityTons: tons,
     capacityKg: tons != null ? Math.round(tons * 1000) : null,
   };
@@ -152,9 +167,12 @@ export async function upsertVehicle(userId, input) {
   const { capacityKg, ...rest } = input;
   const data = {
     ...rest,
-    capacityTons: rest.capacityTons !== undefined
-      ? rest.capacityTons
-      : (capacityKg !== undefined ? capacityKg / 1000 : undefined),
+    capacityTons:
+      rest.capacityTons !== undefined
+        ? rest.capacityTons
+        : capacityKg !== undefined
+          ? capacityKg / 1000
+          : undefined,
   };
   const vehicle = await prisma.vehicle.upsert({
     where: { userId },
@@ -163,39 +181,47 @@ export async function upsertVehicle(userId, input) {
     select: vehicleSelect,
   });
 
-  const tons = vehicle.capacityTons != null ? Number(vehicle.capacityTons) : null;
+  const tons =
+    vehicle.capacityTons != null ? Number(vehicle.capacityTons) : null;
   if (tons != null) {
     const maxWeightKg = tons * 1000;
-    const activePlans = await prisma.journeyPlan.findMany({
-      where: { transporterId: userId, status: { in: ['ACTIVE', 'FULL'] } },
-      include: { assignments: true },
-    }).catch(() => []);
+    const activePlans = await prisma.journeyPlan
+      .findMany({
+        where: { transporterId: userId, status: { in: ["ACTIVE", "FULL"] } },
+        include: { assignments: true },
+      })
+      .catch(() => []);
 
     for (const plan of activePlans) {
       let allocatedWeight = 0;
       for (const assignment of plan.assignments) {
-        const isSmall = assignment.loadSize === 'SMALL_LOAD';
+        const isSmall = assignment.loadSize === "SMALL_LOAD";
         allocatedWeight += isSmall
           ? Number(assignment.weightKg || 0)
           : maxWeightKg * getLoadFraction(assignment.loadSize);
       }
-      const newFraction = Math.min(1, maxWeightKg > 0 ? allocatedWeight / maxWeightKg : 0);
+      const newFraction = Math.min(
+        1,
+        maxWeightKg > 0 ? allocatedWeight / maxWeightKg : 0,
+      );
       const isFull = allocatedWeight >= maxWeightKg - 0.01;
-      await prisma.journeyPlan.update({
-        where: { id: plan.id },
-        data: {
-          maxWeightKg,
-          allocatedWeightKg: allocatedWeight,
-          allocatedLoadFraction: newFraction,
-          status: isFull ? 'FULL' : 'ACTIVE',
-        },
-      }).catch(() => undefined);
+      await prisma.journeyPlan
+        .update({
+          where: { id: plan.id },
+          data: {
+            maxWeightKg,
+            allocatedWeightKg: allocatedWeight,
+            allocatedLoadFraction: newFraction,
+            status: isFull ? "FULL" : "ACTIVE",
+          },
+        })
+        .catch(() => undefined);
     }
   }
 
   return {
     ...vehicle,
-    loadSize: vehicle.loadSize || 'FULL_LOAD',
+    loadSize: vehicle.loadSize || "FULL_LOAD",
     capacityTons: tons,
     capacityKg: tons != null ? Math.round(tons * 1000) : null,
   };
@@ -213,4 +239,3 @@ export async function updateVehiclePhoto(userId, photoUrl) {
     capacityTons: Number(vehicle.capacityTons),
   };
 }
-

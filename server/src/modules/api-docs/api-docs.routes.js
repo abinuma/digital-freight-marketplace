@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { openApiDocument } from './openapi.js';
+import { Router } from "express";
+import { openApiDocument } from "./openapi.js";
 
 const router = Router();
 
@@ -13,20 +13,24 @@ const docsContentSecurityPolicy = [
   "img-src 'self' data: https://unpkg.com",
   "font-src 'self' data: https://unpkg.com",
   "connect-src 'self'",
-].join('; ');
+].join("; ");
 
-router.get('/json', (req, res) => {
-  res.set('Cache-Control', 'no-cache');
+router.get("/json", (req, res) => {
+  res.set("Cache-Control", "no-cache");
   res.json(openApiDocument);
 });
 
-router.get('/ui.js', (req, res) => {
-  res.type('application/javascript').send("window.addEventListener('load', () => SwaggerUIBundle({ url: '/api/docs/json', dom_id: '#swagger-ui', deepLinking: true, persistAuthorization: false }));");
+router.get("/ui.js", (req, res) => {
+  res
+    .type("application/javascript")
+    .send(
+      "window.addEventListener('load', () => SwaggerUIBundle({ url: '/api/docs/json', dom_id: '#swagger-ui', deepLinking: true, persistAuthorization: false }));",
+    );
 });
 
-router.get('/', (req, res) => {
-  res.set('Content-Security-Policy', docsContentSecurityPolicy);
-  res.type('html').send(`<!doctype html>
+router.get("/", (req, res) => {
+  res.set("Content-Security-Policy", docsContentSecurityPolicy);
+  res.type("html").send(`<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />

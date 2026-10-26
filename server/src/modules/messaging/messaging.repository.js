@@ -1,4 +1,4 @@
-import { prisma } from '../../shared/db/prisma.js';
+import { prisma } from "../../shared/db/prisma.js";
 
 const messageSelect = {
   id: true,
@@ -13,15 +13,36 @@ const conversationSelect = {
   shipperId: true,
   transporterId: true,
   updatedAt: true,
-  shipper: { select: { id: true, name: true, image: true, location: true, city: true, phone: true } },
-  transporter: { select: { id: true, name: true, image: true, location: true, city: true, phone: true } },
+  shipper: {
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      location: true,
+      city: true,
+      phone: true,
+    },
+  },
+  transporter: {
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      location: true,
+      city: true,
+      phone: true,
+    },
+  },
 };
 
 export async function listConversations(user) {
   const conversations = await prisma.conversation.findMany({
-    where: user.role === 'SHIPPER' ? { shipperId: user.id } : { transporterId: user.id },
+    where:
+      user.role === "SHIPPER"
+        ? { shipperId: user.id }
+        : { transporterId: user.id },
     select: conversationSelect,
-    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
   });
 
   if (!conversations.length) return [];
@@ -29,9 +50,22 @@ export async function listConversations(user) {
 
   const [bids, messages] = await Promise.all([
     prisma.bid.findMany({
-      where: user.role === 'SHIPPER'
-        ? { shipment: { shipperId: user.id }, transporterId: { in: conversations.map(({ transporterId }) => transporterId) } }
-        : { transporterId: user.id, shipment: { shipperId: { in: conversations.map(({ shipperId }) => shipperId) } } },
+      where:
+        user.role === "SHIPPER"
+          ? {
+              shipment: { shipperId: user.id },
+              transporterId: {
+                in: conversations.map(({ transporterId }) => transporterId),
+              },
+            }
+          : {
+              transporterId: user.id,
+              shipment: {
+                shipperId: {
+                  in: conversations.map(({ shipperId }) => shipperId),
+                },
+              },
+            },
       select: {
         shipmentId: true,
         transporterId: true,
@@ -41,7 +75,7 @@ export async function listConversations(user) {
     prisma.message.findMany({
       where: { conversationId: { in: conversationIds } },
       select: messageSelect,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     }),
   ]);
   const shipmentIdsByPair = new Map();
@@ -53,11 +87,13 @@ export async function listConversations(user) {
   }
   for (const conversation of conversations) {
     const pairKey = `${conversation.shipperId}:${conversation.transporterId}`;
-    if (!shipmentIdsByPair.has(pairKey)) shipmentIdsByPair.set(pairKey, new Set());
+    if (!shipmentIdsByPair.has(pairKey))
+      shipmentIdsByPair.set(pairKey, new Set());
   }
   const lastMessageByConversationId = new Map();
   for (const message of messages) {
-    if (!lastMessageByConversationId.has(message.conversationId)) lastMessageByConversationId.set(message.conversationId, message);
+    if (!lastMessageByConversationId.has(message.conversationId))
+      lastMessageByConversationId.set(message.conversationId, message);
   }
 
   return conversations.map((conversation) => ({
@@ -65,22 +101,35 @@ export async function listConversations(user) {
     messages: lastMessageByConversationId.has(conversation.id)
       ? [lastMessageByConversationId.get(conversation.id)]
       : [],
-    shipmentIds: [...new Set([
-      ...(shipmentIdsByPair.get(`${conversation.shipperId}:${conversation.transporterId}`) || []),
-    ])],
+    shipmentIds: [
+      ...new Set([
+        ...(shipmentIdsByPair.get(
+          `${conversation.shipperId}:${conversation.transporterId}`,
+        ) || []),
+      ]),
+    ],
   }));
 }
 
 export function findConversation(id) {
-  return prisma.conversation.findUnique({ where: { id }, select: conversationSelect });
+  return prisma.conversation.findUnique({
+    where: { id },
+    select: conversationSelect,
+  });
 }
 
 export function findActiveTransporter(id) {
-  return prisma.user.findFirst({ where: { id, role: 'TRANSPORTER', status: 'ACTIVE' }, select: { id: true } });
+  return prisma.user.findFirst({
+    where: { id, role: "TRANSPORTER", status: "ACTIVE" },
+    select: { id: true },
+  });
 }
 
 export function findActiveShipper(id) {
-  return prisma.user.findFirst({ where: { id, role: 'SHIPPER', status: 'ACTIVE' }, select: { id: true } });
+  return prisma.user.findFirst({
+    where: { id, role: "SHIPPER", status: "ACTIVE" },
+    select: { id: true },
+  });
 }
 
 export function findOrCreateConversation(shipperId, transporterId) {
@@ -132,7 +181,7 @@ export function findConversationBids(conversation) {
         },
       },
     },
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
   });
 }
 
@@ -140,7 +189,7 @@ export function findConversationMessages(conversationId) {
   return prisma.message.findMany({
     where: { conversationId },
     select: messageSelect,
-    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
   });
 }
 
@@ -148,7 +197,7 @@ export function findConversationLastMessage(conversationId) {
   return prisma.message.findFirst({
     where: { conversationId },
     select: messageSelect,
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
   });
 }
 
@@ -158,7 +207,10 @@ export function createMessage(conversationId, senderId, content) {
       data: { conversationId, senderId, content },
       select: messageSelect,
     });
-    await transaction.conversation.update({ where: { id: conversationId }, data: { updatedAt: message.createdAt } });
+    await transaction.conversation.update({
+      where: { id: conversationId },
+      data: { updatedAt: message.createdAt },
+    });
     return message;
   });
 }

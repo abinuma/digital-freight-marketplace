@@ -1,25 +1,27 @@
-import * as authService from './auth.service.js';
+import * as authService from "./auth.service.js";
 
 function forwardAuthResponse(response, res, { created = false } = {}) {
   const cookies = response.headers.getSetCookie?.();
-  if (cookies?.length) res.setHeader('Set-Cookie', cookies);
+  if (cookies?.length) res.setHeader("Set-Cookie", cookies);
 
-  const cacheControl = response.headers.get('cache-control');
-  if (cacheControl) res.setHeader('Cache-Control', cacheControl);
+  const cacheControl = response.headers.get("cache-control");
+  if (cacheControl) res.setHeader("Cache-Control", cacheControl);
 
   return response.json().then((payload) => {
     if (!response.ok) {
-      const duplicateEmail = payload.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL';
-      const isInvalidToken = payload.code === 'INVALID_TOKEN' || payload.message === 'Invalid token';
+      const duplicateEmail =
+        payload.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL";
+      const isInvalidToken =
+        payload.code === "INVALID_TOKEN" || payload.message === "Invalid token";
       const statusCode = duplicateEmail ? 409 : response.status;
       return res.status(statusCode).json({
         error: {
           ...(payload.code ? { code: payload.code } : {}),
           message: duplicateEmail
-            ? 'An account with this email already exists'
+            ? "An account with this email already exists"
             : isInvalidToken
-              ? 'This password reset link has expired or has already been used. Please request a new one.'
-              : payload.message || 'Authentication request failed',
+              ? "This password reset link has expired or has already been used. Please request a new one."
+              : payload.message || "Authentication request failed",
         },
       });
     }
@@ -50,8 +52,13 @@ export async function sendVerificationCode(req, res, next) {
   }
 }
 
-export const register = handleAuthRequest((req) => authService.register(req.body, req.headers), { created: true });
-export const login = handleAuthRequest((req) => authService.login(req.body, req.headers));
+export const register = handleAuthRequest(
+  (req) => authService.register(req.body, req.headers),
+  { created: true },
+);
+export const login = handleAuthRequest((req) =>
+  authService.login(req.body, req.headers),
+);
 export async function submitSuspensionAppeal(req, res, next) {
   try {
     const appeal = await authService.submitSuspensionAppeal(req.body);
@@ -60,9 +67,15 @@ export async function submitSuspensionAppeal(req, res, next) {
     return next(error);
   }
 }
-export const logout = handleAuthRequest((req) => authService.logout(req.headers));
-export const forgotPassword = handleAuthRequest((req) => authService.requestPasswordReset(req.body.email, req.headers));
-export const resetPassword = handleAuthRequest((req) => authService.resetPassword(req.body, req.headers));
+export const logout = handleAuthRequest((req) =>
+  authService.logout(req.headers),
+);
+export const forgotPassword = handleAuthRequest((req) =>
+  authService.requestPasswordReset(req.body.email, req.headers),
+);
+export const resetPassword = handleAuthRequest((req) =>
+  authService.resetPassword(req.body, req.headers),
+);
 
 export async function verifyResetToken(req, res, next) {
   try {
@@ -72,7 +85,6 @@ export async function verifyResetToken(req, res, next) {
     return next(error);
   }
 }
-
 
 export async function me(req, res, next) {
   try {

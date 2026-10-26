@@ -1,16 +1,21 @@
-import { z } from 'zod';
-import { ethiopianPhoneSchema } from '../../shared/utils/ethiopianPhone.js';
+import { z } from "zod";
+import { ethiopianPhoneSchema } from "../../shared/utils/ethiopianPhone.js";
 
-const emailSchema = z.string().trim().email().max(255).transform((email) => email.toLowerCase());
+const emailSchema = z
+  .string()
+  .trim()
+  .email()
+  .max(255)
+  .transform((email) => email.toLowerCase());
 const phoneSchema = ethiopianPhoneSchema;
-const roleSchema = z.enum(['SHIPPER', 'TRANSPORTER']);
+const roleSchema = z.enum(["SHIPPER", "TRANSPORTER"]);
 const passwordSchema = z
   .string()
   .min(8)
   .max(128)
-  .regex(/[A-Z]/, 'Password must include an uppercase letter')
-  .regex(/[a-z]/, 'Password must include a lowercase letter')
-  .regex(/[0-9]/, 'Password must include a digit');
+  .regex(/[A-Z]/, "Password must include an uppercase letter")
+  .regex(/[a-z]/, "Password must include a lowercase letter")
+  .regex(/[0-9]/, "Password must include a digit");
 
 export const sendVerificationCodeSchema = {
   body: z.object({
@@ -24,8 +29,12 @@ export const registerSchema = {
     email: emailSchema,
     phone: phoneSchema,
     password: passwordSchema,
-    role: z.enum(['SHIPPER', 'TRANSPORTER']),
-    code: z.string().trim().length(6, 'Verification code must be 6 digits').regex(/^\d{6}$/, 'Verification code must be 6 digits'),
+    role: z.enum(["SHIPPER", "TRANSPORTER"]),
+    code: z
+      .string()
+      .trim()
+      .length(6, "Verification code must be 6 digits")
+      .regex(/^\d{6}$/, "Verification code must be 6 digits"),
   }),
 };
 

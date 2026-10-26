@@ -1,4 +1,4 @@
-import * as messagingService from './messaging.service.js';
+import * as messagingService from "./messaging.service.js";
 
 export async function listConversations(req, res, next) {
   try {
@@ -11,14 +11,22 @@ export async function listConversations(req, res, next) {
 
 export async function startConversation(req, res, next) {
   try {
-    const conversation = await messagingService.startConversation(req.user, req.body);
+    const conversation = await messagingService.startConversation(
+      req.user,
+      req.body,
+    );
     return res.status(201).json({ data: conversation });
-  } catch (error) { return next(error); }
+  } catch (error) {
+    return next(error);
+  }
 }
 
 export async function listMessages(req, res, next) {
   try {
-    const messages = await messagingService.listMessages(req.user, req.params.conversationId);
+    const messages = await messagingService.listMessages(
+      req.user,
+      req.params.conversationId,
+    );
     return res.json({ data: messages });
   } catch (error) {
     return next(error);
@@ -27,7 +35,10 @@ export async function listMessages(req, res, next) {
 
 export async function getLastMessage(req, res, next) {
   try {
-    const message = await messagingService.getLastMessage(req.user, req.params.conversationId);
+    const message = await messagingService.getLastMessage(
+      req.user,
+      req.params.conversationId,
+    );
     return res.json({ data: message });
   } catch (error) {
     return next(error);
@@ -36,7 +47,10 @@ export async function getLastMessage(req, res, next) {
 
 export async function listConversationBids(req, res, next) {
   try {
-    const bids = await messagingService.listConversationBids(req.user, req.params.conversationId);
+    const bids = await messagingService.listConversationBids(
+      req.user,
+      req.params.conversationId,
+    );
     return res.json({ data: bids });
   } catch (error) {
     return next(error);
@@ -45,7 +59,11 @@ export async function listConversationBids(req, res, next) {
 
 export async function sendMessage(req, res, next) {
   try {
-    const message = await messagingService.sendMessage(req.user, req.params.conversationId, req.body.content);
+    const message = await messagingService.sendMessage(
+      req.user,
+      req.params.conversationId,
+      req.body.content,
+    );
     return res.status(201).json({ data: message });
   } catch (error) {
     return next(error);

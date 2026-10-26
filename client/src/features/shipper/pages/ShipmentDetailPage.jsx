@@ -10,13 +10,13 @@ import {
   Textarea,
   useSuccessToast,
 } from "../../../shared/components/index.js";
+import { transitionShipment } from "../shipper.api.js";
 import {
   decideBid,
   getShipment,
   getUserProfile,
   listShipmentBids,
   removeShipmentImage,
-  transitionShipment,
 } from "../shipper.api.js";
 import { ShipmentReviews } from "../components/ShipmentReviews.jsx";
 import { ShipperBidsPanel } from "../components/ShipperBidsPanel.jsx";
@@ -153,20 +153,17 @@ export function ShipmentDetailPage() {
       </div>
     );
 
-  const canEditStatus =
-    shipment.status === "DRAFT" || shipment.status === "PUBLISHED";
+  const canEditStatus = shipment.status === "PUBLISHED";
   const hasActiveBid = bids.some((bid) => ["PENDING", "ACCEPTED"].includes(bid.status));
   const hasAcceptedBid = bids.some((bid) => bid.status === "ACCEPTED");
   const canCancel = !["CANCELLED", "COMPLETED"].includes(shipment.status)
     && !bidsQuery.isPending
     && !bidsQuery.isError
     && !hasAcceptedBid;
-  const canEdit = shipment.status === "DRAFT" || (
-    shipment.status === "PUBLISHED" &&
+  const canEdit = shipment.status === "PUBLISHED" &&
     !bidsQuery.isPending &&
     !bidsQuery.isError &&
-    !hasActiveBid
-  );
+    !hasActiveBid;
   const dialogTitle =
     confirmation?.type === "bid"
       ? `${confirmation.action === "accept" ? "Accept" : "Decline"} this bid?`
@@ -187,15 +184,6 @@ export function ShipmentDetailPage() {
                 onClick={() => navigate(`/shipper/shipments/${id}/edit`)}
               >
                 Edit shipment
-              </Button>
-            )}
-            {shipment.status === "DRAFT" && (
-              <Button
-                onClick={() =>
-                  setConfirmation({ action: "publish", type: "shipment" })
-                }
-              >
-                Publish
               </Button>
             )}
             {shipment.status === "IN_PROGRESS" && (
