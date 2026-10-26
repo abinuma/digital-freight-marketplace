@@ -261,13 +261,24 @@ export function ShipmentDetailPage() {
         </aside>
       </div>
 
-      <Link
-        className="group inline-flex w-fit min-h-9 items-center gap-1.5 rounded-full border border-blue-200 bg-white px-3 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white"
-        to="/shipper/shipments" onClick={(e) => { e.preventDefault(); handleBack(); }}
-      >
-        <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-3.5 w-3.5 group-hover:brightness-0 group-hover:invert" />
-        Back
-      </Link>
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          className="group inline-flex w-fit min-h-9 items-center gap-1.5 rounded-full border border-blue-200 bg-white px-3 text-sm font-semibold text-slate-900 no-underline transition-colors hover:border-blue-700 hover:bg-blue-700 hover:text-white"
+          to="/shipper/shipments" onClick={(e) => { e.preventDefault(); handleBack(); }}
+        >
+          <img src="/chevron-left-solid-full.svg" alt="" aria-hidden="true" className="h-3.5 w-3.5 group-hover:brightness-0 group-hover:invert" />
+          Back
+        </Link>
+        {bids.length > 0 && (
+          <Button
+            variant="primary"
+            onClick={() => openDriverChat(bids[0])}
+            disabled={Boolean(chattingBidId)}
+          >
+            {chattingBidId ? <Spinner /> : "Chat with driver"}
+          </Button>
+        )}
+      </div>
 
       <Modal
         open={Boolean(confirmation)}

@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "lint": "eslint src tests",
+    "lint": "eslint src",
     "test": "vitest run",
     "test:auth:integration": "node scripts/run-auth-integration.js",
-    "format": "prettier --write src tests"
+    "format": "prettier --write src"
   },
   "keywords": [],
   "author": "",
